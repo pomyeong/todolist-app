@@ -8,6 +8,8 @@
 |---|---|---|---|---|
 | v0.1 | 2026-11-04 | pmsong | 초안 | 최초 작성 |
 | v0.2 | 2026-11-04 | pmsong | 초안 | 아키텍처 다이어그램 작성 중 발견한 API·화면 미정의 사항 결정(PD-19~25) |
+| v0.3 | 2026-11-04 | pmsong | 초안 | PRD v0.10 인증 방식 변경(JWT HS384 + refresh 토큰) 반영 |
+| v0.4 | 2026-11-04 | pmsong | 초안 | 문서 간 정합성 검토 반영 |
 
 ### 변경 이력
 
@@ -19,8 +21,13 @@
 | v0.2 | 2026-11-04 | PD-23 | 월 뷰 격자 앞뒤 채움 칸은 빈 칸 | BR-17 기간 밖 칸의 표시 미정의 | pmsong |
 | v0.2 | 2026-11-04 | PD-24, PR-L-12 | 첫 진입 `GET /api/me`의 401은 전역 처리 대상에서 제외 | `/login`에서 다시 `/login`으로 보내는 반복 방지 | pmsong |
 | v0.2 | 2026-11-04 | PR-L-06 | bcrypt 해시는 트랜잭션 밖에서 계산 | 커넥션 점유 최소 근거 명시 | pmsong |
+| v0.3 | 2026-11-04 | PR-S-01~03, PR-S-05, PR-L-12, PR-T-04, PR-T-08, 7.2, 7.3, PD-15, PD-25, PD-26 | HS384 서명, access·refresh 토큰 쿠키, 갱신 API, 화면의 401 시 갱신 후 재요청, `refresh_tokens` 테이블 반영 | PRD v0.10 P-04 | pmsong |
+| v0.3 | 2026-11-04 | 참조 문서 | PRD v0.9 → v0.10, 사용자 시나리오 v0.7 → v0.8 | 버전 동기화 | pmsong |
+| v0.4 | 2026-11-04 | PR-L-06, PR-N-04 | 회원가입 트랜잭션에 refresh 토큰 포함, 테이블 목록에 `refresh_tokens` 추가 | 7.2 `services/auth.js` 행·ERD v0.2와 불일치 | pmsong |
+| v0.4 | 2026-11-04 | 7.1, 7.2 | `docs/` 설명을 1~8번 문서로, `.env.example`에 `NODE_ENV` 추가 | 실제 문서 구성·PR-S-01 키 목록과 불일치 | pmsong |
+| v0.4 | 2026-11-04 | 참조 문서 | PRD v0.10 → v0.11, 시나리오 v0.8 → v0.9, 와이어프레임 v0.3 → v0.4 | 버전 동기화 | pmsong |
 
-> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.6](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.9](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.7](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.3](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
+> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.6](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.11](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.9](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.4](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
 > ID 운영 원칙: PR-C·PR-L·PR-N·PR-T·PR-S·PD의 ID는 재사용하거나 재번호하지 않는다. 원칙·결정을 없애면 행을 지우지 말고 '폐기'로 표시한다.
 
@@ -72,13 +79,13 @@
 | PR-L-03 | services는 규칙·SQL·트랜잭션을 가진다. `req`/`res`를 모르고 `(userId, input)` 같은 값만 받는다. 실패는 `AppError`를 throw한다. | HTTP 없이 호출 가능, 오류 변환은 한 곳. | NFR-15 |
 | PR-L-04 | SQL은 services 파일 안의 문자열로 직접 작성하고 `db.query(text, params)`만 쓴다. 모든 값은 `$1, $2 …`로 바인딩한다. 필터처럼 조건이 바뀌는 경우에도 SQL 조각은 코드의 고정 문자열이고 값만 바인딩한다.<br>하지 말 것: 템플릿 문자열·`+`로 값을 SQL에 끼워 넣기, `SELECT *`(비밀번호 해시 노출 방지, PR-S-06) | SQL 직접 작성의 인젝션 방지. | NFR-08, R-04 |
 | PR-L-05 | 카테고리·할일에 접근하는 모든 SQL은 `user_id = $n`(토큰의 사용자 ID)을 포함한다. 0행이면 `NOT_FOUND`를 던져 '타인 데이터'와 '없음'을 구분하지 않는다. 지정한 카테고리(BR-04)도 같은 조건으로 확인한다. 조회 JOIN에도 양쪽 `user_id`를 건다.<br>하지 말 것: `WHERE id = $1`만으로 조회·수정·삭제 | 소유권 누락이 곧 데이터 유출이다. | NFR-07, BR-03, BR-04, R-04 |
-| PR-L-06 | 트랜잭션(`db.withTransaction(fn)`)은 NFR-10 대상인 회원가입(사용자 + 기본 카테고리), 카테고리 삭제(할일 이동 + 삭제) 두 곳에만 쓴다. 단일 문장은 트랜잭션 없이 쓴다. bcrypt 해시처럼 느린 계산은 트랜잭션을 열기 전에 끝낸다. | 필요한 곳만, 커넥션 점유 최소(풀 크기 20, NFR-03). | NFR-10, NFR-03, BR-10, BR-14 |
+| PR-L-06 | 트랜잭션(`db.withTransaction(fn)`)은 NFR-10 대상인 회원가입(사용자 + 기본 카테고리 + refresh 토큰), 카테고리 삭제(할일 이동 + 삭제) 두 곳에만 쓴다. 단일 문장은 트랜잭션 없이 쓴다. bcrypt 해시처럼 느린 계산은 트랜잭션을 열기 전에 끝낸다. | 필요한 곳만, 커넥션 점유 최소(풀 크기 20, NFR-03). | NFR-10, NFR-03, BR-10, BR-14 |
 | PR-L-07 | `domain/`에는 I/O 없는 순수 함수만 둔다: 상태 판정(`status.js`), 입력 검증(`validate.js`). 다른 모듈을 import하지 않는다. | G-04 단위 테스트 대상을 DB 없이 검증한다. | G-04, NFR-09, NFR-12 |
 | PR-L-08 | 조회는 쿼리 하나로 끝낸다(목록의 카테고리명은 JOIN). 행마다 추가 쿼리를 보내지 않는다. 정렬은 BR-20을 쿼리 한 곳(상수)에 두고 목록·캘린더가 공유하며, 마지막 키로 `id`를 덧붙여 순서를 고정한다. | N+1 방지(R-02), 정렬 규칙 단일화. | BR-20, NFR-04, R-02 |
 | PR-L-09 | 프론트 레이어는 pages → features → api다. pages는 경로 단위 조합만, features는 화면 기능(컴포넌트·훅·스토어), api는 `fetch` 호출과 타입만 가진다. features끼리 직접 import하지 않고, 공유가 필요하면 `components/`·`lib/`·`api/`로 올린다.<br>하지 말 것: 컴포넌트에서 `fetch` 직접 호출 | 의존 방향 고정, 기능 파일 제외 용이(PR-C-06). | P-23, R-01 |
 | PR-L-10 | 상태 보관 위치는 하나씩이다. 서버 데이터는 TanStack Query만, 클라이언트 UI 상태(필터·캘린더 선택 날짜·로그인 사용자 정보)는 Zustand만 쓴다. 서버 데이터(할일·카테고리)를 Zustand에 복사하지 않는다. 토큰은 어디에도 저장하지 않는다. Zustand `persist`는 쓰지 않는다(새로고침 시 초기화가 규칙).<br>하지 말 것: `localStorage`·`sessionStorage` 사용 | PRD 6장 역할 분담, 새로고침 시 필터 초기화(P-23). | PRD 6장, P-04, P-23 |
 | PR-L-11 | 변경(mutation) 성공 후에는 `['todos']`·`['calendar']`(카테고리 변경이면 `['categories']`도) 쿼리를 무효화해 다시 조회한다. 무효화 호출은 `api/queryKeys.ts`의 헬퍼 한 곳에 둔다. 상태가 포함된 조회의 query key에는 `today`를 넣는다.<br>하지 말 것: 캐시 직접 수정, 낙관적 업데이트 | 상태 판정은 서버, 표시는 재조회 결과. | P-15, P-12, NFR-12 |
-| PR-L-12 | 401 `UNAUTHORIZED`는 한 곳에서 처리한다. QueryClient의 `QueryCache`·`MutationCache` `onError`에서 `code === 'UNAUTHORIZED'`이면 Zustand·쿼리 캐시를 비우고 `/login`으로 보낸다. `INVALID_CREDENTIALS`(로그인 실패)와 첫 진입 로그인 확인(`GET /api/me`, PD-24)은 대상이 아니다. | 모든 API에 같은 규칙, 화면별 중복 방지. | FR-04, FR-02, P-23 |
+| PR-L-12 | 401 `UNAUTHORIZED`는 두 단계로 처리한다. (1) `api/client.ts`가 401 `UNAUTHORIZED`를 받으면 `POST /api/auth/refresh`를 한 번 호출하고(같은 탭의 동시 401은 진행 중인 갱신 하나를 공유), 성공하면 원래 요청을 한 번 다시 보낸다. `/api/auth/*` 요청과 재전송한 요청은 갱신 대상이 아니다. 첫 진입 `GET /api/me`에도 (1)을 적용한다. (2) 갱신이 실패해 401이 그대로 올라오면 QueryClient의 `QueryCache`·`MutationCache` `onError`에서 `code === 'UNAUTHORIZED'`이면 Zustand·쿼리 캐시를 비우고 `/login`으로 보낸다. `INVALID_CREDENTIALS`(로그인 실패)와 첫 진입 로그인 확인(`GET /api/me`, PD-24)은 대상이 아니다. | 모든 API에 같은 규칙, 화면별 중복 방지. | FR-04, FR-02, P-23 |
 
 ### 3.3 더 나누지 않는 이유
 
@@ -98,7 +105,7 @@
 | PR-N-01 | 백엔드는 JavaScript ESM(`"type": "module"`), 프론트는 TypeScript `strict`다. 프론트에서 `any`를 쓰지 않는다. 백엔드에 TypeScript·JSDoc 타입 체계를 따로 만들지 않는다. | PRD 6장(백엔드 TypeScript 아님). | PRD 6장, PD-02 |
 | PR-N-02 | 파일명: 백엔드는 자원 이름의 소문자 복수형을 층마다 같게 쓴다(`routes/todos.js`, `services/todos.js`). 층은 디렉토리가 구분하므로 파일명에 `Service`·`Controller`를 붙이지 않는다. 프론트는 컴포넌트·페이지 `PascalCase.tsx`, 그 외 `camelCase.ts`, 페이지는 `XxxPage.tsx`, 훅은 `useXxx.ts`, 스토어는 `xxxStore.ts`(export는 `useXxxStore`). | 파일만 보고 위치·역할을 안다. | - |
 | PR-N-03 | 식별자: 변수·함수 `camelCase`, 상수 `UPPER_SNAKE_CASE`, 컴포넌트 `PascalCase`. 컴포넌트는 함수 컴포넌트·named export, 한 파일에 하나(아주 작은 하위 컴포넌트 예외). | 일관성. | - |
-| PR-N-04 | DB: 테이블 `users`·`categories`·`todos`, 컬럼 `snake_case`(도메인 `userId` ↔ `user_id`). 제약·인덱스 이름은 명시한다(`uq_users_email`, `uq_categories_user_name`, `uq_categories_user_default`, `idx_todos_user_dates`, `idx_todos_user_category`). 중복 오류(23505)는 제약 이름으로 `DUPLICATE_EMAIL`/`DUPLICATE_CATEGORY`를 구분한다. | NFR-04 인덱스 방향 구현, 오류 코드 분기 근거. | NFR-04, NFR-15, BR-02, BR-13 |
+| PR-N-04 | DB: 테이블 `users`·`categories`·`todos`·`refresh_tokens`, 컬럼 `snake_case`(도메인 `userId` ↔ `user_id`). 제약·인덱스 이름은 명시한다(`uq_users_email`, `uq_categories_user_name`, `uq_categories_user_default`, `idx_todos_user_dates`, `idx_todos_user_category`). 중복 오류(23505)는 제약 이름으로 `DUPLICATE_EMAIL`/`DUPLICATE_CATEGORY`를 구분한다. | NFR-04 인덱스 방향 구현, 오류 코드 분기 근거. | NFR-04, NFR-15, BR-02, BR-13 |
 | PR-N-05 | API JSON·쿼리 파라미터는 `camelCase`(`categoryId`, `startDate`, `today`, `from`, `to`)다. SELECT에서 `AS "startDate"`처럼 별칭을 명시해 변환하고, 범용 camelCase 변환기를 두지 않는다. | 도메인 속성명과 일치, 변환 코드 없음. | PRD 6장 |
 | PR-N-06 | API 경로는 `/api` 접두사 + 복수 명사 자원이며 동사를 쓰지 않는다(예외: `auth`의 `signup`·`login`·`logout`, 하위 동작 `completed`·`password`). 상태 변경에 GET을 쓰지 않는다. 경로 목록은 7.2의 표가 정한다. | RESTful, CSRF 방어의 전제(PR-S-03). | NFR-15, PD-13 |
 | PR-N-07 | 오류는 services·domain에서 `AppError(status, code, message, fields?)`를 throw하고 `middleware/error.js` 한 곳에서만 NFR-15 형식으로 응답한다. 예상 못한 오류는 500 `INTERNAL_ERROR`로 바꾼다.<br>하지 말 것: routes에서 `res.status(400).json(...)` 직접 작성 | 형식 단일화. | NFR-15 |
@@ -114,22 +121,22 @@
 | PR-T-01 | 테스트는 세 종류만 둔다. (1) 백엔드 단위: `domain/` 순수 함수. (2) 백엔드 API 통합: 실제 DB로 HTTP 호출. (3) 프론트 단위: 순수 함수. E2E·컴포넌트 테스트는 두지 않고, 화면은 시나리오 셀프 체크로 확인한다. | 2일 안에 가치가 큰 곳에만. | G-03, G-04, R-05 |
 | PR-T-02 | G-04 대상은 모두 테스트한다. 순수 함수(`domain`)로 검증 가능한 것: ST-01~04(시작일·종료일 당일, 완료 우선, 완료 취소), BR-07, BR-21·22 경계(7/8/64/65자, 공백만, trim), 날짜 형식(`2026-13-01`). SQL이 판정하는 것은 API 통합으로 검증한다: BR-15 AND 결합, BR-16~18 월·주 경계, BR-19, BR-20 정렬. | PRD G-04의 검증 방법(단위 + API 통합)을 파일 단위로 나눈 것. | G-04, R-03, PD-09 |
 | PR-T-03 | 소유권 API 테스트: 사용자 두 명(U1·U2)을 만들고 카테고리·할일의 모든 엔드포인트에 타인 ID를 보내 404 `NOT_FOUND`와 데이터 불변을 확인한다. 타인 카테고리 지정(BR-04), 타인 카테고리 필터(P-14)를 포함한다. 새 카테고리·할일 엔드포인트를 만들면 이 테스트에 케이스를 추가해야 완료다. | SQL 직접 작성의 최대 리스크. | R-04, NFR-07, E-C2 |
-| PR-T-04 | API 테스트는 mock 없이 테스트 전용 PostgreSQL DB(`todolist_test`)에서 한다. 파일마다 시작 시 `TRUNCATE users, categories, todos RESTART IDENTITY CASCADE`로 비운다. 파일 병렬 실행을 막는다(`--test-concurrency=1`). | mock은 SQL·제약·인덱스를 검증하지 못한다. | R-04, NFR-04 |
+| PR-T-04 | API 테스트는 mock 없이 테스트 전용 PostgreSQL DB(`todolist_test`)에서 한다. 파일마다 시작 시 `TRUNCATE users, categories, todos, refresh_tokens RESTART IDENTITY CASCADE`로 비운다. 파일 병렬 실행을 막는다(`--test-concurrency=1`). | mock은 SQL·제약·인덱스를 검증하지 못한다. | R-04, NFR-04 |
 | PR-T-05 | 테스트 이름에 시나리오·예외 ID를 넣는다(`E-04-2 시작일 > 종료일은 400`). 새 시나리오 예외가 생기면 대응 테스트를 만든다. 셀프 체크(G-03)는 SC-01~13을 화면에서 수동 수행한다. | 추적성, 테스트 케이스는 시나리오에서 도출. | SC-01~13, G-03 |
 | PR-T-06 | 프론트 단위 테스트(Vitest)는 순수 함수만 대상으로 한다: 월·주 조회 기간 계산, 칸별 할일 필터, 날짜 문자열 연산, 오늘 계산. 반응형(360px·768px)은 M-05에서 수동 점검한다. | 캘린더 경계 계산이 R-03의 프론트 쪽 위험이다. | R-03, NFR-13, M-05 |
 | PR-T-07 | 커밋 전 게이트: 백엔드 `npm test`, 프론트 `npm test`와 `tsc --noEmit`, 루트 `biome check`. CI·pre-commit hook은 두지 않는다. 커버리지는 `node --test --experimental-test-coverage`로 참고만 하고 수치 게이트는 없다. | 로컬 단일 머신(P-10), 테스트 대상은 PR-T-02·03이 정한다. | P-10, PD-12 |
-| PR-T-08 | 부하 테스트(`load-test/`)는 P-02의 값을 스크립트 상단 상수로 둔다: 1000 VU, 1분 ramp-up, 5분 유지, think time 3초, 조회 70%·변경 25%·로그인 5%, 사용자당 할일 100건(`scripts/seed-load.js`로 사전 입력). 매 요청 로그인은 금지하고(NFR-05) 쿠키는 k6 쿠키 저장소가 유지한다. 시작 전 `setup()`에서 `GET /api/health`로 기동을 확인한다. 결과는 머신 사양·같은 머신에서 실행했다는 사실과 함께 기록한다(R-06). | 목표를 재현 가능하게 측정한다. | G-01, G-02, P-02, NFR-05, R-06 |
+| PR-T-08 | 부하 테스트(`load-test/`)는 P-02의 값을 스크립트 상단 상수로 둔다: 1000 VU, 1분 ramp-up, 5분 유지, think time 3초, 조회 70%·변경 25%·로그인 5%, 사용자당 할일 100건(`scripts/seed-load.js`로 사전 입력). 매 요청 로그인은 금지하고(NFR-05) 쿠키는 k6 쿠키 저장소가 유지한다. access 토큰 만료(15분)가 테스트 시간(약 6분)보다 길어 갱신 호출은 시나리오에 넣지 않는다. 시작 전 `setup()`에서 `GET /api/health`로 기동을 확인한다. 결과는 머신 사양·같은 머신에서 실행했다는 사실과 함께 기록한다(R-06). | 목표를 재현 가능하게 측정한다. | G-01, G-02, P-02, NFR-05, R-06 |
 | PR-T-09 | 느린 쿼리는 `EXPLAIN (ANALYZE)`로 확인하고 인덱스는 그 결과로 보강한다. 코드에서 미리 최적화하지 않는다(N+1 제거는 PR-L-08). | M-05는 측정 후 조치. | NFR-04, R-02, M-05 |
 
 ## 6. 설정 / 보안 / 운영 원칙
 
 | ID | 규칙 | 이유 | 관련 ID |
 |---|---|---|---|
-| PR-S-01 | 설정은 환경변수로만 받고 `src/config.js` 한 곳에서 읽는다(Node `--env-file`, dotenv 미사용). 필수 값이 없으면 기동 시 즉시 종료한다. 키: `DATABASE_URL`, `JWT_SECRET`(32자 이상), `PORT`(기본 3000), `DB_POOL_MAX`(기본 20), `NODE_ENV`. `.env`·`.env.test`는 커밋하지 않고 `.env.example`만 커밋한다.<br>하지 말 것: 다른 파일에서 `process.env` 직접 접근 | 설정 오류를 기동 시점에 발견. | NFR-03, PD-07 |
-| PR-S-02 | PRD가 확정한 값은 설정이 아닌 상수로 코드에 둔다: bcrypt cost 10, JWT 만료 1일, 쿠키 이름. | 환경마다 달라지면 안 되는 값. | NFR-06, P-04 |
-| PR-S-03 | 인증은 JWT(HS256, 페이로드는 `sub`=사용자 ID만)를 httpOnly·`SameSite=Lax` 쿠키(`maxAge` 1일, `path=/`)로 주고받는다. `secure`는 `NODE_ENV=production`일 때만 켠다(HTTPS는 범위 외). 로그아웃은 같은 옵션으로 쿠키를 지운다. refresh·서버 블랙리스트는 만들지 않는다. 상태 변경 API는 GET을 쓰지 않고 JSON 본문(`express.json`)만 받아, `SameSite=Lax`와 함께 CSRF를 막는다. | stateless 인증, 토큰 JS 접근 차단. | P-04, NFR-02, FR-03 |
+| PR-S-01 | 설정은 환경변수로만 받고 `src/config.js` 한 곳에서 읽는다(Node `--env-file`, dotenv 미사용). 필수 값이 없으면 기동 시 즉시 종료한다. 키: `DATABASE_URL`, `JWT_SECRET`(HS384 키가 384비트 이상이 되도록 48자 이상), `PORT`(기본 3000), `DB_POOL_MAX`(기본 20), `NODE_ENV`. `.env`·`.env.test`는 커밋하지 않고 `.env.example`만 커밋한다.<br>하지 말 것: 다른 파일에서 `process.env` 직접 접근 | 설정 오류를 기동 시점에 발견. | NFR-03, PD-07 |
+| PR-S-02 | PRD가 확정한 값은 설정이 아닌 상수로 코드에 둔다: bcrypt cost 10, 서명 알고리즘 HS384, access 토큰 만료 15분, refresh 토큰 만료 7일, 쿠키 이름(`access_token`, `refresh_token`). | 환경마다 달라지면 안 되는 값. | NFR-06, P-04 |
+| PR-S-03 | 인증은 access 토큰과 refresh 토큰 두 개를 쓴다(P-04). access 토큰은 JWT(HS384, 페이로드는 `sub`=사용자 ID만, 만료 15분)이고 `access_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/`, `maxAge` 15분)로 보낸다. 검증할 때 `algorithms: ['HS384']`를 명시해 다른 알고리즘(`none`, HS256 등)으로 서명된 토큰을 거부한다. refresh 토큰은 JWT가 아닌 `crypto.randomBytes(32)`의 base64url 문자열이고 `refresh_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/api/auth`, `maxAge` 7일)로 보낸다. DB `refresh_tokens`에는 SHA-256 해시만 저장한다(DB-13). `POST /api/auth/refresh`는 해시가 맞고 만료되지 않은 행을 한 문장으로 삭제(`DELETE … RETURNING user_id`)한 뒤 새 쌍을 발급한다(회전, 재사용 불가). 로그아웃은 그 refresh 토큰 행을 지우고 같은 옵션으로 두 쿠키를 지운다. `secure`는 `NODE_ENV=production`일 때만 켠다(HTTPS는 범위 외). access 토큰 블랙리스트는 만들지 않는다. 상태 변경 API는 GET을 쓰지 않고 JSON 본문(`express.json`)만 받아, `SameSite=Lax`와 함께 CSRF를 막는다. | access 검증은 stateless(NFR-02), 세션 종료는 refresh 토큰 삭제로 한다. 토큰 JS 접근 차단. refresh 쿠키 경로를 좁혀 일반 API 요청에 실리지 않게 한다. | P-04, NFR-02, FR-03, DB-13, PD-26 |
 | PR-S-04 | 개발은 Vite 프록시(`/api` → `http://localhost:3000`)로 같은 출처를 만든다. 프론트는 상대 경로(`/api/...`)만 쓰고 백엔드 주소를 코드에 넣지 않는다. CORS 미들웨어는 두지 않는다. k6는 백엔드를 직접 호출한다(쿠키 저장소 사용). | P-04. 같은 출처면 CORS와 쿠키 SameSite 문제가 없다. | P-04, PD-04 |
-| PR-S-05 | 인증은 기본 적용이다. `routes/index.js`에서 `/api/auth/signup`·`/api/auth/login`·`/api/auth/logout`·`/api/health`를 제외한 모든 라우트에 `auth` 미들웨어를 먼저 건다. 쿠키가 없거나 만료·위조면 401 `UNAUTHORIZED`다. | 새 라우트가 실수로 공개되는 것을 막는다. | BR-01, FR-04 |
+| PR-S-05 | 인증은 기본 적용이다. `routes/index.js`에서 `/api/auth/signup`·`/api/auth/login`·`/api/auth/refresh`·`/api/auth/logout`·`/api/health`를 제외한 모든 라우트에 `auth` 미들웨어를 먼저 건다. access 토큰 쿠키가 없거나 만료·위조면 401 `UNAUTHORIZED`다. | 새 라우트가 실수로 공개되는 것을 막는다. | BR-01, FR-04 |
 | PR-S-06 | 비밀번호는 bcrypt(cost 10)로만 저장한다. 평문·해시·토큰을 로그·응답에 내보내지 않으며, 사용자 조회 SQL은 컬럼을 명시한다. | 민감 정보 노출 방지. | NFR-06, PR-L-04 |
 | PR-S-07 | 모든 입력은 서버에서 검증한다. 문자열은 trim한 뒤 검사하고(BR-22), 본문에서 필요한 필드만 꺼내 쓰며, `express.json`의 본문 한도는 16kb로 낮춘다. | 신뢰 경계 검증, 불필요 필드 무시. | NFR-09, BR-21, BR-22 |
 | PR-S-08 | 오류 로그는 stderr에 JSON 한 줄(시각, 메서드, 경로, 오류 메시지, stack)로 남기고 500 응답에는 상세를 넣지 않는다. 요청 본문·쿠키·비밀번호는 기록하지 않는다. 구조화 로깅 라이브러리·메트릭은 두지 않는다. 헬스 체크는 DB를 조회하지 않는 `GET /api/health` 한 줄만 둔다. | 로컬 단일 프로세스, 판정은 k6 출력. 기동 확인만 필요하다. | NFR-15, P-10, P-25, PD-14 |
@@ -144,7 +151,7 @@
 
 ```
 todolist-app/
-├─ docs/                  # 1~5번 문서 (코드 없음)
+├─ docs/                  # 1~8번 문서, wireframe/ (코드 없음)
 ├─ backend/               # Node.js + Express + pg (JavaScript)
 ├─ frontend/              # React 19 + TypeScript + Vite
 ├─ load-test/             # k6 부하 테스트
@@ -162,7 +169,7 @@ todolist-app/
 ```
 backend/
 ├─ package.json           # "type": "module", engines.node
-├─ .env.example           # DATABASE_URL, JWT_SECRET, PORT, DB_POOL_MAX
+├─ .env.example           # DATABASE_URL, JWT_SECRET, PORT, DB_POOL_MAX, NODE_ENV
 ├─ sql/
 │  └─ schema.sql          # 테이블·제약·인덱스 (PR-S-10)
 ├─ scripts/
@@ -175,7 +182,7 @@ backend/
 │  ├─ db.js               # Pool, query, withTransaction, DATE 문자열 파서
 │  ├─ errors.js           # AppError, 오류 코드 상수
 │  ├─ middleware/
-│  │  ├─ auth.js          # 쿠키 JWT 검증 → req.userId, 쿠키 직접 파싱
+│  │  ├─ auth.js          # access 토큰(HS384) 검증 → req.userId, 쿠키 직접 파싱
 │  │  └─ error.js         # 404(알 수 없는 /api 경로) + NFR-15 형식 응답
 │  ├─ routes/             # HTTP 입출력만 (PR-L-02)
 │  │  ├─ index.js         # /api 마운트, 인증 경계 (PR-S-05)
@@ -202,7 +209,7 @@ backend/
 
 | 경로 | 메서드 | 용도 | FR |
 |---|---|---|---|
-| `/api/auth/signup`, `/login`, `/logout` | POST | 가입(자동 로그인 쿠키 발급), 로그인, 로그아웃(쿠키 삭제) | FR-01~03 |
+| `/api/auth/signup`, `/login`, `/refresh`, `/logout` | POST | 가입(자동 로그인, 토큰 쌍 쿠키 발급), 로그인(토큰 쌍 발급), 토큰 갱신(refresh 토큰 회전), 로그아웃(refresh 토큰 삭제·쿠키 삭제) | FR-01~04, P-04 |
 | `/api/me` | GET, PATCH | 내 정보 조회(화면 첫 진입 시 로그인 여부 확인), 이름 수정 | FR-14 |
 | `/api/me/password` | PUT | 비밀번호 변경 | FR-15 |
 | `/api/categories`, `/api/categories/:id` | GET, POST / PATCH, DELETE | BR-23 순서 목록, 등록, 이름 수정, 삭제 | FR-13 |
@@ -214,14 +221,14 @@ backend/
 
 | 위치 | 역할 | 구현하는 ID |
 |---|---|---|
-| `sql/schema.sql` | `users`·`categories`·`todos`, `DATE` 컬럼, 이메일 유일, `(user_id, name)` 유일, 사용자당 기본 카테고리 1개 부분 유일 인덱스, `todos(user_id, start_date, end_date)`·`(user_id, category_id)` 인덱스, `start_date <= end_date` CHECK(방어용), 상태 컬럼 없음 | NFR-04, NFR-11, NFR-12, BR-02, BR-07, BR-10, BR-12, BR-13 |
+| `sql/schema.sql` | `users`·`categories`·`todos`·`refresh_tokens`(DB-13), `DATE` 컬럼, 이메일 유일, `(user_id, name)` 유일, 사용자당 기본 카테고리 1개 부분 유일 인덱스, `todos(user_id, start_date, end_date)`·`(user_id, category_id)` 인덱스, `start_date <= end_date` CHECK(방어용), 상태 컬럼 없음 | NFR-04, NFR-11, NFR-12, BR-02, BR-07, BR-10, BR-12, BR-13 |
 | `scripts/db-init.js` | 스키마 적용(PD-08) | M-01 |
 | `scripts/seed-load.js` | 사용자 1000명·사용자당 할일 100건, 비밀번호 해시는 한 번 만들어 재사용 | P-02, NFR-05 |
 | `config.js`, `db.js` | 환경변수, 풀(기본 20), 트랜잭션 헬퍼, DATE 문자열 파서 | NFR-03, NFR-10, NFR-11, NFR-08 |
 | `errors.js`, `middleware/error.js` | 오류 클래스·코드 상수, 응답 형식, 500 상세 비노출 | NFR-15, P-13 |
-| `middleware/auth.js`, `routes/auth.js` | 쿠키 검증, 쿠키 발급·삭제 | FR-02~04, BR-01, NFR-02, P-04 |
-| `services/auth.js` | 가입(사용자 + 기본 카테고리, 한 트랜잭션), 로그인, bcrypt | FR-01, FR-02, BR-10, NFR-06, NFR-10 |
-| `routes/me.js`, `services/users.js` | 내 정보, 이름·비밀번호 수정(Should) | FR-14, FR-15, BR-05 |
+| `middleware/auth.js`, `routes/auth.js` | access 토큰 검증(HS384만 허용), 토큰 쌍 쿠키 발급·삭제, 갱신 | FR-02~04, BR-01, NFR-02, P-04 |
+| `services/auth.js` | 가입(사용자 + 기본 카테고리 + refresh 토큰, 한 트랜잭션), 로그인, bcrypt, access 토큰 서명(HS384), refresh 토큰 발급·회전·삭제 | FR-01, FR-02, BR-10, NFR-06, NFR-10, P-04, DB-13 |
+| `routes/me.js`, `services/users.js` | 내 정보, 이름·비밀번호 수정(Should, 비밀번호 변경 시 그 사용자의 refresh 토큰 전체 삭제 후 새 쌍 발급) | FR-14, FR-15, BR-05, P-04 |
 | `services/categories.js` | 카테고리 CRUD, 기본 카테고리 보호, 삭제 시 할일 이동 + 삭제(한 트랜잭션), BR-23 순서 | FR-13, BR-12~14, BR-23, NFR-10 |
 | `services/todos.js` | 할일 CRUD, 완료 전환, 목록(카테고리 필터는 SQL, 상태 필터는 판정 후 JS), 기간 조회(겹침 조건은 SQL, 상태는 판정 함수), BR-20 정렬, 소유권 | FR-05~12, BR-04, BR-15~20, NFR-07, NFR-12, P-11, P-12, P-14 |
 | `domain/status.js` | ST-01~04 판정(한 곳) | ST-01~04, NFR-12, G-04 |
@@ -262,7 +269,7 @@ frontend/
    │  │                   # MonthGrid, WeekGrid, MobileCounts, DayList (주·일 뷰 파일은 Should, PR-C-06)
    │  └─ categories/      # useCategories.ts, CategoryList, CategoryAddForm
    ├─ api/
-   │  ├─ client.ts        # fetch 래퍼(JSON, 오류 → ApiError{status, code, message, fields})
+   │  ├─ client.ts        # fetch 래퍼(JSON, 오류 → ApiError{status, code, message, fields}, 401 시 갱신 후 재요청)
    │  ├─ types.ts         # API 타입, 오류 코드 유니온, 상태 값
    │  ├─ queryKeys.ts     # 쿼리 키 + 무효화 헬퍼 (PR-L-11)
    │  └─ auth.ts, categories.ts, todos.ts, calendar.ts   # 엔드포인트 함수
@@ -285,7 +292,7 @@ frontend/
 | `features/calendar` | `range.ts`(월=1일~말일, 주=일~토 기간 계산)와 `cellTodos.ts`(날짜가 기간에 속하는 할일, 서버 정렬 유지, 3건 초과 '+N')는 순수 함수. `calendarStore`(선택 날짜), 뷰·기준 날짜는 URL 쿼리, 모바일은 개수 점·그날 목록, 오늘 없는 기간이면 선택 해제 | FR-10~12, FR-16, BR-16~20, P-16, P-20, P-23, R-07 |
 | `features/categories` | 목록(BR-23 순서, 서버 순서 그대로), 추가, 이름 수정, 삭제 확인(소속 할일 안내), 기본 카테고리 조작 비활성 | FR-13, P-19, BR-12 |
 | `pages/TodoFormPage.tsx` | 진입 화면 복귀: 진입 시 `navigate(path, { state: { from } })`로 현재 경로(쿼리 포함)를 넘기고, 저장·취소 후 `state.from`으로, 없으면 `/todos`로 이동 | P-17, P-23 |
-| `api/client.ts` | `/api/...` 상대 경로, 같은 출처 쿠키, 오류 형식 파싱. 토큰 접근 코드 없음 | P-04, NFR-15 |
+| `api/client.ts` | `/api/...` 상대 경로, 같은 출처 쿠키, 오류 형식 파싱, 401 시 토큰 갱신 1회 후 재요청(PR-L-12). 토큰 접근 코드 없음(쿠키는 httpOnly) | P-04, NFR-15, PR-L-12 |
 | `components/` | 삭제·카테고리 삭제 공용 확인 대화상자, 입력란 오류, 폼·화면 상단 오류, '불러오는 중…'/'갱신 중…'(이전 데이터 유지는 `placeholderData: keepPreviousData`), '할일이 없습니다.' | P-19, P-21, P-22, PRD 4장 |
 | `lib/` | 날짜 문자열 연산, 오늘 계산·재계산 | NFR-11, NFR-12, P-12 |
 | `styles/`, `*.module.css` | 360px 기준, 768px 중단점 | NFR-13, P-08 |
@@ -330,7 +337,7 @@ PRD·도메인의 기능·규칙 수준 결정은 하지 않았다. 아래는 �
 | PD-12 | 커버리지 수치 게이트를 두지 않는다. 필수 대상은 PR-T-02·03이다. | 대상은 규칙(G-04)·소유권(R-04)이 정한다. 수치는 가치를 보장하지 않는다. | 80% 게이트: 2일 일정에서 비규칙 코드 테스트 부담 |
 | PD-13 | API 경로·메서드는 7.2의 표로 정한다. `:id`는 정수(`INTEGER GENERATED ALWAYS AS IDENTITY`)이고, 정수가 아닌 `:id`는 존재하지 않는 것으로 보아 404 `NOT_FOUND`다. 단건 조회(`GET /api/todos/:id`)는 `today`를 받지 않고 상태를 포함하지 않는다. | PRD P-25가 이 표에 위임한다. 문자열 `:id` 400은 NFR-15에 없는 코드 조합을 만든다. | UUID: 길이·가독성 부담 |
 | PD-14 | 메트릭·구조화 로깅 라이브러리는 두지 않고, 헬스 체크는 DB를 조회하지 않는 `GET /api/health`만 둔다. | 로컬 단일 프로세스(P-10), 부하 판정은 k6가 한다. 부하 테스트 전 기동 확인에는 한 줄이면 충분하다(P-25). | pino, DB 포함 readiness 체크: 운영 배포 시 도입 |
-| PD-15 | `jsonwebtoken`과 `bcrypt`(네이티브)를 쓰고, 쿠키 읽기는 `req.headers.cookie`를 직접 파싱한다(`cookie-parser` 없음). | JWT·bcrypt는 직접 구현이 불가·위험하다. 쿠키 파싱은 약 5줄이다. 네이티브 bcrypt는 로그인 CPU 부하(NFR-05)에 유리하다. Windows에서 미리 빌드된 바이너리가 맞지 않아 설치가 실패하면 API가 같은 `bcryptjs`로 바꾸고 이 행을 갱신한다. | bcryptjs: 설치는 쉬우나 느림. cookie-parser |
+| PD-15 | `jsonwebtoken`과 `bcrypt`(네이티브)를 쓰고, 쿠키 읽기는 `req.headers.cookie`를 직접 파싱한다(`cookie-parser` 없음). | JWT·bcrypt는 직접 구현이 불가·위험하다. 쿠키 파싱은 약 5줄이다. refresh 토큰 생성·해시는 내장 `node:crypto`로 한다. 네이티브 bcrypt는 로그인 CPU 부하(NFR-05)에 유리하다. Windows에서 미리 빌드된 바이너리가 맞지 않아 설치가 실패하면 API가 같은 `bcryptjs`로 바꾸고 이 행을 갱신한다. | bcryptjs: 설치는 쉬우나 느림. cookie-parser |
 | PD-16 | SQL은 별도 repository 파일 없이 `services/`에 둔다. | 3.3 근거. | `repositories/` 계층: 파일 2배, mock 유혹 |
 | PD-17 | 상태 판정과 상태 필터는 `domain/status.js` 한 곳(JS)에 둔다. SQL은 사용자·카테고리·기간으로만 거른다. | 판정 로직 이중화 방지(NFR-12), DB 없이 단위 테스트 가능. P-11(사용자당 약 100건)에서 행 수가 작다. | SQL `CASE`: 판정 2곳. 사용자당 건수가 크게 늘면 재검토 |
 | PD-18 | SCR-04의 진입 화면 복귀는 `navigate`의 `state.from`(경로 + 쿼리)으로 구현하고 없으면 `/todos`다. | P-17·P-23의 '진입 화면이 없을 때'를 만족하며, 캘린더 URL(뷰·날짜)도 복원된다. | `navigate(-1)`: 직접 접근 시 앱 밖으로 나갈 수 있음 |
@@ -340,7 +347,8 @@ PRD·도메인의 기능·규칙 수준 결정은 하지 않았다. 아래는 �
 | PD-22 | 오류 판정 순서는 인증(401) → 입력 형식·값(400 `VALIDATION_ERROR`) → 존재·소유권(404 `NOT_FOUND`) → 규칙(400 `DEFAULT_CATEGORY_IMMUTABLE`·`INVALID_PASSWORD`) → 중복(409)이다. 여러 입력 오류는 `fields`에 함께 담는다. | 타인 데이터는 규칙 위반보다 먼저 404가 되어 존재가 드러나지 않는다(BR-03). DB 없이 판정할 수 있는 것을 먼저 거른다. | - |
 | PD-23 | 데스크톱 월 뷰 격자의 앞뒤 채움 칸(이전·다음 달 날짜)은 날짜 숫자와 할일을 표시하지 않는 빈 칸이며 선택할 수 없다. 모바일 월 뷰도 같다. | BR-17의 화면 기간(1일~말일) 밖이라 표시하면 '일부만 보이는' 오해가 생긴다. 칸 배치(`cellTodos.ts`)에서 분기 없이 처리된다. | 이전·다음 달 할일 함께 조회: 조회 기간이 BR-17과 달라짐 |
 | PD-24 | 앱 첫 진입의 로그인 확인 `GET /api/me`는 query `meta`로 전역 401 처리(PR-L-12)에서 빼고, 401이면 '로그인 안 됨'으로 보관한다. 이후 `RequireAuth`가 보호 경로는 `/login`으로, 공개 경로(`/login`·`/signup`)는 그대로 보여 준다. 그 밖의 401은 PR-L-12대로 처리한다. | 미로그인 상태가 정상인 첫 진입에서 오류 처리·이동이 반복되지 않는다. | - |
-| PD-25 | 성공 상태 코드: 생성(가입, 할일·카테고리 등록)은 201과 생성된 객체, 삭제(할일·카테고리)와 로그아웃은 204 본문 없음, 그 외(조회·수정·완료 토글·로그인)는 200이다. | REST 관례, 프론트는 상태 코드가 아닌 성공 여부로만 분기한다. | 전부 200: 의미 손실 |
+| PD-25 | 성공 상태 코드: 생성(가입, 할일·카테고리 등록)은 201과 생성된 객체, 삭제(할일·카테고리), 로그아웃, 토큰 갱신은 204 본문 없음, 그 외(조회·수정·완료 토글·로그인)는 200이다. | REST 관례, 프론트는 상태 코드가 아닌 성공 여부로만 분기한다. | 전부 200: 의미 손실 |
+| PD-26 | refresh 토큰은 불투명 난수 + DB 해시 저장이며 JWT로 만들지 않는다. 같은 refresh 토큰으로 동시에 갱신하면(여러 탭) 먼저 도착한 요청만 성공하고 나머지 탭은 401로 로그인 화면에 간다. 같은 탭 안의 동시 401은 `api/client.ts`가 갱신 요청 하나로 묶는다. | 회전·폐기에 DB 조회가 필요해 refresh 토큰을 JWT로 만들어도 stateless 이점이 없고, 불투명 값은 서명 검증 코드가 필요 없다. 탭 간 경쟁 처리(유예 시간)는 2일 일정 대비 과설계. | refresh JWT(stateless): 로그아웃·비밀번호 변경 시 무효화 불가. 재사용 탐지(사용한 토큰을 보관하다 재사용 시 사용자 전체 폐기): 탈취 대응이 필요해지면 도입 |
 
 ### 8.1 커버리지 확인
 

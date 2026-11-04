@@ -9,6 +9,8 @@
 | v0.1 | 2026-11-04 | pmsong | 초안 | 최초 작성 |
 | v0.2 | 2026-11-04 | pmsong | 초안 | 데이터 구조(물리 ERD, AD-04) 추가 |
 | v0.3 | 2026-11-04 | pmsong | 초안 | AD-04를 폐기하고 ERD를 7-erd.md로 분리 |
+| v0.4 | 2026-11-04 | pmsong | 초안 | SD-02에 refresh 토큰 갱신 흐름 반영 |
+| v0.5 | 2026-11-04 | pmsong | 초안 | 문서 간 정합성 검토 반영 |
 
 ### 변경 이력
 
@@ -17,12 +19,15 @@
 | v0.1 | 2026-11-04 | 전체 | 최초 작성 | - | pmsong |
 | v0.2 | 2026-11-04 | AD-04, 머리말, 4장 | 테이블·컬럼·타입·제약·인덱스를 그린 물리 ERD와 도메인 속성 대응표 추가 | `schema.sql` 작성 기준이 되는 데이터 구조 그림 필요 | pmsong |
 | v0.3 | 2026-11-04 | AD-04, 머리말, 1장, 4장 | AD-04 본문(ERD·제약 표·설계 메모)을 삭제하고 개요 표는 '폐기'로 표시, 머리말·커버리지 갱신 | ERD가 개념·물리·테이블 명세·결정으로 커져 [ERD v0.1](./7-erd.md)로 분리 | pmsong |
+| v0.4 | 2026-11-04 | SD-02, 참조 문서 | access 토큰 만료 시 `api/client.ts`의 갱신 후 재요청, 갱신 실패 시 전역 401 처리. 참조 버전 PRD v0.10, 시나리오 v0.8, 구조 설계 원칙 v0.3, ERD v0.2 | PRD v0.10 P-04 | pmsong |
+| v0.5 | 2026-11-04 | AD-02, AD-03, SD-01 | access 토큰(HS384) 검증, 인증 경계 제외 목록에 refresh 추가, 401 시 `api/client.ts` 갱신 후 전역 처리, 가입 시 refresh 토큰 INSERT와 두 쿠키 발급(1일 쿠키 삭제) | PRD v0.10 P-04·구조 설계 원칙 v0.3 반영 누락(SD-02만 갱신됨) | pmsong |
+| v0.5 | 2026-11-04 | 참조 문서 | PRD v0.10 → v0.11, 시나리오 v0.8 → v0.9, 와이어프레임 v0.3 → v0.4, 구조 설계 원칙 v0.3 → v0.4, ERD v0.2 → v0.3 | 버전 동기화 | pmsong |
 
-> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.6](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.9](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.7](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.3](./4-wireframe.md)이, 구조(PR·PD)는 [프로젝트 구조 설계 원칙 v0.2](./5-project-principle.md)이, 데이터 구조(ERD-xx·DB-xx)는 [ERD v0.1](./7-erd.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > 이 문서 순으로 따른다.
+> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.6](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.11](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.9](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.4](./4-wireframe.md)이, 구조(PR·PD)는 [프로젝트 구조 설계 원칙 v0.4](./5-project-principle.md)이, 데이터 구조(ERD-xx·DB-xx)는 [ERD v0.3](./7-erd.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > 이 문서 순으로 따른다.
 >
 > ID 운영 원칙: 다이어그램 ID(AD-xx 구조, SD-xx 순서)는 재사용하거나 재번호하지 않는다. 다이어그램을 없애면 행을 지우지 말고 '폐기'로 표시한다.
 >
-> 데이터 구조(개념 ERD, 물리 ERD, 테이블·제약·인덱스)는 [ERD v0.1](./7-erd.md)이 정의하고, 이 문서에는 그리지 않는다. 엔티티·관계의 정의는 [도메인 정의서 3.4](./1-domain-definition.md)가 맡는다. 오류 코드는 NFR-15에 있는 것만 쓴다.
+> 데이터 구조(개념 ERD, 물리 ERD, 테이블·제약·인덱스)는 [ERD v0.3](./7-erd.md)이 정의하고, 이 문서에는 그리지 않는다. 엔티티·관계의 정의는 [도메인 정의서 3.4](./1-domain-definition.md)가 맡는다. 오류 코드는 NFR-15에 있는 것만 쓴다.
 
 ## 1. 개요
 
@@ -31,7 +36,7 @@
 | AD-01 | 구조 | 시스템 컨텍스트와 배포 구성 | P-10, PR-S-04, PR-S-11 |
 | AD-02 | 구조 | 백엔드 레이어와 모듈 의존 | 구조 원칙 3.1, 7.2 |
 | AD-03 | 구조 | 프론트엔드 레이어와 상태 분담 | 구조 원칙 3.1, 7.3, PRD 6장 |
-| AD-04 | 구조 | 폐기(v0.3) → 7-erd.md로 이동 | [ERD v0.1](./7-erd.md) ERD-02 |
+| AD-04 | 구조 | 폐기(v0.3) → 7-erd.md로 이동 | [ERD v0.3](./7-erd.md) ERD-02 |
 | SD-01 | 순서 | 회원가입 트랜잭션 | FR-01, NFR-10 |
 | SD-02 | 순서 | 인증 미들웨어와 401 전역 처리 | FR-04, PR-L-12 |
 | SD-03 | 순서 | 할일 목록 조회 | FR-09, P-14, PD-17 |
@@ -76,7 +81,7 @@ flowchart LR
 flowchart TB
     SRV["server.js<br/>listen, 종료 시 pool.end"] --> APP["app.js<br/>미들웨어·라우터 조립"]
     SRV --> CFG["config.js<br/>환경변수 단일 입구"]
-    APP --> AUTHMW["middleware/auth.js<br/>쿠키 JWT 검증, req.userId"]
+    APP --> AUTHMW["middleware/auth.js<br/>access 토큰(HS384) 검증, req.userId"]
     APP --> ERRMW["middleware/error.js<br/>NFR-15 형식 응답"]
     APP --> RT
 
@@ -120,7 +125,7 @@ flowchart TB
     DBJS --> CFG
 ```
 
-의존은 위에서 아래로만 흐른다. routes는 SQL을 직접 실행하지 않고, domain은 다른 모듈을 import하지 않는다. 모든 오류는 `AppError`로 던져 `middleware/error.js` 한 곳에서만 응답으로 바꾼다. `auth` 미들웨어는 `routes/index.js`가 signup, login, logout, health를 제외한 모든 라우트 앞에 건다.
+의존은 위에서 아래로만 흐른다. routes는 SQL을 직접 실행하지 않고, domain은 다른 모듈을 import하지 않는다. 모든 오류는 `AppError`로 던져 `middleware/error.js` 한 곳에서만 응답으로 바꾼다. `auth` 미들웨어는 `routes/index.js`가 signup, login, refresh, logout, health를 제외한 모든 라우트 앞에 건다.
 
 관련 ID: PR-L-01~08, PR-N-07, PR-S-01, PR-S-05, NFR-07, NFR-08, NFR-15, G-04
 
@@ -161,17 +166,18 @@ flowchart TB
     FC --> URL
     TQ --> API
     API -->|"fetch 상대 경로"| BACK
-    BACK -.->|"401 UNAUTHORIZED"| MAIN
+    API -.->|"401: refresh 1회 후 재요청"| BACK
+    BACK -.->|"갱신도 실패한 401 UNAUTHORIZED"| MAIN
     MAIN -.->|"QueryCache·MutationCache onError:<br/>Zustand와 캐시 비움, /login 이동"| ZS
 ```
 
-서버 데이터는 TanStack Query에만, UI 상태는 Zustand에만 두며 서로 복사하지 않는다. 토큰은 어디에도 저장하지 않고 httpOnly 쿠키만 쓴다. 401 `UNAUTHORIZED`는 어떤 API에서 오든 `main.tsx`의 QueryClient `onError` 한 곳에서 처리한다. features끼리는 직접 import하지 않는다.
+서버 데이터는 TanStack Query에만, UI 상태는 Zustand에만 두며 서로 복사하지 않는다. 토큰은 어디에도 저장하지 않고 httpOnly 쿠키만 쓴다. 401 `UNAUTHORIZED`는 먼저 `api/client.ts`가 refresh 토큰으로 한 번 갱신해 다시 요청하고, 갱신도 실패한 401만 어떤 API에서 오든 `main.tsx`의 QueryClient `onError` 한 곳에서 처리한다(PR-L-12). features끼리는 직접 import하지 않는다.
 
 관련 ID: PRD 6장, PR-L-09~12, FR-04, P-04, P-12, P-15, P-23, PD-04
 
 ### AD-04 데이터 구조 (물리 ERD)
 
-폐기(v0.3). [ERD v0.1](./7-erd.md)로 이동했다.
+폐기(v0.3). [ERD v0.3](./7-erd.md)로 이동했다.
 
 ## 3. Sequence Diagram
 
@@ -209,17 +215,18 @@ sequenceDiagram
         FE-->>U: 폼 상단에 message 표시
     else 성공
         SV->>DB: INSERT categories (이름 기본, is_default true)
+        SV->>DB: INSERT refresh_tokens (token_hash, expires_at)
         SV->>DB: COMMIT
-        SV-->>RT: 사용자 id, 이름
-        RT->>RT: JWT 서명 (sub = 사용자 id)
-        RT-->>FE: 201 + Set-Cookie (httpOnly, SameSite=Lax, 1일)
+        SV->>SV: access 토큰 JWT 서명 (HS384, sub = 사용자 id, 15분)
+        SV-->>RT: 사용자, access 토큰, refresh 토큰
+        RT-->>FE: 201 + Set-Cookie access_token(15분), refresh_token(7일, path=/api/auth)
         FE->>FE: Zustand에 사용자 보관, /todos 이동
     end
 ```
 
-사용자와 기본 카테고리는 한 트랜잭션이라 둘 중 하나만 생기는 일이 없다. 해시 계산은 트랜잭션 밖에서 해 커넥션 점유를 줄인다. 이메일 중복은 제약 이름(`uq_users_email`)으로 구분해 409로 바꾼다. 가입 성공 응답이 곧 로그인(쿠키 발급)이다.
+사용자, 기본 카테고리, refresh 토큰은 한 트랜잭션이라 일부만 생기는 일이 없다. refresh 토큰은 해시만 저장한다(DB-13). 해시 계산은 트랜잭션 밖에서 해 커넥션 점유를 줄인다. 이메일 중복은 제약 이름(`uq_users_email`)으로 구분해 409로 바꾼다. 가입 성공 응답이 곧 로그인(쿠키 발급)이다.
 
-관련 ID: FR-01, UC-01, BR-02, BR-10, BR-21, BR-22, NFR-06, NFR-09, NFR-10, NFR-15, P-04, P-24, PR-L-06, PR-N-04, PD-22, PD-25, SC-01
+관련 ID: FR-01, UC-01, BR-02, BR-10, BR-21, BR-22, NFR-06, NFR-09, NFR-10, NFR-15, P-04, P-24, PR-L-06, PR-N-04, PR-S-03, PD-22, PD-25, DB-13, SC-01
 
 ### SD-02 인증 미들웨어와 401 전역 처리
 
@@ -227,30 +234,45 @@ sequenceDiagram
 sequenceDiagram
     actor U as 사용자
     participant FE as 화면 (features)
+    participant CL as api/client.ts
     participant QC as QueryClient onError
     participant RT as routes/index.js
     participant AM as middleware/auth.js
     participant SV as services
     participant EM as middleware/error.js
+    participant DB as PostgreSQL
 
     U->>FE: 보호된 화면 조작
-    FE->>RT: /api 요청 (쿠키 자동 전송)
+    FE->>CL: API 함수 호출
+    CL->>RT: /api 요청 (access_token 쿠키 자동 전송)
     RT->>AM: 인증 경계 통과
-    alt 쿠키 없음, 만료, 위조
-        AM-->>EM: throw AppError 401 UNAUTHORIZED
-        EM-->>FE: 401 UNAUTHORIZED
-        FE->>QC: 쿼리 또는 변경 실패 전달
-        QC->>QC: code가 UNAUTHORIZED인지 확인
-        QC->>QC: Zustand와 쿼리 캐시 비움
-        QC-->>U: /login 이동 (SCR-01)
-    else 유효한 쿠키
-        AM->>AM: JWT 검증, sub를 req.userId로
+    alt 유효한 access 토큰
+        AM->>AM: JWT 검증(HS384만 허용), sub를 req.userId로
         AM->>SV: 다음 핸들러
         SV-->>FE: 응답
+    else access 토큰 없음, 만료, 위조
+        AM-->>EM: throw AppError 401 UNAUTHORIZED
+        EM-->>CL: 401 UNAUTHORIZED
+        CL->>RT: POST /api/auth/refresh (refresh_token 쿠키, 같은 탭은 1건 공유)
+        RT->>SV: services/auth.js 회전
+        SV->>DB: DELETE refresh_tokens WHERE token_hash = $1 AND expires_at > now() RETURNING user_id
+        alt refresh 토큰 유효
+            SV->>DB: INSERT 새 refresh 토큰 해시
+            SV-->>CL: 204, 새 access_token·refresh_token 쿠키
+            CL->>RT: 원래 요청 1회 재전송
+            RT-->>FE: 응답
+        else refresh 토큰 없음, 만료, 이미 사용됨
+            SV-->>CL: 401 UNAUTHORIZED, 두 쿠키 삭제
+            CL-->>FE: ApiError 401 UNAUTHORIZED
+            FE->>QC: 쿼리 또는 변경 실패 전달
+            QC->>QC: code가 UNAUTHORIZED인지 확인
+            QC->>QC: Zustand와 쿼리 캐시 비움
+            QC-->>U: /login 이동 (SCR-01)
+        end
     end
     opt 대상 아님 - 첫 진입 GET /api/me 401 (PD-24)
         FE->>RT: GET /api/me
-        RT-->>FE: 401 UNAUTHORIZED
+        RT-->>FE: 401 UNAUTHORIZED (갱신도 실패한 뒤)
         FE->>FE: 로그인 안 됨으로 보관, 이동하지 않음
         FE-->>U: RequireAuth가 보호 경로만 /login으로, /login·/signup은 그대로
     end
@@ -261,9 +283,9 @@ sequenceDiagram
     end
 ```
 
-인증은 기본 적용이고 공개 라우트만 예외로 열어 둔다. 화면은 401 `UNAUTHORIZED`를 받으면 어느 API에서든 같은 방식으로 로그인 화면으로 이동한다. `INVALID_CREDENTIALS`와 첫 진입 로그인 확인(`GET /api/me`)의 401은 이 처리 대상이 아니라서, 미로그인 상태로 `/login`을 열 때 이동이 반복되지 않는다(PD-24).
+인증은 기본 적용이고 공개 라우트만 예외로 열어 둔다. access 토큰이 만료되면 `api/client.ts`가 refresh 토큰으로 한 번 갱신하고 원래 요청을 다시 보낸다(PR-L-12). 갱신도 실패해 401 `UNAUTHORIZED`가 올라오면 화면은 어느 API에서든 같은 방식으로 로그인 화면으로 이동한다. `INVALID_CREDENTIALS`와 첫 진입 로그인 확인(`GET /api/me`)의 401은 이 처리 대상이 아니라서, 미로그인 상태로 `/login`을 열 때 이동이 반복되지 않는다(PD-24).
 
-관련 ID: FR-02, FR-03, FR-04, BR-01, NFR-02, NFR-15, P-04, P-23, PD-24, PR-S-03, PR-S-05, PR-L-12, SC-02
+관련 ID: FR-02, FR-03, FR-04, BR-01, NFR-02, NFR-15, P-04, P-23, PD-24, PD-26, PR-S-03, PR-S-05, PR-L-12, DB-13, SC-02
 
 ### SD-03 할일 목록 조회
 

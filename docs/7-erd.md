@@ -7,14 +7,20 @@
 | 버전 | 일자 | 작성자 | 상태 | 비고 |
 |---|---|---|---|---|
 | v0.1 | 2026-11-04 | pmsong | 초안 | 최초 작성. 아키텍처 다이어그램 v0.2의 AD-04를 옮겨 보강 |
+| v0.2 | 2026-11-04 | pmsong | 초안 | PRD v0.10 refresh 토큰 저장 테이블 추가 |
+| v0.3 | 2026-11-04 | pmsong | 초안 | 문서 간 정합성 검토 반영 |
 
 ### 변경 이력
 
 | 버전 | 일자 | 변경 위치 | 변경 내용 | 변경 사유 | 작성자 |
 |---|---|---|---|---|---|
 | v0.1 | 2026-11-04 | 전체 | 최초 작성. 개념 ERD, 물리 ERD, 테이블 명세, 제약·인덱스, 파생값, 속성 대응표, DB 결정(DB-01~12) | ERD를 아키텍처 다이어그램에서 분리하고 `schema.sql`의 작성 기준을 한 문서로 모음 | pmsong |
+| v0.2 | 2026-11-04 | 1장, ERD-02, 4.4, 5장, 6장, DB-13, 9.3 | `refresh_tokens` 테이블·제약·인덱스 추가, 토큰 원문 미저장 | PRD v0.10 P-04(refresh 토큰을 DB에 해시로 저장) | pmsong |
+| v0.2 | 2026-11-04 | 참조 문서 | PRD v0.9 → v0.10, 구조 설계 원칙 v0.2 → v0.3 | 버전 동기화 | pmsong |
+| v0.3 | 2026-11-04 | 7장 | 목록·캘린더 응답의 `categoryName`(JOIN) 행 추가 | 구조 설계 원칙 PR-L-08(카테고리명 JOIN)과 대응표 누락 | pmsong |
+| v0.3 | 2026-11-04 | 참조 문서 | PRD v0.10 → v0.11, 구조 설계 원칙 v0.3 → v0.4 | 버전 동기화 | pmsong |
 
-> 단일 출처 원칙: 엔티티·속성·관계, 용어, 상태 규칙(ST), 비즈니스 규칙(BR)은 [도메인 정의서 v0.6](./1-domain-definition.md)이, 기능(FR)·비기능(NFR)·결정(P)은 [PRD v0.9](./2-PRD.md)이, 이름 규칙·API 경로(PR·PD)는 [프로젝트 구조 설계 원칙 v0.2](./5-project-principle.md)이 정의한다. 이 문서는 도메인 3장의 엔티티와 관계를 PostgreSQL 17 물리 구조로 옮긴 것이며, 규칙·오류 코드·수치를 다시 정의하지 않고 ID로 참조한다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > [아키텍처 다이어그램](./6-arch-diagram.md) > 이 문서 순으로 따른다.
+> 단일 출처 원칙: 엔티티·속성·관계, 용어, 상태 규칙(ST), 비즈니스 규칙(BR)은 [도메인 정의서 v0.6](./1-domain-definition.md)이, 기능(FR)·비기능(NFR)·결정(P)은 [PRD v0.11](./2-PRD.md)이, 이름 규칙·API 경로(PR·PD)는 [프로젝트 구조 설계 원칙 v0.4](./5-project-principle.md)이 정의한다. 이 문서는 도메인 3장의 엔티티와 관계를 PostgreSQL 17 물리 구조로 옮긴 것이며, 규칙·오류 코드·수치를 다시 정의하지 않고 ID로 참조한다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > [아키텍처 다이어그램](./6-arch-diagram.md) > 이 문서 순으로 따른다.
 >
 > ID 운영 원칙: ERD-xx(다이어그램)와 DB-xx(이 문서에서 정한 결정)는 재사용하거나 재번호하지 않는다. 없애면 행을 지우지 말고 '폐기'로 표시한다. 실제 DDL의 단일 출처는 `backend/sql/schema.sql`이다(PR-S-10). 이 문서와 그 파일이 다르면 이 문서를 먼저 고치고 파일을 맞춘다.
 
@@ -25,7 +31,7 @@
 | ERD-01 | 개념 | 개념 ERD | 도메인 3.1~3.4 |
 | ERD-02 | 물리 | 물리 ERD | NFR-04, NFR-11, NFR-12, PR-N-04, PR-S-10 |
 
-- 테이블은 `users`, `categories`, `todos` 세 개다(PR-N-04). 마이그레이션 도구와 ORM은 쓰지 않는다(PR-S-10, PR-C-02).
+- 테이블은 `users`, `categories`, `todos`와 인증용 `refresh_tokens` 네 개다(PR-N-04, P-04, DB-13). 마이그레이션 도구와 ORM은 쓰지 않는다(PR-S-10, PR-C-02).
 - 사용자 수 약 1000명, 사용자당 할일 약 100건(P-11)을 기준으로 한 규모 판단은 DB-01, DB-10에 있다.
 
 ## 2. 개념 ERD
@@ -90,6 +96,7 @@ erDiagram
     users ||--|{ categories : "소유 기본 1개 포함"
     users ||--o{ todos : "소유"
     categories ||--o{ todos : "분류"
+    users ||--o{ refresh_tokens : "세션"
 
     users {
         integer id PK "IDENTITY"
@@ -120,9 +127,16 @@ erDiagram
         timestamptz created_at "기본 now BR-20 정렬"
         timestamptz updated_at "기본 now"
     }
+    refresh_tokens {
+        integer id PK "IDENTITY"
+        integer user_id FK "users.id"
+        char token_hash UK "SHA-256 64자 uq_refresh_tokens_hash"
+        timestamptz expires_at "발급 후 7일"
+        timestamptz created_at "기본 now"
+    }
 ```
 
-관련 ID: 도메인 3.1~3.4, NFR-04, NFR-11, NFR-12, PR-N-04, PR-S-10, DB-01~12
+관련 ID: 도메인 3.1~3.4, NFR-04, NFR-11, NFR-12, P-04, PR-N-04, PR-S-10, DB-01~13
 
 ## 4. 테이블 명세
 
@@ -166,13 +180,25 @@ erDiagram
 | `created_at` | `TIMESTAMPTZ` | N | `now()` | - | createdAt | BR-20, DB-02 |
 | `updated_at` | `TIMESTAMPTZ` | N | `now()` | - | updatedAt | DB-02 |
 
+### 4.4 refresh_tokens
+
+인증용 테이블이며 도메인 엔티티가 아니다(ERD-01에 없음). 행을 수정하지 않고 발급 시 INSERT, 갱신·로그아웃·비밀번호 변경 시 DELETE만 한다(DB-13).
+
+| 컬럼 | 타입 | NULL | 기본값 | 제약 | 도메인 속성 | 관련 ID |
+|---|---|---|---|---|---|---|
+| `id` | `INTEGER` | N | `GENERATED ALWAYS AS IDENTITY` | PK | - | DB-01 |
+| `user_id` | `INTEGER` | N | - | `fk_refresh_tokens_user` FK → `users(id)` `ON DELETE RESTRICT` | - | P-04, DB-05, DB-12 |
+| `token_hash` | `CHAR(64)` | N | - | `uq_refresh_tokens_hash` UNIQUE | - | P-04, DB-13 |
+| `expires_at` | `TIMESTAMPTZ` | N | - | - | - | P-04 |
+| `created_at` | `TIMESTAMPTZ` | N | `now()` | - | - | DB-02 |
+
 ## 5. 제약·인덱스 목록
 
-이름은 PR-N-04가 정한 것에 `fk_*`, `ck_users_email_lower`, `ck_todos_completed`를 더했다(DB-03, DB-08, DB-12). 위반 오류의 응답 코드는 NFR-15를 따른다.
+이름은 PR-N-04가 정한 것에 `fk_*`, `ck_users_email_lower`, `ck_todos_completed`를 더했다(DB-03, DB-08, DB-12). `refresh_tokens`의 제약·인덱스 이름은 DB-13이 정한다. 위반 오류의 응답 코드는 NFR-15를 따른다.
 
 | 이름 | 테이블 | 종류 | 정의 | 쓰임새 | 관련 BR·NFR |
 |---|---|---|---|---|---|
-| (기본 이름) | 세 테이블 | PK | `id` | 정수 식별자, 경로 `:id` | PD-13 |
+| (기본 이름) | 네 테이블 | PK | `id` | 정수 식별자, 경로 `:id` | PD-13 |
 | `uq_users_email` | `users` | UNIQUE | (`email`) | 이메일 전체 유일. 로그인 조회에도 쓰인다. 위반(23505)은 409 `DUPLICATE_EMAIL` | BR-02, NFR-04, PR-N-04 |
 | `ck_users_email_lower` | `users` | CHECK | `email = lower(email)` | 소문자 정규화 누락 방어(DB-03) | BR-02 |
 | `uq_categories_user_name` | `categories` | UNIQUE | (`user_id`, `name`) | 같은 사용자 안에서 이름 유일. 위반은 409 `DUPLICATE_CATEGORY` | BR-13, NFR-04 |
@@ -184,6 +210,9 @@ erDiagram
 | `ck_todos_completed` | `todos` | CHECK | `completed = (completed_at IS NOT NULL)` | 완료 여부와 완료 시각의 일관성 방어 | PD-21 |
 | `idx_todos_user_dates` | `todos` | 인덱스 | (`user_id`, `start_date`, `end_date`) | 캘린더 기간 겹침 조회, 사용자 단위 목록 조회 | NFR-04, BR-17, BR-18 |
 | `idx_todos_user_category` | `todos` | 인덱스 | (`user_id`, `category_id`) | 목록 카테고리 필터, 카테고리 삭제 시 할일 이동 | NFR-04, BR-14, BR-15 |
+| `fk_refresh_tokens_user` | `refresh_tokens` | FK | (`user_id`) → `users(id)` RESTRICT | 토큰 소유 사용자 존재 보장 | P-04 |
+| `uq_refresh_tokens_hash` | `refresh_tokens` | UNIQUE | (`token_hash`) | 갱신·로그아웃 시 토큰 조회, 같은 해시 중복 방지 | P-04, DB-13 |
+| `idx_refresh_tokens_user` | `refresh_tokens` | 인덱스 | (`user_id`) | 비밀번호 변경 시 전체 폐기, 로그인 시 만료 행 정리 | P-04, DB-13 |
 
 정렬 전용 인덱스, `category_id` 단독 인덱스, `todos(user_id, end_date, created_at, id)` 인덱스는 만들지 않는다(DB-10).
 
@@ -194,6 +223,8 @@ erDiagram
 | 할일 상태(완료·시작 전·진행 중·지연) | 안 함 | `completed`, 두 날짜, 요청의 `today`로 `domain/status.js`가 조회 시 판정한다. 상태 컬럼도 만들지 않는다. | ST-01~04, NFR-12, PD-17, PR-S-10 |
 | 비밀번호 확인값 | 안 함 | 화면에서만 비교하고 서버로 보내지 않는다. | P-24 |
 | 비밀번호 평문 | 안 함 | bcrypt cost 10 해시만 `password_hash`에 저장하고 응답·로그에 내보내지 않는다. | NFR-06, PR-S-06 |
+| refresh 토큰 원문 | 안 함 | SHA-256 해시만 `token_hash`에 저장한다. DB가 유출돼도 그 값으로 갱신할 수 없다. | P-04, DB-13 |
+| access 토큰 | 안 함 | JWT 서명(HS384)만으로 검증한다(stateless). | P-04, NFR-02 |
 | 오늘(`today`) | 안 함 | 요청마다 클라이언트가 보낸다. DB는 현재 날짜를 판정에 쓰지 않는다. | NFR-12, P-12 |
 | 캘린더 날짜 칸 배치 | 안 함 | 기간과 겹치는 할일만 SQL이 거르고, 칸 배치는 프론트 순수 함수가 한다. | BR-16, BR-17 |
 | 카테고리별 할일 수 | 안 함 | 필요한 화면이 없다. | - |
@@ -223,6 +254,7 @@ API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startD
 | Todo | completed | `todos.completed` | `completed` | 완료 토글 본문 `{ completed }`(PD-21) |
 | Todo | completedAt | `todos.completed_at` | `completedAt` | 기록용(PD-21) |
 | Todo | createdAt / updatedAt | `todos.created_at` / `updated_at` | `createdAt` / `updatedAt` | |
+| (JOIN) | 카테고리 이름 | `categories.name` | `categoryName` | 목록·캘린더 응답의 할일마다 JOIN으로 포함(PR-L-08) |
 | (파생) | status | 없음 | `status` | `completed`·`not_started`·`in_progress`·`overdue`(PD-19). 서버가 `today`로 판정 |
 
 ## 8. 이 문서에서 정한 결정 (DB-xx)
@@ -243,6 +275,7 @@ API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startD
 | DB-10 | BR-20(종료일 → 등록 시각 → id)·BR-23(기본 우선 → 생성 시각) 정렬 전용 인덱스는 만들지 않는다. 정렬은 `ORDER BY`가 한다. `category_id` 단독 인덱스도 두지 않는다. | 목록·캘린더는 `user_id` 조건으로 사용자당 약 100건(P-11)만 읽으므로 메모리 정렬 비용이 무시할 만하고, `idx_todos_user_dates`·`idx_todos_user_category`의 첫 컬럼이 `user_id`라 사용자 단위 범위를 좁힌다. 카테고리는 사용자당 수 건이다. 카테고리 삭제 시 RESTRICT 검사가 `category_id` 단독으로 `todos`를 훑지만 드문 작업이라 약 10만 행 규모에서 허용한다. 인덱스는 실행 계획으로 검증한다(NFR-04). | `(user_id, end_date, created_at, id)`: 쓰기 비용만 늘고 이득이 없다 |
 | DB-11 | `description`은 trim 후 빈 문자열이면 서비스가 `NULL`로 저장하고 API는 `null`로 돌려준다. | `''`와 `NULL` 두 표현이 같은 뜻이라 하나로 모은다. 도메인 3.3이 `description`을 선택 속성(N)으로 정의한다. | 빈 문자열 그대로 저장: 표시 쪽이 둘을 다 처리해야 한다. API 계약에는 아직 명시가 없다. |
 | DB-12 | FK 이름은 `fk_<테이블>_<참조>` 형식으로 명시한다(`fk_categories_user`, `fk_todos_user`, `fk_todos_category`). PK는 기본 이름을 쓴다. | PR-N-04가 제약 이름을 명시하는 방침이다. 오류 분기에는 23505만 쓰지만 로그에서 위반 원인을 읽기 쉽다. | 기본 이름: 자동 생성 이름은 읽기 어렵다 |
+| DB-13 | `refresh_tokens`는 refresh 토큰 1개당 1행이다. 토큰 원문 대신 SHA-256 16진수 64자를 `CHAR(64)`로 저장하고 `uq_refresh_tokens_hash`로 찾는다. 갱신은 `DELETE … WHERE token_hash = $1 AND expires_at > now() RETURNING user_id` 한 문장으로 사용 처리해 같은 토큰을 동시에 써도 한 번만 성공한다. 행을 수정하지 않으므로 `updated_at`이 없다. 만료 행은 로그인할 때 그 사용자의 만료 행을 지워 정리하고 배치는 두지 않는다. 비밀번호 변경 시 전체 폐기와 만료 정리를 위해 `idx_refresh_tokens_user`를 둔다. | 해시는 bcrypt가 아닌 SHA-256이다: 원문이 32바이트 난수라 무차별 대입이 불가능하고, 갱신마다 bcrypt를 계산하면 CPU 부하(NFR-05)가 커진다. 한 문장 DELETE는 트랜잭션 없이 원자적이다. | 원문 저장: DB 유출 시 세션 탈취. 소프트 삭제(`revoked_at`): 재사용 탐지가 필요해지면 도입(PD-26). 만료 정리 배치: 로컬 단일 머신(P-10)에서 과설계 |
 
 ## 9. 커버리지
 
@@ -287,7 +320,7 @@ API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startD
 | NFR-10 트랜잭션 | DB-05(가입·삭제 모두 서비스 트랜잭션) |
 | NFR-11 DATE | 4.3 `start_date`·`end_date` |
 | NFR-12 상태 파생 | 6장 |
-| P-04 | 해당 구조 없음(토큰은 DB에 저장하지 않음) |
+| P-04 | 4.4 `refresh_tokens`, DB-13(access 토큰은 저장하지 않음, 6장) |
 | P-11 규모(사용자당 약 100건) | DB-01, DB-10 |
 | P-24 확인값 | 6장 |
 | P-25 정수 `:id` | DB-01, 7장 |

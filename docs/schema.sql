@@ -1,9 +1,9 @@
 -- TodoList 데이터베이스 스키마 (PostgreSQL 17)
--- 근거: docs/7-erd.md v0.1 (ERD-02, 4장 테이블 명세, 5장 제약·인덱스, DB-01~12)
+-- 근거: docs/7-erd.md v0.2 (ERD-02, 4장 테이블 명세, 5장 제약·인덱스, DB-01~13)
 -- 상태(ST-01~04) 컬럼은 두지 않는다. 조회 시 파생한다(NFR-12).
 -- 다시 만들 때는 아래 DROP 구문의 주석을 풀고 실행한다(운영 데이터 없음, P-10).
 
--- DROP TABLE IF EXISTS todos, categories, users;
+-- DROP TABLE IF EXISTS refresh_tokens, todos, categories, users;
 
 BEGIN;
 
@@ -54,5 +54,19 @@ CREATE TABLE todos (
 CREATE INDEX idx_todos_user_dates    ON todos (user_id, start_date, end_date);
 -- 목록 카테고리 필터, 카테고리 삭제 시 할일 이동(NFR-04, BR-14, BR-15)
 CREATE INDEX idx_todos_user_category ON todos (user_id, category_id);
+
+-- refresh 토큰(P-04). 원문은 저장하지 않고 SHA-256 해시만 둔다(DB-13).
+CREATE TABLE refresh_tokens (
+    id          INTEGER      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,      -- DB-01
+    user_id     INTEGER      NOT NULL,
+    token_hash  CHAR(64)     NOT NULL,                                      -- SHA-256 16진수(DB-13)
+    expires_at  TIMESTAMPTZ  NOT NULL,                                      -- 발급 후 7일(P-04)
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),                        -- DB-02
+    CONSTRAINT fk_refresh_tokens_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,  -- DB-05, DB-12
+    CONSTRAINT uq_refresh_tokens_hash UNIQUE (token_hash)                                            -- 갱신·로그아웃 조회(DB-13)
+);
+
+-- 비밀번호 변경 시 전체 폐기, 로그인 시 만료 행 정리(DB-13)
+CREATE INDEX idx_refresh_tokens_user ON refresh_tokens (user_id);
 
 COMMIT;
