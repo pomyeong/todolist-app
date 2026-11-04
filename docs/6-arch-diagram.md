@@ -8,6 +8,7 @@
 |---|---|---|---|---|
 | v0.1 | 2026-11-04 | pmsong | 초안 | 최초 작성 |
 | v0.2 | 2026-11-04 | pmsong | 초안 | 데이터 구조(물리 ERD, AD-04) 추가 |
+| v0.3 | 2026-11-04 | pmsong | 초안 | AD-04를 폐기하고 ERD를 7-erd.md로 분리 |
 
 ### 변경 이력
 
@@ -15,12 +16,13 @@
 |---|---|---|---|---|---|
 | v0.1 | 2026-11-04 | 전체 | 최초 작성 | - | pmsong |
 | v0.2 | 2026-11-04 | AD-04, 머리말, 4장 | 테이블·컬럼·타입·제약·인덱스를 그린 물리 ERD와 도메인 속성 대응표 추가 | `schema.sql` 작성 기준이 되는 데이터 구조 그림 필요 | pmsong |
+| v0.3 | 2026-11-04 | AD-04, 머리말, 1장, 4장 | AD-04 본문(ERD·제약 표·설계 메모)을 삭제하고 개요 표는 '폐기'로 표시, 머리말·커버리지 갱신 | ERD가 개념·물리·테이블 명세·결정으로 커져 [ERD v0.1](./7-erd.md)로 분리 | pmsong |
 
-> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.6](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.9](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.7](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.3](./4-wireframe.md)이, 구조(PR·PD)는 [프로젝트 구조 설계 원칙 v0.2](./5-project-principle.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > 이 문서 순으로 따른다.
+> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.6](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.9](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.7](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.3](./4-wireframe.md)이, 구조(PR·PD)는 [프로젝트 구조 설계 원칙 v0.2](./5-project-principle.md)이, 데이터 구조(ERD-xx·DB-xx)는 [ERD v0.1](./7-erd.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > 이 문서 순으로 따른다.
 >
 > ID 운영 원칙: 다이어그램 ID(AD-xx 구조, SD-xx 순서)는 재사용하거나 재번호하지 않는다. 다이어그램을 없애면 행을 지우지 말고 '폐기'로 표시한다.
 >
-> 엔티티·관계(개념 ERD)는 [도메인 정의서 3.4](./1-domain-definition.md)가 정의한다. 이 문서의 AD-04는 그것을 PostgreSQL 테이블로 옮긴 물리 구조(컬럼명·타입·제약·인덱스)이며, 둘이 다르면 도메인 정의서를 따른다. 오류 코드는 NFR-15에 있는 것만 쓴다.
+> 데이터 구조(개념 ERD, 물리 ERD, 테이블·제약·인덱스)는 [ERD v0.1](./7-erd.md)이 정의하고, 이 문서에는 그리지 않는다. 엔티티·관계의 정의는 [도메인 정의서 3.4](./1-domain-definition.md)가 맡는다. 오류 코드는 NFR-15에 있는 것만 쓴다.
 
 ## 1. 개요
 
@@ -29,7 +31,7 @@
 | AD-01 | 구조 | 시스템 컨텍스트와 배포 구성 | P-10, PR-S-04, PR-S-11 |
 | AD-02 | 구조 | 백엔드 레이어와 모듈 의존 | 구조 원칙 3.1, 7.2 |
 | AD-03 | 구조 | 프론트엔드 레이어와 상태 분담 | 구조 원칙 3.1, 7.3, PRD 6장 |
-| AD-04 | 구조 | 데이터 구조(물리 ERD) | 도메인 3장, NFR-04, PR-N-04, PR-S-10 |
+| AD-04 | 구조 | 폐기(v0.3) → 7-erd.md로 이동 | [ERD v0.1](./7-erd.md) ERD-02 |
 | SD-01 | 순서 | 회원가입 트랜잭션 | FR-01, NFR-10 |
 | SD-02 | 순서 | 인증 미들웨어와 401 전역 처리 | FR-04, PR-L-12 |
 | SD-03 | 순서 | 할일 목록 조회 | FR-09, P-14, PD-17 |
@@ -169,61 +171,7 @@ flowchart TB
 
 ### AD-04 데이터 구조 (물리 ERD)
 
-```mermaid
-erDiagram
-    users ||--|{ categories : "소유 (기본 1개 포함)"
-    users ||--o{ todos : "소유"
-    categories ||--o{ todos : "분류"
-
-    users {
-        integer id PK "GENERATED ALWAYS AS IDENTITY"
-        varchar email UK "254자, uq_users_email"
-        varchar password_hash "bcrypt 해시 60자"
-        varchar name "50자"
-        timestamptz created_at "기본 now()"
-        timestamptz updated_at "기본 now()"
-    }
-    categories {
-        integer id PK "GENERATED ALWAYS AS IDENTITY"
-        integer user_id FK "users.id"
-        varchar name "30자, uq_categories_user_name"
-        boolean is_default "uq_categories_user_default"
-        timestamptz created_at "기본 now(), BR-23 정렬"
-        timestamptz updated_at "기본 now()"
-    }
-    todos {
-        integer id PK "GENERATED ALWAYS AS IDENTITY"
-        integer user_id FK "users.id"
-        integer category_id FK "categories.id"
-        varchar title "100자"
-        varchar description "1000자, NULL 허용"
-        date start_date "ck_todos_dates"
-        date end_date "start_date 이상"
-        boolean completed "기본 false"
-        timestamptz completed_at "NULL 허용"
-        timestamptz created_at "기본 now(), BR-20 정렬"
-        timestamptz updated_at "기본 now()"
-    }
-```
-
-| 테이블 | 제약·인덱스 | 내용 | 관련 ID |
-|---|---|---|---|
-| `users` | `uq_users_email` UNIQUE(`email`) | 이메일 전체 유일, 위반(23505)은 409 `DUPLICATE_EMAIL` | BR-02, PR-N-04 |
-| `categories` | `uq_categories_user_name` UNIQUE(`user_id`, `name`) | 같은 사용자 안에서 이름 유일, 위반은 409 `DUPLICATE_CATEGORY` | BR-13, PR-N-04 |
-| `categories` | `uq_categories_user_default` UNIQUE(`user_id`) WHERE `is_default` | 사용자당 기본 카테고리 정확히 1개(부분 유일 인덱스) | BR-10, BR-12 |
-| `todos` | `ck_todos_dates` CHECK(`start_date <= end_date`) | 방어용. 판정은 `domain/validate.js`가 먼저 한다 | BR-07, PD-20 |
-| `todos` | `idx_todos_user_dates` (`user_id`, `start_date`, `end_date`) | 캘린더 기간 겹침 조회 | NFR-04, BR-17, SD-04 |
-| `todos` | `idx_todos_user_category` (`user_id`, `category_id`) | 목록 카테고리 필터, 카테고리 삭제 시 할일 이동 | NFR-04, BR-14, SD-03, SD-06 |
-
-- **상태 컬럼 없음:** ST-01~04는 `completed`, 두 날짜, `today`로 조회할 때 판정한다(NFR-12, PD-17).
-- **날짜 타입:** `start_date`·`end_date`는 시각 없는 `DATE`이고 pg가 `'YYYY-MM-DD'` 문자열로 돌려준다(NFR-11, PR-S-09). 생성·수정·완료 시각만 `TIMESTAMPTZ`다.
-- **완료 시각:** `completed_at`은 완료하면 현재 시각, 취소하면 NULL이다(PD-21).
-- **이름 변환:** 컬럼은 `snake_case`, API는 도메인 속성명(`camelCase`)이며 SELECT 별칭으로 바꾼다(PR-N-05). 비밀번호 해시는 도메인 `password`에 대응하며 응답에 내보내지 않는다(PR-S-06).
-- **카테고리 소유 일치:** 할일의 `category_id`가 같은 사용자의 카테고리인지는 서비스가 `user_id` 조건으로 확인한다(BR-04, PR-L-05, SD-07).
-- **삭제:** 회원 탈퇴가 범위 외라 `ON DELETE CASCADE`를 두지 않는다. 카테고리 삭제는 할일을 먼저 기본 카테고리로 옮긴 뒤 지운다(BR-14, SD-06).
-- **스키마 파일:** 실제 정의는 `backend/sql/schema.sql` 하나다(PR-S-10, PD-08).
-
-관련 ID: 도메인 3.1~3.4, ST-01~04, BR-02, BR-04, BR-07, BR-10, BR-12~14, BR-17, BR-20, BR-23, NFR-04, NFR-06, NFR-11, NFR-12, PD-13, PD-17, PD-21, PR-N-04, PR-N-05, PR-S-06, PR-S-09, PR-S-10
+폐기(v0.3). [ERD v0.1](./7-erd.md)로 이동했다.
 
 ## 3. Sequence Diagram
 
@@ -571,20 +519,20 @@ sequenceDiagram
 | BR | 다이어그램 |
 |---|---|
 | BR-01 | SD-02, AD-02 |
-| BR-02 | SD-01, AD-04 |
+| BR-02 | SD-01, 7-erd.md |
 | BR-03 | SD-03, SD-05, SD-06, SD-07 |
 | BR-04 | SD-07 |
 | BR-06, BR-07, BR-08 | SD-07 |
-| BR-10 | SD-01, AD-04 |
+| BR-10 | SD-01, 7-erd.md |
 | BR-11 | SD-07 |
-| BR-12 | SD-06, AD-04 |
+| BR-12 | SD-06, 7-erd.md |
 | BR-14 | SD-06 |
 | BR-15 | SD-03 |
 | BR-16, BR-17, BR-18, BR-19 | SD-04 |
 | BR-20 | SD-03, SD-04 |
 | BR-21, BR-22 | SD-01, SD-07 |
 | BR-23 | SD-06, SD-07의 카테고리 선택 순서는 서버 순서 그대로(AD-03) |
-| BR-13 | AD-04 |
+| BR-13 | 7-erd.md |
 | BR-05, BR-09 | 해당 없음 (단순 규칙) |
 
 ### 4.3 NFR 커버리지
@@ -594,13 +542,13 @@ sequenceDiagram
 | NFR-01, NFR-05 | AD-01 (k6 위치) |
 | NFR-02 | AD-01, SD-02 |
 | NFR-03 | AD-01, AD-02 |
-| NFR-04 | AD-04 (인덱스), SD-03, SD-04 (필터·겹침 조건이 DB에서 처리됨) |
+| NFR-04 | 7-erd.md (인덱스), SD-03, SD-04 (필터·겹침 조건이 DB에서 처리됨) |
 | NFR-06 | SD-01 |
 | NFR-07 | SD-03, SD-05, SD-06, SD-07 |
 | NFR-08 | AD-01, AD-02 |
 | NFR-09 | SD-01, SD-07, AD-02 |
 | NFR-10 | SD-01, SD-06 |
-| NFR-11 | AD-04, SD-04 |
-| NFR-12 | AD-04, SD-03, SD-04, SD-05 |
+| NFR-11 | 7-erd.md, SD-04 |
+| NFR-12 | 7-erd.md, SD-03, SD-04, SD-05 |
 | NFR-13, NFR-14 | 해당 없음 (배치·브라우저 요구, SD-04의 데스크톱·모바일 분기만 관련) |
 | NFR-15 | SD-01~SD-07 전체, AD-02 |
