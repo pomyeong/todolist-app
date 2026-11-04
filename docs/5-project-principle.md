@@ -7,12 +7,18 @@
 | 버전 | 일자 | 작성자 | 상태 | 비고 |
 |---|---|---|---|---|
 | v0.1 | 2026-11-04 | pmsong | 초안 | 최초 작성 |
+| v0.2 | 2026-11-04 | pmsong | 초안 | 아키텍처 다이어그램 작성 중 발견한 API·화면 미정의 사항 결정(PD-19~25) |
 
 ### 변경 이력
 
 | 버전 | 일자 | 변경 위치 | 변경 내용 | 변경 사유 | 작성자 |
 |---|---|---|---|---|---|
 | v0.1 | 2026-11-04 | 전체 | 최초 작성 | - | pmsong |
+| v0.2 | 2026-11-04 | PD-19~21, 7.2 | 상태 값 문자열, 할일 수정 본문, 완료 토글 본문과 `completedAt` 규칙 | API 계약 미정의 | pmsong |
+| v0.2 | 2026-11-04 | PD-22, PD-25 | 오류 판정 순서, 성공 상태 코드 | 구현마다 응답이 달라질 위험 | pmsong |
+| v0.2 | 2026-11-04 | PD-23 | 월 뷰 격자 앞뒤 채움 칸은 빈 칸 | BR-17 기간 밖 칸의 표시 미정의 | pmsong |
+| v0.2 | 2026-11-04 | PD-24, PR-L-12 | 첫 진입 `GET /api/me`의 401은 전역 처리 대상에서 제외 | `/login`에서 다시 `/login`으로 보내는 반복 방지 | pmsong |
+| v0.2 | 2026-11-04 | PR-L-06 | bcrypt 해시는 트랜잭션 밖에서 계산 | 커넥션 점유 최소 근거 명시 | pmsong |
 
 > 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.6](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.9](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.7](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.3](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
@@ -66,13 +72,13 @@
 | PR-L-03 | services는 규칙·SQL·트랜잭션을 가진다. `req`/`res`를 모르고 `(userId, input)` 같은 값만 받는다. 실패는 `AppError`를 throw한다. | HTTP 없이 호출 가능, 오류 변환은 한 곳. | NFR-15 |
 | PR-L-04 | SQL은 services 파일 안의 문자열로 직접 작성하고 `db.query(text, params)`만 쓴다. 모든 값은 `$1, $2 …`로 바인딩한다. 필터처럼 조건이 바뀌는 경우에도 SQL 조각은 코드의 고정 문자열이고 값만 바인딩한다.<br>하지 말 것: 템플릿 문자열·`+`로 값을 SQL에 끼워 넣기, `SELECT *`(비밀번호 해시 노출 방지, PR-S-06) | SQL 직접 작성의 인젝션 방지. | NFR-08, R-04 |
 | PR-L-05 | 카테고리·할일에 접근하는 모든 SQL은 `user_id = $n`(토큰의 사용자 ID)을 포함한다. 0행이면 `NOT_FOUND`를 던져 '타인 데이터'와 '없음'을 구분하지 않는다. 지정한 카테고리(BR-04)도 같은 조건으로 확인한다. 조회 JOIN에도 양쪽 `user_id`를 건다.<br>하지 말 것: `WHERE id = $1`만으로 조회·수정·삭제 | 소유권 누락이 곧 데이터 유출이다. | NFR-07, BR-03, BR-04, R-04 |
-| PR-L-06 | 트랜잭션(`db.withTransaction(fn)`)은 NFR-10 대상인 회원가입(사용자 + 기본 카테고리), 카테고리 삭제(할일 이동 + 삭제) 두 곳에만 쓴다. 단일 문장은 트랜잭션 없이 쓴다. | 필요한 곳만, 커넥션 점유 최소(풀 크기 20, NFR-03). | NFR-10, NFR-03, BR-10, BR-14 |
+| PR-L-06 | 트랜잭션(`db.withTransaction(fn)`)은 NFR-10 대상인 회원가입(사용자 + 기본 카테고리), 카테고리 삭제(할일 이동 + 삭제) 두 곳에만 쓴다. 단일 문장은 트랜잭션 없이 쓴다. bcrypt 해시처럼 느린 계산은 트랜잭션을 열기 전에 끝낸다. | 필요한 곳만, 커넥션 점유 최소(풀 크기 20, NFR-03). | NFR-10, NFR-03, BR-10, BR-14 |
 | PR-L-07 | `domain/`에는 I/O 없는 순수 함수만 둔다: 상태 판정(`status.js`), 입력 검증(`validate.js`). 다른 모듈을 import하지 않는다. | G-04 단위 테스트 대상을 DB 없이 검증한다. | G-04, NFR-09, NFR-12 |
 | PR-L-08 | 조회는 쿼리 하나로 끝낸다(목록의 카테고리명은 JOIN). 행마다 추가 쿼리를 보내지 않는다. 정렬은 BR-20을 쿼리 한 곳(상수)에 두고 목록·캘린더가 공유하며, 마지막 키로 `id`를 덧붙여 순서를 고정한다. | N+1 방지(R-02), 정렬 규칙 단일화. | BR-20, NFR-04, R-02 |
 | PR-L-09 | 프론트 레이어는 pages → features → api다. pages는 경로 단위 조합만, features는 화면 기능(컴포넌트·훅·스토어), api는 `fetch` 호출과 타입만 가진다. features끼리 직접 import하지 않고, 공유가 필요하면 `components/`·`lib/`·`api/`로 올린다.<br>하지 말 것: 컴포넌트에서 `fetch` 직접 호출 | 의존 방향 고정, 기능 파일 제외 용이(PR-C-06). | P-23, R-01 |
 | PR-L-10 | 상태 보관 위치는 하나씩이다. 서버 데이터는 TanStack Query만, 클라이언트 UI 상태(필터·캘린더 선택 날짜·로그인 사용자 정보)는 Zustand만 쓴다. 서버 데이터(할일·카테고리)를 Zustand에 복사하지 않는다. 토큰은 어디에도 저장하지 않는다. Zustand `persist`는 쓰지 않는다(새로고침 시 초기화가 규칙).<br>하지 말 것: `localStorage`·`sessionStorage` 사용 | PRD 6장 역할 분담, 새로고침 시 필터 초기화(P-23). | PRD 6장, P-04, P-23 |
 | PR-L-11 | 변경(mutation) 성공 후에는 `['todos']`·`['calendar']`(카테고리 변경이면 `['categories']`도) 쿼리를 무효화해 다시 조회한다. 무효화 호출은 `api/queryKeys.ts`의 헬퍼 한 곳에 둔다. 상태가 포함된 조회의 query key에는 `today`를 넣는다.<br>하지 말 것: 캐시 직접 수정, 낙관적 업데이트 | 상태 판정은 서버, 표시는 재조회 결과. | P-15, P-12, NFR-12 |
-| PR-L-12 | 401 `UNAUTHORIZED`는 한 곳에서 처리한다. QueryClient의 `QueryCache`·`MutationCache` `onError`에서 `code === 'UNAUTHORIZED'`이면 Zustand·쿼리 캐시를 비우고 `/login`으로 보낸다. `INVALID_CREDENTIALS`(로그인 실패)는 대상이 아니다. | 모든 API에 같은 규칙, 화면별 중복 방지. | FR-04, FR-02, P-23 |
+| PR-L-12 | 401 `UNAUTHORIZED`는 한 곳에서 처리한다. QueryClient의 `QueryCache`·`MutationCache` `onError`에서 `code === 'UNAUTHORIZED'`이면 Zustand·쿼리 캐시를 비우고 `/login`으로 보낸다. `INVALID_CREDENTIALS`(로그인 실패)와 첫 진입 로그인 확인(`GET /api/me`, PD-24)은 대상이 아니다. | 모든 API에 같은 규칙, 화면별 중복 방지. | FR-04, FR-02, P-23 |
 
 ### 3.3 더 나누지 않는 이유
 
@@ -200,9 +206,9 @@ backend/
 | `/api/me` | GET, PATCH | 내 정보 조회(화면 첫 진입 시 로그인 여부 확인), 이름 수정 | FR-14 |
 | `/api/me/password` | PUT | 비밀번호 변경 | FR-15 |
 | `/api/categories`, `/api/categories/:id` | GET, POST / PATCH, DELETE | BR-23 순서 목록, 등록, 이름 수정, 삭제 | FR-13 |
-| `/api/todos?categoryId&status&today` | GET | 목록(필터·`today` 필수) | FR-09 |
-| `/api/todos`, `/api/todos/:id` | POST / GET, PATCH, DELETE | 등록, 단건 조회(편집 화면), 수정, 삭제 | FR-05, FR-06, FR-08 |
-| `/api/todos/:id/completed` | PATCH | 완료 / 완료 취소 | FR-07 |
+| `/api/todos?categoryId&status&today` | GET | 목록(필터·`today` 필수, `status` 값은 PD-19) | FR-09 |
+| `/api/todos`, `/api/todos/:id` | POST / GET, PATCH, DELETE | 등록, 단건 조회(편집 화면), 수정(본문은 PD-20), 삭제 | FR-05, FR-06, FR-08 |
+| `/api/todos/:id/completed` | PATCH | 완료 / 완료 취소, 본문 `{ "completed": boolean }`(PD-21) | FR-07 |
 | `/api/calendar?from&to&today` | GET | 기간과 겹치는 할일(월·주·일 뷰 공통) | FR-10~12 |
 | `/api/health` | GET | 인증 없이 `{ "ok": true }`, DB 미조회(기동 확인) | P-25 |
 
@@ -328,6 +334,13 @@ PRD·도메인의 기능·규칙 수준 결정은 하지 않았다. 아래는 �
 | PD-16 | SQL은 별도 repository 파일 없이 `services/`에 둔다. | 3.3 근거. | `repositories/` 계층: 파일 2배, mock 유혹 |
 | PD-17 | 상태 판정과 상태 필터는 `domain/status.js` 한 곳(JS)에 둔다. SQL은 사용자·카테고리·기간으로만 거른다. | 판정 로직 이중화 방지(NFR-12), DB 없이 단위 테스트 가능. P-11(사용자당 약 100건)에서 행 수가 작다. | SQL `CASE`: 판정 2곳. 사용자당 건수가 크게 늘면 재검토 |
 | PD-18 | SCR-04의 진입 화면 복귀는 `navigate`의 `state.from`(경로 + 쿼리)으로 구현하고 없으면 `/todos`다. | P-17·P-23의 '진입 화면이 없을 때'를 만족하며, 캘린더 URL(뷰·날짜)도 복원된다. | `navigate(-1)`: 직접 접근 시 앱 밖으로 나갈 수 있음 |
+| PD-19 | 상태 값 문자열은 ST-01~04 순으로 `completed`·`not_started`·`in_progress`·`overdue`다. 응답의 `status` 필드와 목록 `status` 쿼리 파라미터가 같은 값을 쓰고, 화면 표시 문구(완료·시작 전·진행 중·지연)는 프론트 `api/types.ts`의 표 하나가 바꾼다. 다른 값은 400 `VALIDATION_ERROR`(P-14). | 한글 값은 URL 인코딩·오타 위험. 값과 표시 문구를 분리한다. | 한글 값 그대로: URL에 인코딩 필요 |
+| PD-20 | 할일 수정(`PATCH /api/todos/:id`) 본문은 편집 폼의 값 전체를 보낸다: `title`·`startDate`·`endDate` 필수, `description`·`categoryId` 선택. `categoryId`가 없으면 기존 카테고리를 유지한다(BR-11). BR-07은 본문의 두 날짜만으로 `domain/validate.js`가 판정한다. | 편집 폼은 항상 전체 값을 가진다. 기존 값과 합치는 코드 없이 순수 함수로 BR-07을 판정한다. | 부분 수정: 기존 행 조회 후 병합 판정이 필요 |
+| PD-21 | 완료 토글 본문은 `{ "completed": boolean }`이다. `true`면 `completed_at = now()`, `false`면 `completed_at = NULL`이다. 같은 값을 다시 보내도 오류가 아니다(멱등, `true` 재전송 시 `completed_at`은 유지). 응답은 상태를 포함하지 않는 할일이며 화면은 재조회 결과로 표시한다(P-15). | 연타·재시도에도 결과가 같다. `completedAt`은 표시하지 않는 기록용이다. | 서버 반전(toggle): 재시도 시 결과가 뒤집힘 |
+| PD-22 | 오류 판정 순서는 인증(401) → 입력 형식·값(400 `VALIDATION_ERROR`) → 존재·소유권(404 `NOT_FOUND`) → 규칙(400 `DEFAULT_CATEGORY_IMMUTABLE`·`INVALID_PASSWORD`) → 중복(409)이다. 여러 입력 오류는 `fields`에 함께 담는다. | 타인 데이터는 규칙 위반보다 먼저 404가 되어 존재가 드러나지 않는다(BR-03). DB 없이 판정할 수 있는 것을 먼저 거른다. | - |
+| PD-23 | 데스크톱 월 뷰 격자의 앞뒤 채움 칸(이전·다음 달 날짜)은 날짜 숫자와 할일을 표시하지 않는 빈 칸이며 선택할 수 없다. 모바일 월 뷰도 같다. | BR-17의 화면 기간(1일~말일) 밖이라 표시하면 '일부만 보이는' 오해가 생긴다. 칸 배치(`cellTodos.ts`)에서 분기 없이 처리된다. | 이전·다음 달 할일 함께 조회: 조회 기간이 BR-17과 달라짐 |
+| PD-24 | 앱 첫 진입의 로그인 확인 `GET /api/me`는 query `meta`로 전역 401 처리(PR-L-12)에서 빼고, 401이면 '로그인 안 됨'으로 보관한다. 이후 `RequireAuth`가 보호 경로는 `/login`으로, 공개 경로(`/login`·`/signup`)는 그대로 보여 준다. 그 밖의 401은 PR-L-12대로 처리한다. | 미로그인 상태가 정상인 첫 진입에서 오류 처리·이동이 반복되지 않는다. | - |
+| PD-25 | 성공 상태 코드: 생성(가입, 할일·카테고리 등록)은 201과 생성된 객체, 삭제(할일·카테고리)와 로그아웃은 204 본문 없음, 그 외(조회·수정·완료 토글·로그인)는 200이다. | REST 관례, 프론트는 상태 코드가 아닌 성공 여부로만 분기한다. | 전부 200: 의미 손실 |
 
 ### 8.1 커버리지 확인
 
