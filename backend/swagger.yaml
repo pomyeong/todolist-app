@@ -1046,7 +1046,20 @@ components:
       description: |
         할일. 모든 할일 응답(단건 조회·등록·수정·완료 토글·목록·캘린더)이 이 스키마를 쓴다(PD-29).
         `status`는 `today`를 받는 목록·캘린더 응답에만 있다(PD-13, NFR-12).
-      required: [id, categoryId, categoryName, title, description, startDate, endDate, completed, completedAt, createdAt, updatedAt]
+      required:
+        [
+          id,
+          categoryId,
+          categoryName,
+          title,
+          description,
+          startDate,
+          endDate,
+          completed,
+          completedAt,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: integer

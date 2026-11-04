@@ -9,5 +9,10 @@
       "quoteStyle": "single",
       "semicolons": "always"
     }
+  },
+  "yaml": {
+    "formatter": {
+      "quoteStyle": "single"
+    }
   }
 }

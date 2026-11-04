@@ -198,10 +198,10 @@ flowchart LR
 3. `package.json` scripts에 `db:init`을 등록하고, `.env.test`로도 실행할 수 있게 한다(예: `node --env-file=.env.test scripts/db-init.js --reset`).
 
 **완료 조건**
-- [ ] 빈 `todolist` DB에서 `npm run db:init`을 실행하면 테이블 4개와 인덱스가 생긴다.
-- [ ] 테이블이 이미 있을 때 `npm run db:init -- --reset`이 오류 없이 다시 만든다.
-- [ ] `--reset` 없이 두 번째 실행하면 '이미 존재' 오류로 실패하고 기존 데이터는 그대로다(실수로 지우지 않음).
-- [ ] `todolist_test`에도 같은 스키마가 적용된다.
+- [x] 빈 `todolist` DB에서 `npm run db:init`을 실행하면 테이블 4개와 인덱스가 생긴다.
+- [x] 테이블이 이미 있을 때 `npm run db:init -- --reset`이 오류 없이 다시 만든다.
+- [x] `--reset` 없이 두 번째 실행하면 '이미 존재' 오류로 실패하고 기존 데이터는 그대로다(실수로 지우지 않음).
+- [x] `todolist_test`에도 같은 스키마가 적용된다.
 
 ### T-DB-04 스키마 제약 동작 검증
 
@@ -214,14 +214,14 @@ flowchart LR
 2. 위반 시 PostgreSQL 오류 코드·제약 이름이 T-BE-08·T-BE-10의 23505 분기(PR-N-04)에 쓸 수 있는 형태인지 확인한다.
 
 **완료 조건**
-- [ ] 같은 이메일 두 번 INSERT 시 23505 + 제약 이름 `uq_users_email`이 나온다.
-- [ ] 대문자 이메일 INSERT가 `ck_users_email_lower`로 실패한다.
-- [ ] 같은 사용자에 같은 카테고리 이름 INSERT 시 23505 + `uq_categories_user_name`이 나온다.
-- [ ] 같은 사용자에 `is_default = true` 두 번째 INSERT가 `uq_categories_user_default`로 실패한다.
-- [ ] `start_date > end_date` INSERT가 `ck_todos_dates`로 실패한다.
-- [ ] `completed = true`, `completed_at = NULL` INSERT가 `ck_todos_completed`로 실패한다.
-- [ ] 할일이 있는 카테고리 DELETE가 FK RESTRICT(23503)로 실패한다.
-- [ ] 같은 `token_hash`를 두 번 INSERT하면 23505 + `uq_refresh_tokens_hash`가 나온다(DB-13).
+- [x] 같은 이메일 두 번 INSERT 시 23505 + 제약 이름 `uq_users_email`이 나온다.
+- [x] 대문자 이메일 INSERT가 `ck_users_email_lower`로 실패한다.
+- [x] 같은 사용자에 같은 카테고리 이름 INSERT 시 23505 + `uq_categories_user_name`이 나온다.
+- [x] 같은 사용자에 `is_default = true` 두 번째 INSERT가 `uq_categories_user_default`로 실패한다.
+- [x] `start_date > end_date` INSERT가 `ck_todos_dates`로 실패한다.
+- [x] `completed = true`, `completed_at = NULL` INSERT가 `ck_todos_completed`로 실패한다.
+- [x] 할일이 있는 카테고리 DELETE가 FK RESTRICT(23503)로 실패한다.
+- [x] 같은 `token_hash`를 두 번 INSERT하면 23505 + `uq_refresh_tokens_hash`가 나온다(DB-13).
 
 ### T-DB-05 부하 테스트 시드(`seed-load.js`)
 
@@ -237,11 +237,11 @@ flowchart LR
 5. `package.json` scripts에 `seed:load` 등록. k6가 쓸 계정 규칙(예: `load{n}@test.local` / 공통 비밀번호)을 `load-test/README.md`에 적는다.
 
 **완료 조건**
-- [ ] `npm run seed:load` 후 `users` 1000행, `categories` 기본 1000행 이상, `todos` 100000행이다.
-- [ ] 사용자마다 `is_default = true` 카테고리가 정확히 1개다.
-- [ ] 시드 계정으로 `POST /api/auth/login`이 200을 반환한다.
-- [ ] 시드가 1분 이내에 끝난다(bcrypt 1회).
-- [ ] 계정 규칙이 `load-test/README.md`에 기록되어 있다.
+- [x] `npm run seed:load` 후 `users` 1000행, `categories` 기본 1000행 이상, `todos` 100000행이다.
+- [x] 사용자마다 `is_default = true` 카테고리가 정확히 1개다.
+- [x] 시드 계정으로 `POST /api/auth/login`이 200을 반환한다.
+- [x] 시드가 1분 이내에 끝난다(bcrypt 1회).
+- [x] 계정 규칙이 `load-test/README.md`에 기록되어 있다.
 
 ### T-DB-06 실행 계획 기반 인덱스 검증
 
@@ -255,9 +255,9 @@ flowchart LR
 3. 결과(쿼리, 사용 인덱스, 실행 시간)를 `load-test/README.md`에 기록한다.
 
 **완료 조건**
-- [ ] 목록·캘린더 조회가 `idx_todos_user_dates` 또는 `idx_todos_user_category`를 사용한다(`todos` Seq Scan 없음).
-- [ ] 각 조회 SQL의 실행 시간이 기록되어 있다.
-- [ ] 인덱스를 추가했다면 `schema.sql`·7-erd 5장에 반영하고 변경 이력을 남겼다.
+- [x] 목록·캘린더 조회가 `idx_todos_user_dates` 또는 `idx_todos_user_category`를 사용한다(`todos` Seq Scan 없음).
+- [x] 각 조회 SQL의 실행 시간이 기록되어 있다.
+- [x] 인덱스를 추가했다면 `schema.sql`·7-erd 5장에 반영하고 변경 이력을 남겼다.
 
 ## 5. 백엔드 Task
 
@@ -291,10 +291,10 @@ flowchart LR
 2. `src/db.js`: `pg.Pool` 하나(크기 `DB_POOL_MAX`), `query(text, params)`, `withTransaction(fn)`(BEGIN/COMMIT/ROLLBACK, 커넥션 반납 보장), DATE(OID 1082) 문자열 파서 설정, `close()`.
 
 **완료 조건**
-- [ ] `config.js` 외 파일에 `process.env` 접근이 없다(`grep -r "process.env" src` 결과가 `config.js`뿐).
-- [ ] `JWT_SECRET`이 47자이거나 `DATABASE_URL`이 없으면 프로세스가 오류 메시지와 함께 종료된다.
-- [ ] `SELECT '2026-11-04'::date AS d`의 결과 `d`가 문자열 `'2026-11-04'`다(Date 객체 아님).
-- [ ] `withTransaction` 안에서 오류를 던지면 ROLLBACK되고 커넥션이 풀로 반납된다.
+- [x] `config.js` 외 파일에 `process.env` 접근이 없다(`grep -r "process.env" src` 결과가 `config.js`뿐).
+- [x] `JWT_SECRET`이 47자이거나 `DATABASE_URL`이 없으면 프로세스가 오류 메시지와 함께 종료된다.
+- [x] `SELECT '2026-11-04'::date AS d`의 결과 `d`가 문자열 `'2026-11-04'`다(Date 객체 아님).
+- [x] `withTransaction` 안에서 오류를 던지면 ROLLBACK되고 커넥션이 풀로 반납된다.
 
 ### T-BE-03 오류 규약·앱 골격·헬스 체크
 
@@ -310,11 +310,11 @@ flowchart LR
 5. `src/routes/index.js`: `/api` 라우터 뼈대(인증 경계는 T-BE-07).
 
 **완료 조건**
-- [ ] `npm run dev` 후 `GET /api/health`가 인증 없이 200 `{ "ok": true }`를 반환한다.
-- [ ] `GET /api/없는경로`가 404 `{ "error": { "code": "NOT_FOUND", "message": ... } }`를 반환한다.
-- [ ] 임시로 던진 일반 `Error`가 500 `INTERNAL_ERROR`로 응답되고, 응답 본문에 stack·내부 메시지가 없으며 stderr에 JSON 한 줄이 남는다.
-- [ ] 16kb를 넘는 본문이 400 `VALIDATION_ERROR`로 거부되고(413을 오류 미들웨어가 변환) 서버가 죽지 않는다.
-- [ ] 오류 코드 문자열이 `errors.js` 밖에 리터럴로 없다(PR-C-01).
+- [x] `npm run dev` 후 `GET /api/health`가 인증 없이 200 `{ "ok": true }`를 반환한다.
+- [x] `GET /api/없는경로`가 404 `{ "error": { "code": "NOT_FOUND", "message": ... } }`를 반환한다.
+- [x] 임시로 던진 일반 `Error`가 500 `INTERNAL_ERROR`로 응답되고, 응답 본문에 stack·내부 메시지가 없으며 stderr에 JSON 한 줄이 남는다.
+- [x] 16kb를 넘는 본문이 400 `VALIDATION_ERROR`로 거부되고(413을 오류 미들웨어가 변환) 서버가 죽지 않는다.
+- [x] 오류 코드 문자열이 `errors.js` 밖에 리터럴로 없다(PR-C-01).
 
 ### T-BE-04 입력 검증 순수 함수 + 단위 테스트
 
@@ -333,17 +333,17 @@ flowchart LR
 2. `test/unit/validate.test.js`: 경계값 테스트.
 
 **완료 조건**
-- [ ] `domain/validate.js`에 `import` 문이 없다(오류 클래스는 인자로 받거나 동일 형태 객체를 throw — 구현 방식은 PR-L-07 범위에서 선택).
-- [ ] 비밀번호 7자·65자는 실패, 8자·64자는 통과한다(BR-21).
-- [ ] 이메일 254자 통과·255자 실패, 이름 50자 통과·51자 실패, 카테고리 30/31자, 제목 100/101자, 설명 1000/1001자 경계가 테스트된다(BR-22).
-- [ ] 공백만 있는 제목·이름은 누락으로 실패하고, 앞뒤 공백은 trim된 값으로 반환된다. 비밀번호는 trim하지 않는다(`' 1234567'`은 8자로 통과, BR-22).
-- [ ] `title: null`은 실패하고 `description: null`은 통과한다(PD-27). `categoryId=abc`는 실패한다(PD-13).
-- [ ] `2026-13-01`, `2026-02-30`, `2026-1-1`은 날짜 형식 오류, `2026-02-28`은 통과한다.
-- [ ] 시작일 `2026-11-10` > 종료일 `2026-11-02`는 실패, 같은 날은 통과한다(E-04-2, BR-07).
-- [ ] `status=done` 같은 값은 실패하고 PD-19의 4개 값은 통과한다(E-08-3).
-- [ ] `from > to`는 실패한다(E-09-2).
-- [ ] 여러 필드가 동시에 틀리면 `fields`에 모두 담긴다(PD-22).
-- [ ] 테스트 이름에 E-ID 또는 BR-ID가 들어 있다(PR-T-05).
+- [x] `domain/validate.js`에 `import` 문이 없다(오류 클래스는 인자로 받거나 동일 형태 객체를 throw — 구현 방식은 PR-L-07 범위에서 선택).
+- [x] 비밀번호 7자·65자는 실패, 8자·64자는 통과한다(BR-21).
+- [x] 이메일 254자 통과·255자 실패, 이름 50자 통과·51자 실패, 카테고리 30/31자, 제목 100/101자, 설명 1000/1001자 경계가 테스트된다(BR-22).
+- [x] 공백만 있는 제목·이름은 누락으로 실패하고, 앞뒤 공백은 trim된 값으로 반환된다. 비밀번호는 trim하지 않는다(`' 1234567'`은 8자로 통과, BR-22).
+- [x] `title: null`은 실패하고 `description: null`은 통과한다(PD-27). `categoryId=abc`는 실패한다(PD-13).
+- [x] `2026-13-01`, `2026-02-30`, `2026-1-1`은 날짜 형식 오류, `2026-02-28`은 통과한다.
+- [x] 시작일 `2026-11-10` > 종료일 `2026-11-02`는 실패, 같은 날은 통과한다(E-04-2, BR-07).
+- [x] `status=done` 같은 값은 실패하고 PD-19의 4개 값은 통과한다(E-08-3).
+- [x] `from > to`는 실패한다(E-09-2).
+- [x] 여러 필드가 동시에 틀리면 `fields`에 모두 담긴다(PD-22).
+- [x] 테스트 이름에 E-ID 또는 BR-ID가 들어 있다(PR-T-05).
 
 ### T-BE-05 상태 판정 순수 함수 + 단위 테스트
 
@@ -356,12 +356,12 @@ flowchart LR
 2. `test/unit/status.test.js`: 시나리오 3.0 예시 T1~T4(오늘 2026-11-04)와 경계값.
 
 **완료 조건**
-- [ ] T1→`overdue`, T2→`in_progress`, T3→`not_started`, T4→`completed`가 나온다.
-- [ ] 시작일 당일·종료일 당일은 `in_progress`다.
-- [ ] 종료일이 지난 할일도 `completed = true`면 `completed`다(완료 우선).
-- [ ] 시작 전 할일도 `completed = true`면 `completed`다.
-- [ ] 완료 취소(`completed = false`)하면 날짜 규칙으로 다시 판정된다.
-- [ ] 상태 문자열 리터럴이 `status.js` 밖 백엔드 코드에 없다(PR-C-01).
+- [x] T1→`overdue`, T2→`in_progress`, T3→`not_started`, T4→`completed`가 나온다.
+- [x] 시작일 당일·종료일 당일은 `in_progress`다.
+- [x] 종료일이 지난 할일도 `completed = true`면 `completed`다(완료 우선).
+- [x] 시작 전 할일도 `completed = true`면 `completed`다.
+- [x] 완료 취소(`completed = false`)하면 날짜 규칙으로 다시 판정된다.
+- [x] 상태 문자열 리터럴이 `status.js` 밖 백엔드 코드에 없다(PR-C-01).
 
 ### T-BE-06 API 테스트 헬퍼
 
@@ -375,10 +375,10 @@ flowchart LR
 3. 내장 `fetch`로 가입·로그인 후 `Set-Cookie`(`access_token`·`refresh_token`)를 저장해 다음 요청에 붙이는 헬퍼(사용자 U1·U2를 만드는 함수 포함).
 
 **완료 조건**
-- [ ] 헬퍼만 쓰는 샘플 테스트에서 `GET /api/health`가 200이다.
-- [ ] 테스트 실행이 `todolist`(개발 DB)를 건드리지 않는다(`.env.test`의 `todolist_test`만 사용).
-- [ ] supertest 등 추가 의존성이 없다(PD-09).
-- [ ] 테스트 종료 후 서버·풀이 닫혀 `npm test`가 멈추지 않고 끝난다.
+- [x] 헬퍼만 쓰는 샘플 테스트에서 `GET /api/health`가 200이다.
+- [x] 테스트 실행이 `todolist`(개발 DB)를 건드리지 않는다(`.env.test`의 `todolist_test`만 사용).
+- [x] supertest 등 추가 의존성이 없다(PD-09).
+- [x] 테스트 종료 후 서버·풀이 닫혀 `npm test`가 멈추지 않고 끝난다.
 
 ### T-BE-07 인증 미들웨어·인증 경계
 
@@ -392,12 +392,12 @@ flowchart LR
 3. `routes/index.js`: `/api/auth/signup`·`/login`·`/refresh`·`/logout`·`/api/health`를 제외한 모든 라우트 앞에 `auth`를 건다.
 
 **완료 조건**
-- [ ] 쿠키 없이 보호된 라우트 호출 시 401 `UNAUTHORIZED`다(E-02-2).
-- [ ] 서명이 다른 토큰, 만료된 토큰 모두 401 `UNAUTHORIZED`다(E-C1).
-- [ ] 같은 비밀키로 HS256 서명한 토큰과 `alg: none` 토큰이 401이다(HS384만 허용, PR-S-03).
-- [ ] access 토큰의 `exp - iat`가 900초(15분)다.
-- [ ] JWT 페이로드에 `sub` 외 사용자 정보가 없다.
-- [ ] 새 라우터를 `routes/index.js`에 추가하면 별도 코드 없이 인증이 적용되는 구조다.
+- [x] 쿠키 없이 보호된 라우트 호출 시 401 `UNAUTHORIZED`다(E-02-2).
+- [x] 서명이 다른 토큰, 만료된 토큰 모두 401 `UNAUTHORIZED`다(E-C1).
+- [x] 같은 비밀키로 HS256 서명한 토큰과 `alg: none` 토큰이 401이다(HS384만 허용, PR-S-03).
+- [x] access 토큰의 `exp - iat`가 900초(15분)다.
+- [x] JWT 페이로드에 `sub` 외 사용자 정보가 없다.
+- [x] 새 라우터를 `routes/index.js`에 추가하면 별도 코드 없이 인증이 적용되는 구조다.
 
 ### T-BE-08 회원가입·로그인·로그아웃 API
 
@@ -414,16 +414,16 @@ flowchart LR
 3. `test/api/auth.test.js`.
 
 **완료 조건**
-- [ ] 가입 성공 시 201, `access_token`(`Path=/`, 15분)·`refresh_token`(`Path=/api/auth`, 7일) 두 `Set-Cookie`가 모두 httpOnly·`SameSite=Lax`이고 응답 본문에 `passwordHash`·토큰 값이 없다(FR-01, P-04).
-- [ ] 가입 직후 해당 사용자의 `is_default = true` 카테고리 '기본'이 정확히 1개다(BR-10).
-- [ ] 가입 쿠키로 바로 보호 API 호출이 성공한다(자동 로그인).
-- [ ] 중복 이메일(대소문자만 다른 경우 포함)은 409 `DUPLICATE_EMAIL`이고 사용자 수가 늘지 않는다(E-01-1).
-- [ ] 비밀번호 7자·65자, 이메일 형식 오류·255자, 이름 51자·공백만은 400 `VALIDATION_ERROR`이며 사용자가 생성되지 않는다(E-01-2, E-01-3).
-- [ ] 기본 카테고리 INSERT가 실패하면 사용자도 남지 않는다(트랜잭션, NFR-10).
-- [ ] 틀린 비밀번호와 없는 이메일의 응답이 둘 다 401 `INVALID_CREDENTIALS`로 같다(E-02-1).
-- [ ] 로그아웃 204 후 `refresh_tokens`에서 그 행이 사라지고, 이전 refresh 토큰으로 `POST /api/auth/refresh`를 호출하면 401이다(FR-03, P-04).
-- [ ] DB의 `password_hash`가 `$2b$10$`로 시작하고 로그에 평문 비밀번호가 없다(NFR-06).
-- [ ] DB `refresh_tokens.token_hash`가 64자 16진수이고 쿠키의 원문과 다르다(DB-13).
+- [x] 가입 성공 시 201, `access_token`(`Path=/`, 15분)·`refresh_token`(`Path=/api/auth`, 7일) 두 `Set-Cookie`가 모두 httpOnly·`SameSite=Lax`이고 응답 본문에 `passwordHash`·토큰 값이 없다(FR-01, P-04).
+- [x] 가입 직후 해당 사용자의 `is_default = true` 카테고리 '기본'이 정확히 1개다(BR-10).
+- [x] 가입 쿠키로 바로 보호 API 호출이 성공한다(자동 로그인).
+- [x] 중복 이메일(대소문자만 다른 경우 포함)은 409 `DUPLICATE_EMAIL`이고 사용자 수가 늘지 않는다(E-01-1).
+- [x] 비밀번호 7자·65자, 이메일 형식 오류·255자, 이름 51자·공백만은 400 `VALIDATION_ERROR`이며 사용자가 생성되지 않는다(E-01-2, E-01-3).
+- [x] 기본 카테고리 INSERT가 실패하면 사용자도 남지 않는다(트랜잭션, NFR-10).
+- [x] 틀린 비밀번호와 없는 이메일의 응답이 둘 다 401 `INVALID_CREDENTIALS`로 같다(E-02-1).
+- [x] 로그아웃 204 후 `refresh_tokens`에서 그 행이 사라지고, 이전 refresh 토큰으로 `POST /api/auth/refresh`를 호출하면 401이다(FR-03, P-04).
+- [x] DB의 `password_hash`가 `$2b$10$`로 시작하고 로그에 평문 비밀번호가 없다(NFR-06).
+- [x] DB `refresh_tokens.token_hash`가 64자 16진수이고 쿠키의 원문과 다르다(DB-13).
 
 ### T-BE-16 토큰 갱신 API(`POST /api/auth/refresh`)
 
@@ -437,13 +437,13 @@ flowchart LR
 3. `test/api/auth.test.js`에 갱신 케이스 추가.
 
 **완료 조건**
-- [ ] 유효한 refresh 쿠키로 호출하면 204와 새 `access_token`·`refresh_token` 쿠키가 오고, 새 access 토큰으로 보호 API가 200이다.
-- [ ] 갱신 후 이전 refresh 토큰을 다시 쓰면 401 `UNAUTHORIZED`다(회전, 재사용 불가).
-- [ ] 같은 refresh 토큰으로 동시에 2번 호출하면 1번만 204, 나머지는 401이다(DB-13).
-- [ ] `expires_at`이 지난 토큰, DB에 없는 값, 쿠키 없음은 모두 401이고 응답이 두 쿠키를 삭제한다.
-- [ ] access 토큰 쿠키 없이 refresh 쿠키만으로 갱신된다(인증 경계 제외).
-- [ ] `refresh_token` 쿠키의 `Path`가 `/api/auth`라 `/api/todos` 요청에는 실리지 않는다.
-- [ ] 갱신을 여러 번 해도 그 사용자의 `refresh_tokens` 행 수가 늘지 않는다(삭제 1 + 삽입 1).
+- [x] 유효한 refresh 쿠키로 호출하면 204와 새 `access_token`·`refresh_token` 쿠키가 오고, 새 access 토큰으로 보호 API가 200이다.
+- [x] 갱신 후 이전 refresh 토큰을 다시 쓰면 401 `UNAUTHORIZED`다(회전, 재사용 불가).
+- [x] 같은 refresh 토큰으로 동시에 2번 호출하면 1번만 204, 나머지는 401이다(DB-13).
+- [x] `expires_at`이 지난 토큰, DB에 없는 값, 쿠키 없음은 모두 401이고 응답이 두 쿠키를 삭제한다.
+- [x] access 토큰 쿠키 없이 refresh 쿠키만으로 갱신된다(인증 경계 제외).
+- [x] `refresh_token` 쿠키의 `Path`가 `/api/auth`라 `/api/todos` 요청에는 실리지 않는다.
+- [x] 갱신을 여러 번 해도 그 사용자의 `refresh_tokens` 행 수가 늘지 않는다(삭제 1 + 삽입 1).
 
 ### T-BE-09 내 정보 조회 API(`GET /api/me`)
 
@@ -457,8 +457,8 @@ flowchart LR
 3. API 테스트 추가.
 
 **완료 조건**
-- [ ] 로그인 쿠키로 호출하면 200과 `{ id, email, name, ... }`이 오고 비밀번호 해시가 없다.
-- [ ] 쿠키 없이 호출하면 401 `UNAUTHORIZED`다.
+- [x] 로그인 쿠키로 호출하면 200과 `{ id, email, name, ... }`이 오고 비밀번호 해시가 없다.
+- [x] 쿠키 없이 호출하면 401 `UNAUTHORIZED`다.
 
 ### T-BE-10 카테고리 API
 
@@ -476,15 +476,15 @@ flowchart LR
 3. `test/api/categories.test.js`.
 
 **완료 조건**
-- [ ] 목록이 '기본' 맨 앞, 나머지는 생성 순서다(BR-23).
-- [ ] '업무' 추가 201, 같은 이름 또는 '기본'으로 추가·이름 변경 시 409 `DUPLICATE_CATEGORY`(E-03-1).
-- [ ] `' 업무 '`는 `'업무'`와 같은 이름으로 취급된다(DB-04).
-- [ ] 이름 31자·공백만은 400 `VALIDATION_ERROR`(E-03-3).
-- [ ] 기본 카테고리 이름 변경·삭제는 400 `DEFAULT_CATEGORY_IMMUTABLE`이고 변경이 없다(E-03-2).
-- [ ] 할일 2건이 있는 카테고리를 삭제하면 204, 두 할일의 `category_id`가 기본 카테고리로 바뀌고 할일 수가 그대로다(BR-14).
-- [ ] 삭제 도중 오류가 나면 할일 이동도 롤백된다(NFR-10).
-- [ ] `/api/categories/abc`는 404 `NOT_FOUND`다.
-- [ ] 오류 판정 순서가 PD-22를 따른다(예: 타인의 기본 카테고리 삭제는 400이 아니라 404).
+- [x] 목록이 '기본' 맨 앞, 나머지는 생성 순서다(BR-23).
+- [x] '업무' 추가 201, 같은 이름 또는 '기본'으로 추가·이름 변경 시 409 `DUPLICATE_CATEGORY`(E-03-1).
+- [x] `' 업무 '`는 `'업무'`와 같은 이름으로 취급된다(DB-04).
+- [x] 이름 31자·공백만은 400 `VALIDATION_ERROR`(E-03-3).
+- [x] 기본 카테고리 이름 변경·삭제는 400 `DEFAULT_CATEGORY_IMMUTABLE`이고 변경이 없다(E-03-2).
+- [x] 할일 2건이 있는 카테고리를 삭제하면 204, 두 할일의 `category_id`가 기본 카테고리로 바뀌고 할일 수가 그대로다(BR-14).
+- [x] 삭제 도중 오류가 나면 할일 이동도 롤백된다(NFR-10).
+- [x] `/api/categories/abc`는 404 `NOT_FOUND`다.
+- [x] 오류 판정 순서가 PD-22를 따른다(예: 타인의 기본 카테고리 삭제는 400이 아니라 404).
 
 ### T-BE-11 할일 등록·단건 조회·수정·삭제·완료 API
 
@@ -503,18 +503,18 @@ flowchart LR
 3. `routes/todos.js`, `test/api/todos.test.js`.
 
 **완료 조건**
-- [ ] 카테고리 없이 등록하면 기본 카테고리에 저장되고 201이다(BR-11).
-- [ ] 과거 날짜(종료일 < 오늘) 등록이 성공한다(BR-08).
-- [ ] 제목·시작일·종료일 누락, 공백 제목, 시작일 > 종료일, 제목 101자·설명 1001자는 400이고 저장되지 않는다(E-04-1~3).
-- [ ] 설명 `'  '`은 `null`로 저장·반환된다(DB-11).
-- [ ] 응답 날짜가 `'YYYY-MM-DD'` 문자열이다(NFR-11).
-- [ ] 수정 시 `categoryId`를 빼면 기존 카테고리가 유지된다(BR-11).
-- [ ] 완료 `true` → `completed_at` 설정, 다시 `true` → `completed_at` 그대로, `false` → `NULL`(PD-21 멱등).
-- [ ] `{ "completed": "yes" }`는 400 `VALIDATION_ERROR`다.
-- [ ] 삭제 204 후 단건 조회가 404다.
-- [ ] 성공 상태 코드가 PD-25와 일치한다(등록 201, 삭제 204, 나머지 200).
-- [ ] 단건 조회·등록·수정·완료 응답에 `categoryName`이 있다(PD-29).
-- [ ] 수정에서 `description: null`이면 설명이 비워지고, `title: null`·`categoryId: null`은 400이다(PD-27).
+- [x] 카테고리 없이 등록하면 기본 카테고리에 저장되고 201이다(BR-11).
+- [x] 과거 날짜(종료일 < 오늘) 등록이 성공한다(BR-08).
+- [x] 제목·시작일·종료일 누락, 공백 제목, 시작일 > 종료일, 제목 101자·설명 1001자는 400이고 저장되지 않는다(E-04-1~3).
+- [x] 설명 `'  '`은 `null`로 저장·반환된다(DB-11).
+- [x] 응답 날짜가 `'YYYY-MM-DD'` 문자열이다(NFR-11).
+- [x] 수정 시 `categoryId`를 빼면 기존 카테고리가 유지된다(BR-11).
+- [x] 완료 `true` → `completed_at` 설정, 다시 `true` → `completed_at` 그대로, `false` → `NULL`(PD-21 멱등).
+- [x] `{ "completed": "yes" }`는 400 `VALIDATION_ERROR`다.
+- [x] 삭제 204 후 단건 조회가 404다.
+- [x] 성공 상태 코드가 PD-25와 일치한다(등록 201, 삭제 204, 나머지 200).
+- [x] 단건 조회·등록·수정·완료 응답에 `categoryName`이 있다(PD-29).
+- [x] 수정에서 `description: null`이면 설명이 비워지고, `title: null`·`categoryId: null`은 400이다(PD-27).
 
 ### T-BE-12 할일 목록 조회 + 필터 API
 
@@ -528,13 +528,13 @@ flowchart LR
 3. `test/api/todos.test.js`에 목록 케이스 추가(구조 설계 원칙 7.2 파일 구성): 시나리오 3.0 예시 데이터(T1~T4, 카테고리 기본·업무·학습)로 검증.
 
 **완료 조건**
-- [ ] 필터 없음 → T1~T4 4건이 BR-20 순서(T1, T4, T2, T3)로 오고 각 항목에 `status`·`categoryName`이 있다.
-- [ ] 카테고리 단독(업무) → T1만, 상태 단독(`in_progress`) → T2만, AND 결합(기본 + `not_started`) → T3만(BR-15).
-- [ ] 종료일이 같으면 `created_at` 순, 그것도 같으면 `id` 순이다(BR-20).
-- [ ] `today` 누락·`2026-13-01`은 400(E-08-1), 잘못된 `status`는 400(E-08-3).
-- [ ] U2의 카테고리·없는 카테고리로 필터하면 둘 다 404 `NOT_FOUND`(E-08-2). `categoryId=abc`는 400 `VALIDATION_ERROR`(PD-13).
-- [ ] U2의 할일은 결과에 포함되지 않는다.
-- [ ] 요청 하나에 SQL이 2개(카테고리 확인 + 목록) 이하다(N+1 없음, PR-L-08).
+- [x] 필터 없음 → T1~T4 4건이 BR-20 순서(T1, T4, T2, T3)로 오고 각 항목에 `status`·`categoryName`이 있다.
+- [x] 카테고리 단독(업무) → T1만, 상태 단독(`in_progress`) → T2만, AND 결합(기본 + `not_started`) → T3만(BR-15).
+- [x] 종료일이 같으면 `created_at` 순, 그것도 같으면 `id` 순이다(BR-20).
+- [x] `today` 누락·`2026-13-01`은 400(E-08-1), 잘못된 `status`는 400(E-08-3).
+- [x] U2의 카테고리·없는 카테고리로 필터하면 둘 다 404 `NOT_FOUND`(E-08-2). `categoryId=abc`는 400 `VALIDATION_ERROR`(PD-13).
+- [x] U2의 할일은 결과에 포함되지 않는다.
+- [x] 요청 하나에 SQL이 2개(카테고리 확인 + 목록) 이하다(N+1 없음, PR-L-08).
 
 ### T-BE-13 캘린더 기간 조회 API
 
@@ -547,13 +547,13 @@ flowchart LR
 2. `routes/calendar.js`, `test/api/calendar.test.js`.
 
 **완료 조건**
-- [ ] 월(2026-11-01~11-30) 조회에 10-28~11-03(T1, 월 경계 걸침)과 11-20~12-02(T3)가 포함된다(BR-17).
-- [ ] 주(11-01~11-07) 조회에 T1·T2·T4가 있고 T3는 없다. 주(10-25~10-31)에 T1이 있다(BR-17 주 경계).
-- [ ] 일(11-04) 조회에 T2·T4가 있고 T1(11-03 종료)은 없다. 일(11-03)에는 T1이 있다(BR-18 당일 포함).
-- [ ] 완료된 T4가 `completed` 상태로 포함된다(BR-19).
-- [ ] 결과 순서가 BR-20이다.
-- [ ] `from`·`to`·`today` 형식 오류, `from > to`는 400 `VALIDATION_ERROR`(E-09-1, E-09-2).
-- [ ] 요청당 SQL이 1개다.
+- [x] 월(2026-11-01~11-30) 조회에 10-28~11-03(T1, 월 경계 걸침)과 11-20~12-02(T3)가 포함된다(BR-17).
+- [x] 주(11-01~11-07) 조회에 T1·T2·T4가 있고 T3는 없다. 주(10-25~10-31)에 T1이 있다(BR-17 주 경계).
+- [x] 일(11-04) 조회에 T2·T4가 있고 T1(11-03 종료)은 없다. 일(11-03)에는 T1이 있다(BR-18 당일 포함).
+- [x] 완료된 T4가 `completed` 상태로 포함된다(BR-19).
+- [x] 결과 순서가 BR-20이다.
+- [x] `from`·`to`·`today` 형식 오류, `from > to`는 400 `VALIDATION_ERROR`(E-09-1, E-09-2).
+- [x] 요청당 SQL이 1개다.
 
 ### T-BE-14 소유권 통합 테스트
 
@@ -567,13 +567,13 @@ flowchart LR
 3. 각 호출 후 U2 데이터가 변하지 않았는지 DB로 확인한다.
 
 **완료 조건**
-- [ ] `PATCH/DELETE /api/categories/C9` → 404, C9 그대로.
-- [ ] `GET/PATCH/DELETE /api/todos/T9`, `PATCH /api/todos/T9/completed` → 404, T9 그대로(E-05-2, E-06-1, E-07-1).
-- [ ] 할일 등록·수정에 `categoryId = C9` → 404, 저장·변경 없음(E-04-4, BR-04).
-- [ ] `GET /api/todos?categoryId=C9` → 404(E-08-2).
-- [ ] U1의 목록·캘린더 응답에 T9가 없다.
-- [ ] 타인 ID와 존재하지 않는 ID의 응답 본문이 같다(존재 여부 비노출).
-- [ ] `services/` 안의 카테고리·할일 SQL이 모두 `user_id = $n`을 포함한다(코드 검색으로 확인).
+- [x] `PATCH/DELETE /api/categories/C9` → 404, C9 그대로.
+- [x] `GET/PATCH/DELETE /api/todos/T9`, `PATCH /api/todos/T9/completed` → 404, T9 그대로(E-05-2, E-06-1, E-07-1).
+- [x] 할일 등록·수정에 `categoryId = C9` → 404, 저장·변경 없음(E-04-4, BR-04).
+- [x] `GET /api/todos?categoryId=C9` → 404(E-08-2).
+- [x] U1의 목록·캘린더 응답에 T9가 없다.
+- [x] 타인 ID와 존재하지 않는 ID의 응답 본문이 같다(존재 여부 비노출).
+- [x] `services/` 안의 카테고리·할일 SQL이 모두 `user_id = $n`을 포함한다(코드 검색으로 확인).
 
 ### T-BE-15 이름 수정·비밀번호 변경 API
 
@@ -587,13 +587,13 @@ flowchart LR
 3. API 테스트 추가. Should 코드는 별도 함수·테스트 파일로 두어 빼기 쉽게 한다(PR-C-06).
 
 **완료 조건**
-- [ ] 이름 수정 후 `GET /api/me`의 `name`이 새 이름이다.
-- [ ] 본문에 `email`을 넣어도 이메일이 바뀌지 않는다(BR-05).
-- [ ] 이름 51자·공백만은 400(E-11-1).
-- [ ] 현재 비밀번호가 틀리면 400 `INVALID_PASSWORD`, 기존 비밀번호로 로그인이 여전히 되고 쿠키가 유지된다(E-11-2).
-- [ ] 새 비밀번호 7자·65자는 400(E-11-3).
-- [ ] 변경 성공 후 새 비밀번호로 로그인되고 이전 비밀번호는 401이다.
-- [ ] 변경 전에 발급한 다른 세션의 refresh 토큰으로 갱신하면 401이고, 현재 세션은 새 쿠키로 계속 쓸 수 있다(P-04).
+- [x] 이름 수정 후 `GET /api/me`의 `name`이 새 이름이다.
+- [x] 본문에 `email`을 넣어도 이메일이 바뀌지 않는다(BR-05).
+- [x] 이름 51자·공백만은 400(E-11-1).
+- [x] 현재 비밀번호가 틀리면 400 `INVALID_PASSWORD`, 기존 비밀번호로 로그인이 여전히 되고 쿠키가 유지된다(E-11-2).
+- [x] 새 비밀번호 7자·65자는 400(E-11-3).
+- [x] 변경 성공 후 새 비밀번호로 로그인되고 이전 비밀번호는 401이다.
+- [x] 변경 전에 발급한 다른 세션의 refresh 토큰으로 갱신하면 401이고, 현재 세션은 새 쿠키로 계속 쓸 수 있다(P-04).
 
 ## 6. 프론트엔드 Task
 
