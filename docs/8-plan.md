@@ -9,6 +9,7 @@
 | v0.1 | 2026-11-04 | pmsong | 초안 | 최초 작성 |
 | v0.2 | 2026-11-04 | pmsong | 초안 | 인증 방식 변경(JWT HS384 + refresh 토큰) 반영 |
 | v0.3 | 2026-11-04 | pmsong | 초안 | 문서 간 정합성 검토 반영 |
+| v0.4 | 2026-11-04 | Claude | 초안 | API 명세 작성 중 결정 반영 |
 
 ### 변경 이력
 
@@ -18,8 +19,12 @@
 | v0.2 | 2026-11-04 | T-DB-02~04, T-BE-02, T-BE-06~08, T-BE-15, T-BE-16(신설), T-FE-02, T-FE-05, T-QA-01, 2장, 8장 | HS384 서명, access·refresh 토큰 발급·갱신·폐기, `refresh_tokens` 테이블, 화면의 401 시 갱신 후 재요청 작업·완료 조건 추가 | 사용자 결정(PRD v0.10 P-04) | pmsong |
 | v0.3 | 2026-11-04 | T-BE-12, T-BE-16, T-FE-13 | 테스트 파일을 구조 설계 원칙 7.2 구성(auth·todos)에 맞춤, 일 뷰 11-04 순서를 BR-20(T4 → T2)으로 명시 | 7.2 `test/api` 목록과 불일치, 순서 표기 모호 | pmsong |
 | v0.3 | 2026-11-04 | 참조 문서 | PRD v0.10 → v0.11, 시나리오 v0.8 → v0.9, 와이어프레임 v0.3 → v0.4, 구조 설계 원칙 v0.3 → v0.4 | 버전 동기화 | pmsong |
+| v0.4 | 2026-11-04 | T-BE-03 | 본문 한도 초과는 413 또는 400 → 400 `VALIDATION_ERROR`(오류 미들웨어 변환) | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
+| v0.4 | 2026-11-04 | T-BE-04, T-BE-11, T-BE-12 | 비밀번호 trim 예외, `null` 처리, 쿼리 형식 오류 400, 할일 응답 `categoryName` | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
+| v0.4 | 2026-11-04 | T-BE-08, T-BE-10, T-BE-15 | 로그인·카테고리 수정·이름 수정 응답 본문, 비밀번호 변경 200 → 204 | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
+| v0.4 | 2026-11-04 | 참조 문서 | 도메인 v0.6 → v0.7, PRD v0.11 → v0.12, 시나리오 v0.9 → v0.10, 와이어프레임 v0.4 → v0.5, 구조 설계 원칙 v0.4 → v0.5 | 버전 동기화 | Claude |
 
-> 단일 출처 원칙: 규칙(ST·BR·UC)은 [도메인 정의서 v0.6](./1-domain-definition.md), 기능·비기능·일정(FR·NFR·SCR·M·P)은 [PRD v0.11](./2-PRD.md), 시나리오·예외(SC·E)는 [사용자 시나리오 v0.9](./3-user-scenario.md), 화면 배치(WF·L)는 [와이어프레임 v0.4](./4-wireframe.md), 구조·레이어·파일 위치(PR·PD)는 [프로젝트 구조 설계 원칙 v0.4](./5-project-principle.md), 흐름(AD·SD)은 [아키텍처 다이어그램](./6-arch-diagram.md), 테이블·제약(DB)은 [ERD](./7-erd.md)가 정의한다. 이 문서는 **작업 순서·완료 조건만** 정하며 규칙·코드·수치를 다시 정의하지 않는다. 충돌하면 위 문서를 따른다.
+> 단일 출처 원칙: 규칙(ST·BR·UC)은 [도메인 정의서 v0.7](./1-domain-definition.md), 기능·비기능·일정(FR·NFR·SCR·M·P)은 [PRD v0.12](./2-PRD.md), 시나리오·예외(SC·E)는 [사용자 시나리오 v0.10](./3-user-scenario.md), 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md), 구조·레이어·파일 위치(PR·PD)는 [프로젝트 구조 설계 원칙 v0.5](./5-project-principle.md), 흐름(AD·SD)은 [아키텍처 다이어그램](./6-arch-diagram.md), 테이블·제약(DB)은 [ERD](./7-erd.md)가 정의한다. 이 문서는 **작업 순서·완료 조건만** 정하며 규칙·코드·수치를 다시 정의하지 않는다. 충돌하면 위 문서를 따른다.
 >
 > ID 운영 원칙: T-CM·T-DB·T-BE·T-FE·T-QA의 ID는 재사용하거나 재번호하지 않는다. Task를 없애면 행을 지우지 말고 '폐기'로 표시한다.
 
@@ -299,7 +304,7 @@ flowchart LR
 
 **수행 작업**
 1. `src/errors.js`: `AppError(status, code, message, fields?)`와 오류 코드 상수(NFR-15의 코드 전체).
-2. `src/middleware/error.js`: 알 수 없는 `/api` 경로는 404 `NOT_FOUND`, `AppError`는 NFR-15 형식으로 응답, 그 밖의 오류는 500 `INTERNAL_ERROR` + stderr JSON 한 줄 로그(본문·쿠키·비밀번호 미기록). `express.json` 파싱 실패는 400 `VALIDATION_ERROR`.
+2. `src/middleware/error.js`: 알 수 없는 `/api` 경로는 404 `NOT_FOUND`, `AppError`는 NFR-15 형식으로 응답, 그 밖의 오류는 500 `INTERNAL_ERROR` + stderr JSON 한 줄 로그(본문·쿠키·비밀번호 미기록). `express.json` 파싱 실패와 본문 한도 초과(413 `entity.too.large`)는 400 `VALIDATION_ERROR`로 변환(PR-S-07).
 3. `src/app.js`: `createApp()` — `express.json({ limit: '16kb' })`, `/api/health`(`{ ok: true }`, DB 미조회), 라우터, 오류 미들웨어 조립.
 4. `src/server.js`: `createApp().listen(PORT)`, `SIGINT`·`SIGTERM`에서 `pool.end()`.
 5. `src/routes/index.js`: `/api` 라우터 뼈대(인증 경계는 T-BE-07).
@@ -308,7 +313,7 @@ flowchart LR
 - [ ] `npm run dev` 후 `GET /api/health`가 인증 없이 200 `{ "ok": true }`를 반환한다.
 - [ ] `GET /api/없는경로`가 404 `{ "error": { "code": "NOT_FOUND", "message": ... } }`를 반환한다.
 - [ ] 임시로 던진 일반 `Error`가 500 `INTERNAL_ERROR`로 응답되고, 응답 본문에 stack·내부 메시지가 없으며 stderr에 JSON 한 줄이 남는다.
-- [ ] 16kb를 넘는 본문이 413 또는 400으로 거부되고 서버가 죽지 않는다.
+- [ ] 16kb를 넘는 본문이 400 `VALIDATION_ERROR`로 거부되고(413을 오류 미들웨어가 변환) 서버가 죽지 않는다.
 - [ ] 오류 코드 문자열이 `errors.js` 밖에 리터럴로 없다(PR-C-01).
 
 ### T-BE-04 입력 검증 순수 함수 + 단위 테스트
@@ -318,12 +323,12 @@ flowchart LR
 - **근거**: NFR-09, BR-06, BR-07, BR-21, BR-22, P-12, P-14, PD-06, PD-19, PD-20, PD-22, DB-03, DB-11, PR-L-07, PR-T-02
 
 **수행 작업**
-1. `src/domain/validate.js`(다른 모듈 import 금지, I/O 없음): trim 후 검사, 여러 오류를 `fields`에 함께 담아 `VALIDATION_ERROR`를 throw.
+1. `src/domain/validate.js`(다른 모듈 import 금지, I/O 없음): trim 후 검사(비밀번호는 trim하지 않음, BR-22), NOT NULL 필드의 `null`은 실패·`description`의 `null`은 허용(PD-27), 여러 오류를 `fields`에 함께 담아 `VALIDATION_ERROR`를 throw.
    - 회원가입: 이메일 형식·254자, 비밀번호 8~64자, 이름 1~50자. 이메일은 소문자로 정규화해 반환(DB-03).
    - 로그인: 이메일·비밀번호 필수.
    - 카테고리 이름: 1~30자.
    - 할일 등록·수정: 제목 1~100자 필수, 설명 0~1000자(빈 문자열은 `null`, DB-11), `startDate`·`endDate` 필수 `YYYY-MM-DD` 실제 날짜, `startDate ≤ endDate`(BR-07), `categoryId` 선택 정수.
-   - 조회 조건: `today` 필수 날짜, `status`는 PD-19 4개 값 중 하나, `from`·`to` 날짜이고 `from ≤ to`.
+   - 조회 조건: `categoryId`는 정수(아니면 400, PD-13), `today` 필수 날짜, `status`는 PD-19 4개 값 중 하나, `from`·`to` 날짜이고 `from ≤ to`.
    - 이름 수정·비밀번호 변경(Should용): 이름 1~50자, 새 비밀번호 8~64자.
 2. `test/unit/validate.test.js`: 경계값 테스트.
 
@@ -331,7 +336,8 @@ flowchart LR
 - [ ] `domain/validate.js`에 `import` 문이 없다(오류 클래스는 인자로 받거나 동일 형태 객체를 throw — 구현 방식은 PR-L-07 범위에서 선택).
 - [ ] 비밀번호 7자·65자는 실패, 8자·64자는 통과한다(BR-21).
 - [ ] 이메일 254자 통과·255자 실패, 이름 50자 통과·51자 실패, 카테고리 30/31자, 제목 100/101자, 설명 1000/1001자 경계가 테스트된다(BR-22).
-- [ ] 공백만 있는 제목·이름은 누락으로 실패하고, 앞뒤 공백은 trim된 값으로 반환된다.
+- [ ] 공백만 있는 제목·이름은 누락으로 실패하고, 앞뒤 공백은 trim된 값으로 반환된다. 비밀번호는 trim하지 않는다(`' 1234567'`은 8자로 통과, BR-22).
+- [ ] `title: null`은 실패하고 `description: null`은 통과한다(PD-27). `categoryId=abc`는 실패한다(PD-13).
 - [ ] `2026-13-01`, `2026-02-30`, `2026-1-1`은 날짜 형식 오류, `2026-02-28`은 통과한다.
 - [ ] 시작일 `2026-11-10` > 종료일 `2026-11-02`는 실패, 같은 날은 통과한다(E-04-2, BR-07).
 - [ ] `status=done` 같은 값은 실패하고 PD-19의 4개 값은 통과한다(E-08-3).
@@ -404,7 +410,7 @@ flowchart LR
    - 가입: 검증 → bcrypt(cost 10) 해시를 **트랜잭션 밖에서** 계산 → `withTransaction`으로 사용자 INSERT + '기본' 카테고리 INSERT + refresh 토큰 해시 INSERT → 23505 `uq_users_email`이면 409 `DUPLICATE_EMAIL`.
    - 로그인: 소문자 이메일로 조회(컬럼 명시, `SELECT *` 금지) → bcrypt 비교 → 이메일 없음·비밀번호 틀림 모두 401 `INVALID_CREDENTIALS` → 성공 시 그 사용자의 만료 refresh 토큰 삭제 후 새 refresh 토큰 INSERT(DB-13).
    - 토큰 발급 함수: access 토큰 JWT(HS384, `sub`만, 15분) 서명, refresh 토큰 `crypto.randomBytes(32)` base64url 생성과 SHA-256 해시(PR-S-03). T-BE-16·T-BE-15가 재사용한다.
-2. `routes/auth.js`: 가입 201 + 사용자(비밀번호 해시 제외) + `access_token`·`refresh_token` 쿠키 발급, 로그인 200 + 두 쿠키 발급, 로그아웃 204 + `refresh_token`에 해당하는 행 삭제 + 같은 옵션으로 두 쿠키 삭제(쿠키가 없거나 이미 무효여도 204).
+2. `routes/auth.js`: 가입 201 + 사용자(비밀번호 해시 제외) + `access_token`·`refresh_token` 쿠키 발급, 로그인 200 + 사용자(가입과 같은 형태, PD-25) + 두 쿠키 발급, 로그아웃 204 + `refresh_token`에 해당하는 행 삭제 + 같은 옵션으로 두 쿠키 삭제(쿠키가 없거나 이미 무효여도 204).
 3. `test/api/auth.test.js`.
 
 **완료 조건**
@@ -466,7 +472,7 @@ flowchart LR
    - 등록: 이름 검증 → INSERT → 23505 `uq_categories_user_name`이면 409 `DUPLICATE_CATEGORY`.
    - 이름 수정: `id AND user_id`로 조회(0행이면 404) → 기본이면 400 `DEFAULT_CATEGORY_IMMUTABLE` → UPDATE(`updated_at = now()`) → 중복이면 409.
    - 삭제: 조회(404) → 기본이면 400 → `withTransaction`으로 소속 할일을 기본 카테고리로 UPDATE(`updated_at = now()`) 후 DELETE(BR-14).
-2. `routes/categories.js`: GET 200, POST 201, PATCH 200, DELETE 204. 정수가 아닌 `:id`는 404(PD-13).
+2. `routes/categories.js`: GET 200, POST 201, PATCH 200(수정된 카테고리), DELETE 204. 정수가 아닌 `:id`는 404(PD-13).
 3. `test/api/categories.test.js`.
 
 **완료 조건**
@@ -507,6 +513,8 @@ flowchart LR
 - [ ] `{ "completed": "yes" }`는 400 `VALIDATION_ERROR`다.
 - [ ] 삭제 204 후 단건 조회가 404다.
 - [ ] 성공 상태 코드가 PD-25와 일치한다(등록 201, 삭제 204, 나머지 200).
+- [ ] 단건 조회·등록·수정·완료 응답에 `categoryName`이 있다(PD-29).
+- [ ] 수정에서 `description: null`이면 설명이 비워지고, `title: null`·`categoryId: null`은 400이다(PD-27).
 
 ### T-BE-12 할일 목록 조회 + 필터 API
 
@@ -524,7 +532,7 @@ flowchart LR
 - [ ] 카테고리 단독(업무) → T1만, 상태 단독(`in_progress`) → T2만, AND 결합(기본 + `not_started`) → T3만(BR-15).
 - [ ] 종료일이 같으면 `created_at` 순, 그것도 같으면 `id` 순이다(BR-20).
 - [ ] `today` 누락·`2026-13-01`은 400(E-08-1), 잘못된 `status`는 400(E-08-3).
-- [ ] U2의 카테고리·없는 카테고리로 필터하면 둘 다 404 `NOT_FOUND`(E-08-2).
+- [ ] U2의 카테고리·없는 카테고리로 필터하면 둘 다 404 `NOT_FOUND`(E-08-2). `categoryId=abc`는 400 `VALIDATION_ERROR`(PD-13).
 - [ ] U2의 할일은 결과에 포함되지 않는다.
 - [ ] 요청 하나에 SQL이 2개(카테고리 확인 + 목록) 이하다(N+1 없음, PR-L-08).
 
@@ -575,7 +583,7 @@ flowchart LR
 
 **수행 작업**
 1. `services/users.js`: 이름 수정(UPDATE `updated_at = now()`), 비밀번호 변경(현재 비밀번호 bcrypt 비교 → 틀리면 400 `INVALID_PASSWORD` → 새 해시 UPDATE).
-2. `routes/me.js`: `PATCH /api/me` 200, `PUT /api/me/password` 200. 이메일 변경 필드는 무시한다(BR-05). 비밀번호 변경에 성공하면 그 사용자의 refresh 토큰을 모두 삭제하고 현재 요청에 새 토큰 쌍 쿠키를 발급한다(P-04).
+2. `routes/me.js`: `PATCH /api/me` 200(수정된 사용자), `PUT /api/me/password` 204(본문 없음, PD-25). 이메일 변경 필드는 무시한다(BR-05). 비밀번호 변경에 성공하면 그 사용자의 refresh 토큰을 모두 삭제하고 현재 요청에 새 토큰 쌍 쿠키를 발급한다(P-04).
 3. API 테스트 추가. Should 코드는 별도 함수·테스트 파일로 두어 빼기 쉽게 한다(PR-C-06).
 
 **완료 조건**

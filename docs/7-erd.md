@@ -9,6 +9,7 @@
 | v0.1 | 2026-11-04 | pmsong | 초안 | 최초 작성. 아키텍처 다이어그램 v0.2의 AD-04를 옮겨 보강 |
 | v0.2 | 2026-11-04 | pmsong | 초안 | PRD v0.10 refresh 토큰 저장 테이블 추가 |
 | v0.3 | 2026-11-04 | pmsong | 초안 | 문서 간 정합성 검토 반영 |
+| v0.4 | 2026-11-04 | Claude | 초안 | API 명세 작성 중 결정 반영(응답 필드, null, 시각 형식) |
 
 ### 변경 이력
 
@@ -19,8 +20,11 @@
 | v0.2 | 2026-11-04 | 참조 문서 | PRD v0.9 → v0.10, 구조 설계 원칙 v0.2 → v0.3 | 버전 동기화 | pmsong |
 | v0.3 | 2026-11-04 | 7장 | 목록·캘린더 응답의 `categoryName`(JOIN) 행 추가 | 구조 설계 원칙 PR-L-08(카테고리명 JOIN)과 대응표 누락 | pmsong |
 | v0.3 | 2026-11-04 | 참조 문서 | PRD v0.10 → v0.11, 구조 설계 원칙 v0.3 → v0.4 | 버전 동기화 | pmsong |
+| v0.4 | 2026-11-04 | 7장 | 사용자 `createdAt`/`updatedAt` 항상 포함, `categoryName`을 모든 할일 응답에 포함, 비밀번호 변경 요청 필드, 시각 형식·`null` 규칙 참조 | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
+| v0.4 | 2026-11-04 | DB-11 | 요청 `null` 처리(PD-27) 반영 | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
+| v0.4 | 2026-11-04 | 참조 문서 | 도메인 v0.6 → v0.7, PRD v0.11 → v0.12, 구조 설계 원칙 v0.4 → v0.5 | 버전 동기화 | Claude |
 
-> 단일 출처 원칙: 엔티티·속성·관계, 용어, 상태 규칙(ST), 비즈니스 규칙(BR)은 [도메인 정의서 v0.6](./1-domain-definition.md)이, 기능(FR)·비기능(NFR)·결정(P)은 [PRD v0.11](./2-PRD.md)이, 이름 규칙·API 경로(PR·PD)는 [프로젝트 구조 설계 원칙 v0.4](./5-project-principle.md)이 정의한다. 이 문서는 도메인 3장의 엔티티와 관계를 PostgreSQL 17 물리 구조로 옮긴 것이며, 규칙·오류 코드·수치를 다시 정의하지 않고 ID로 참조한다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > [아키텍처 다이어그램](./6-arch-diagram.md) > 이 문서 순으로 따른다.
+> 단일 출처 원칙: 엔티티·속성·관계, 용어, 상태 규칙(ST), 비즈니스 규칙(BR)은 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·비기능(NFR)·결정(P)은 [PRD v0.12](./2-PRD.md)이, 이름 규칙·API 경로(PR·PD)는 [프로젝트 구조 설계 원칙 v0.5](./5-project-principle.md)이 정의한다. 이 문서는 도메인 3장의 엔티티와 관계를 PostgreSQL 17 물리 구조로 옮긴 것이며, 규칙·오류 코드·수치를 다시 정의하지 않고 ID로 참조한다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > [아키텍처 다이어그램](./6-arch-diagram.md) > 이 문서 순으로 따른다.
 >
 > ID 운영 원칙: ERD-xx(다이어그램)와 DB-xx(이 문서에서 정한 결정)는 재사용하거나 재번호하지 않는다. 없애면 행을 지우지 말고 '폐기'로 표시한다. 실제 DDL의 단일 출처는 `backend/sql/schema.sql`이다(PR-S-10). 이 문서와 그 파일이 다르면 이 문서를 먼저 고치고 파일을 맞춘다.
 
@@ -231,15 +235,15 @@ erDiagram
 
 ## 7. 도메인 속성 ↔ 컬럼 ↔ API 필드 대응표
 
-API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startDate"`)으로 바꾼다(PR-N-05, P-25). 범용 변환기는 두지 않는다.
+API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startDate"`)으로 바꾼다(PR-N-05, P-25). 범용 변환기는 두지 않는다. 시각 필드는 ISO 8601 UTC(`toISOString()` 형식, PD-28), 요청의 `null`은 NULL 허용 컬럼(`description`)에만 허용한다(PD-27).
 
 | 엔티티 | 도메인 속성 | 컬럼 | API 필드 | 비고 |
 |---|---|---|---|---|
 | User | id | `users.id` | `id` | |
 | User | email | `users.email` | `email` | 저장 전 소문자(DB-03). 변경 불가(BR-05) |
-| User | password | `users.password_hash` | 요청 `password`만, 응답 없음 | 응답에 해시를 내보내지 않는다(PR-S-06) |
+| User | password | `users.password_hash` | 요청 `password`(가입·로그인), `currentPassword`·`newPassword`(비밀번호 변경)만, 응답 없음 | 응답에 해시를 내보내지 않는다(PR-S-06) |
 | User | name | `users.name` | `name` | |
-| User | createdAt / updatedAt | `users.created_at` / `updated_at` | 응답에 필요할 때만 `createdAt` / `updatedAt` | 별칭 사용 |
+| User | createdAt / updatedAt | `users.created_at` / `updated_at` | `createdAt` / `updatedAt` | 사용자 응답에 항상 포함(PD-29). 별칭 사용 |
 | Category | id | `categories.id` | `id` | |
 | Category | userId | `categories.user_id` | 응답 미포함(소유자는 항상 본인) | 요청 값으로 받지 않고 `req.userId`를 쓴다(BR-03) |
 | Category | name | `categories.name` | `name` | trim 후 저장(DB-04) |
@@ -254,7 +258,7 @@ API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startD
 | Todo | completed | `todos.completed` | `completed` | 완료 토글 본문 `{ completed }`(PD-21) |
 | Todo | completedAt | `todos.completed_at` | `completedAt` | 기록용(PD-21) |
 | Todo | createdAt / updatedAt | `todos.created_at` / `updated_at` | `createdAt` / `updatedAt` | |
-| (JOIN) | 카테고리 이름 | `categories.name` | `categoryName` | 목록·캘린더 응답의 할일마다 JOIN으로 포함(PR-L-08) |
+| (JOIN) | 카테고리 이름 | `categories.name` | `categoryName` | 모든 할일 응답(단건 조회·등록·수정·완료 토글·목록·캘린더)에 JOIN으로 포함, 항상 값이 있음(`category_id` NOT NULL, PR-L-08, PD-29) |
 | (파생) | status | 없음 | `status` | `completed`·`not_started`·`in_progress`·`overdue`(PD-19). 서버가 `today`로 판정 |
 
 ## 8. 이 문서에서 정한 결정 (DB-xx)
@@ -273,7 +277,7 @@ API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startD
 | DB-08 | `ck_todos_completed` CHECK(`completed = (completed_at IS NOT NULL)`)를 둔다. 완료 토글 SQL은 `completed_at = CASE WHEN $완료 THEN COALESCE(completed_at, now()) ELSE NULL END`처럼 같은 문장에서 두 컬럼을 함께 바꾼다. | PD-21(완료 시 현재 시각, 취소 시 NULL, 완료 재전송 시 유지)이 항상 두 값의 일치를 만든다. 한 줄 CHECK로 ST-01 판정의 기반인 `completed`와 기록이 어긋나는 UPDATE 실수를 잡는다. 등록 시 `completed`는 `false`, `completed_at`은 NULL이다. | CHECK 없음: 일관성이 서비스 한 곳에만 의존 |
 | DB-09 | 길이는 `VARCHAR(n)`(BR-22 값)으로, 필수는 `NOT NULL`로 DB에 건다. 공백·형식 검증은 DB에 두지 않는다. | DB-07과 같다. 비밀번호 해시는 bcrypt 출력 길이 60자에 맞춰 `VARCHAR(60)`이다. | `TEXT`: 길이 방어가 없다 |
 | DB-10 | BR-20(종료일 → 등록 시각 → id)·BR-23(기본 우선 → 생성 시각) 정렬 전용 인덱스는 만들지 않는다. 정렬은 `ORDER BY`가 한다. `category_id` 단독 인덱스도 두지 않는다. | 목록·캘린더는 `user_id` 조건으로 사용자당 약 100건(P-11)만 읽으므로 메모리 정렬 비용이 무시할 만하고, `idx_todos_user_dates`·`idx_todos_user_category`의 첫 컬럼이 `user_id`라 사용자 단위 범위를 좁힌다. 카테고리는 사용자당 수 건이다. 카테고리 삭제 시 RESTRICT 검사가 `category_id` 단독으로 `todos`를 훑지만 드문 작업이라 약 10만 행 규모에서 허용한다. 인덱스는 실행 계획으로 검증한다(NFR-04). | `(user_id, end_date, created_at, id)`: 쓰기 비용만 늘고 이득이 없다 |
-| DB-11 | `description`은 trim 후 빈 문자열이면 서비스가 `NULL`로 저장하고 API는 `null`로 돌려준다. | `''`와 `NULL` 두 표현이 같은 뜻이라 하나로 모은다. 도메인 3.3이 `description`을 선택 속성(N)으로 정의한다. | 빈 문자열 그대로 저장: 표시 쪽이 둘을 다 처리해야 한다. API 계약에는 아직 명시가 없다. |
+| DB-11 | `description`은 trim 후 빈 문자열이면 서비스가 `NULL`로 저장하고 API는 `null`로 돌려준다. | `''`와 `NULL` 두 표현이 같은 뜻이라 하나로 모은다. 도메인 3.3이 `description`을 선택 속성(N)으로 정의한다. | 빈 문자열 그대로 저장: 표시 쪽이 둘을 다 처리해야 한다. 요청의 `null`도 `NULL`로 저장한다(등록은 생략과 같음, 수정은 값 비움, PD-27). |
 | DB-12 | FK 이름은 `fk_<테이블>_<참조>` 형식으로 명시한다(`fk_categories_user`, `fk_todos_user`, `fk_todos_category`). PK는 기본 이름을 쓴다. | PR-N-04가 제약 이름을 명시하는 방침이다. 오류 분기에는 23505만 쓰지만 로그에서 위반 원인을 읽기 쉽다. | 기본 이름: 자동 생성 이름은 읽기 어렵다 |
 | DB-13 | `refresh_tokens`는 refresh 토큰 1개당 1행이다. 토큰 원문 대신 SHA-256 16진수 64자를 `CHAR(64)`로 저장하고 `uq_refresh_tokens_hash`로 찾는다. 갱신은 `DELETE … WHERE token_hash = $1 AND expires_at > now() RETURNING user_id` 한 문장으로 사용 처리해 같은 토큰을 동시에 써도 한 번만 성공한다. 행을 수정하지 않으므로 `updated_at`이 없다. 만료 행은 로그인할 때 그 사용자의 만료 행을 지워 정리하고 배치는 두지 않는다. 비밀번호 변경 시 전체 폐기와 만료 정리를 위해 `idx_refresh_tokens_user`를 둔다. | 해시는 bcrypt가 아닌 SHA-256이다: 원문이 32바이트 난수라 무차별 대입이 불가능하고, 갱신마다 bcrypt를 계산하면 CPU 부하(NFR-05)가 커진다. 한 문장 DELETE는 트랜잭션 없이 원자적이다. | 원문 저장: DB 유출 시 세션 탈취. 소프트 삭제(`revoked_at`): 재사용 탐지가 필요해지면 도입(PD-26). 만료 정리 배치: 로컬 단일 머신(P-10)에서 과설계 |
 

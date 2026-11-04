@@ -10,6 +10,7 @@
 | v0.2 | 2026-11-04 | pmsong | 초안 | 아키텍처 다이어그램 작성 중 발견한 API·화면 미정의 사항 결정(PD-19~25) |
 | v0.3 | 2026-11-04 | pmsong | 초안 | PRD v0.10 인증 방식 변경(JWT HS384 + refresh 토큰) 반영 |
 | v0.4 | 2026-11-04 | pmsong | 초안 | 문서 간 정합성 검토 반영 |
+| v0.5 | 2026-11-04 | Claude | 초안 | API 명세 작성 중 발견한 미정의 사항 결정(PD-27~29) |
 
 ### 변경 이력
 
@@ -26,8 +27,14 @@
 | v0.4 | 2026-11-04 | PR-L-06, PR-N-04 | 회원가입 트랜잭션에 refresh 토큰 포함, 테이블 목록에 `refresh_tokens` 추가 | 7.2 `services/auth.js` 행·ERD v0.2와 불일치 | pmsong |
 | v0.4 | 2026-11-04 | 7.1, 7.2 | `docs/` 설명을 1~8번 문서로, `.env.example`에 `NODE_ENV` 추가 | 실제 문서 구성·PR-S-01 키 목록과 불일치 | pmsong |
 | v0.4 | 2026-11-04 | 참조 문서 | PRD v0.10 → v0.11, 시나리오 v0.8 → v0.9, 와이어프레임 v0.3 → v0.4 | 버전 동기화 | pmsong |
+| v0.5 | 2026-11-04 | PR-N-06 | 동사형 경로 예외에 `refresh` 추가 | 7.2·PR-S-05의 `/api/auth/refresh`와 불일치 | Claude |
+| v0.5 | 2026-11-04 | PR-S-07, PR-T-02, 7.2 `domain/validate.js` | 비밀번호 trim 예외, 본문 한도 초과(413)·JSON 파싱 실패를 400 `VALIDATION_ERROR`로 변환 | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
+| v0.5 | 2026-11-04 | PD-13 | 쿼리 파라미터 형식 오류는 400 `VALIDATION_ERROR`(경로 `:id`는 404 유지) | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
+| v0.5 | 2026-11-04 | PD-25, 7.2 | 비밀번호 변경 200 → 204, 로그인·이름 수정·카테고리 수정의 200 응답 본문 | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
+| v0.5 | 2026-11-04 | PD-20, PD-27~29 | `null` 처리, 시각 형식(ISO 8601 UTC), 할일 `categoryName`·사용자 `createdAt`/`updatedAt` 응답 필드 | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
+| v0.5 | 2026-11-04 | 참조 문서 | 도메인 v0.6 → v0.7, PRD v0.11 → v0.12, 시나리오 v0.9 → v0.10, 와이어프레임 v0.4 → v0.5 | 버전 동기화 | Claude |
 
-> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.6](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.11](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.9](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.4](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
+> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.12](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
 > ID 운영 원칙: PR-C·PR-L·PR-N·PR-T·PR-S·PD의 ID는 재사용하거나 재번호하지 않는다. 원칙·결정을 없애면 행을 지우지 말고 '폐기'로 표시한다.
 
@@ -107,7 +114,7 @@
 | PR-N-03 | 식별자: 변수·함수 `camelCase`, 상수 `UPPER_SNAKE_CASE`, 컴포넌트 `PascalCase`. 컴포넌트는 함수 컴포넌트·named export, 한 파일에 하나(아주 작은 하위 컴포넌트 예외). | 일관성. | - |
 | PR-N-04 | DB: 테이블 `users`·`categories`·`todos`·`refresh_tokens`, 컬럼 `snake_case`(도메인 `userId` ↔ `user_id`). 제약·인덱스 이름은 명시한다(`uq_users_email`, `uq_categories_user_name`, `uq_categories_user_default`, `idx_todos_user_dates`, `idx_todos_user_category`). 중복 오류(23505)는 제약 이름으로 `DUPLICATE_EMAIL`/`DUPLICATE_CATEGORY`를 구분한다. | NFR-04 인덱스 방향 구현, 오류 코드 분기 근거. | NFR-04, NFR-15, BR-02, BR-13 |
 | PR-N-05 | API JSON·쿼리 파라미터는 `camelCase`(`categoryId`, `startDate`, `today`, `from`, `to`)다. SELECT에서 `AS "startDate"`처럼 별칭을 명시해 변환하고, 범용 camelCase 변환기를 두지 않는다. | 도메인 속성명과 일치, 변환 코드 없음. | PRD 6장 |
-| PR-N-06 | API 경로는 `/api` 접두사 + 복수 명사 자원이며 동사를 쓰지 않는다(예외: `auth`의 `signup`·`login`·`logout`, 하위 동작 `completed`·`password`). 상태 변경에 GET을 쓰지 않는다. 경로 목록은 7.2의 표가 정한다. | RESTful, CSRF 방어의 전제(PR-S-03). | NFR-15, PD-13 |
+| PR-N-06 | API 경로는 `/api` 접두사 + 복수 명사 자원이며 동사를 쓰지 않는다(예외: `auth`의 `signup`·`login`·`refresh`·`logout`, 하위 동작 `completed`·`password`). 상태 변경에 GET을 쓰지 않는다. 경로 목록은 7.2의 표가 정한다. | RESTful, CSRF 방어의 전제(PR-S-03). | NFR-15, PD-13 |
 | PR-N-07 | 오류는 services·domain에서 `AppError(status, code, message, fields?)`를 throw하고 `middleware/error.js` 한 곳에서만 NFR-15 형식으로 응답한다. 예상 못한 오류는 500 `INTERNAL_ERROR`로 바꾼다.<br>하지 말 것: routes에서 `res.status(400).json(...)` 직접 작성 | 형식 단일화. | NFR-15 |
 | PR-N-08 | 주석은 '왜'만 한 줄로 쓴다. 규칙 근거는 ID로 쓴다(`// BR-14: 삭제 전에 기본 카테고리로 이동`). 지름길에는 `shortcut: 한계, 업그레이드 시점`을 쓴다. | 코드가 보여 주지 않는 것만 남긴다. | PR-C-01 |
 | PR-N-09 | 프론트 폼은 제어 컴포넌트(`useState`)로 쓰고, 입력란 옆 사유는 `fields[name]`을 `components/FieldError`로, 폼·화면 상단 오류는 `message`를 `components/FormError`로 표시한다. 고정 문구(P-21·P-22의 '할일이 없습니다.', '불러오는 중…', '갱신 중…')는 공용 컴포넌트에 한 번만 쓴다. i18n 라이브러리는 쓰지 않는다(한국어 단일). | 표시 위치 규칙(PRD 4장 머리말)의 일관성. | PRD 4장, P-21, P-22, PRD 3.2 |
@@ -119,7 +126,7 @@
 | ID | 규칙 | 이유 | 관련 ID |
 |---|---|---|---|
 | PR-T-01 | 테스트는 세 종류만 둔다. (1) 백엔드 단위: `domain/` 순수 함수. (2) 백엔드 API 통합: 실제 DB로 HTTP 호출. (3) 프론트 단위: 순수 함수. E2E·컴포넌트 테스트는 두지 않고, 화면은 시나리오 셀프 체크로 확인한다. | 2일 안에 가치가 큰 곳에만. | G-03, G-04, R-05 |
-| PR-T-02 | G-04 대상은 모두 테스트한다. 순수 함수(`domain`)로 검증 가능한 것: ST-01~04(시작일·종료일 당일, 완료 우선, 완료 취소), BR-07, BR-21·22 경계(7/8/64/65자, 공백만, trim), 날짜 형식(`2026-13-01`). SQL이 판정하는 것은 API 통합으로 검증한다: BR-15 AND 결합, BR-16~18 월·주 경계, BR-19, BR-20 정렬. | PRD G-04의 검증 방법(단위 + API 통합)을 파일 단위로 나눈 것. | G-04, R-03, PD-09 |
+| PR-T-02 | G-04 대상은 모두 테스트한다. 순수 함수(`domain`)로 검증 가능한 것: ST-01~04(시작일·종료일 당일, 완료 우선, 완료 취소), BR-07, BR-21·22 경계(7/8/64/65자, 공백만, trim, 비밀번호는 trim하지 않음), 날짜 형식(`2026-13-01`). SQL이 판정하는 것은 API 통합으로 검증한다: BR-15 AND 결합, BR-16~18 월·주 경계, BR-19, BR-20 정렬. | PRD G-04의 검증 방법(단위 + API 통합)을 파일 단위로 나눈 것. | G-04, R-03, PD-09 |
 | PR-T-03 | 소유권 API 테스트: 사용자 두 명(U1·U2)을 만들고 카테고리·할일의 모든 엔드포인트에 타인 ID를 보내 404 `NOT_FOUND`와 데이터 불변을 확인한다. 타인 카테고리 지정(BR-04), 타인 카테고리 필터(P-14)를 포함한다. 새 카테고리·할일 엔드포인트를 만들면 이 테스트에 케이스를 추가해야 완료다. | SQL 직접 작성의 최대 리스크. | R-04, NFR-07, E-C2 |
 | PR-T-04 | API 테스트는 mock 없이 테스트 전용 PostgreSQL DB(`todolist_test`)에서 한다. 파일마다 시작 시 `TRUNCATE users, categories, todos, refresh_tokens RESTART IDENTITY CASCADE`로 비운다. 파일 병렬 실행을 막는다(`--test-concurrency=1`). | mock은 SQL·제약·인덱스를 검증하지 못한다. | R-04, NFR-04 |
 | PR-T-05 | 테스트 이름에 시나리오·예외 ID를 넣는다(`E-04-2 시작일 > 종료일은 400`). 새 시나리오 예외가 생기면 대응 테스트를 만든다. 셀프 체크(G-03)는 SC-01~13을 화면에서 수동 수행한다. | 추적성, 테스트 케이스는 시나리오에서 도출. | SC-01~13, G-03 |
@@ -138,7 +145,7 @@
 | PR-S-04 | 개발은 Vite 프록시(`/api` → `http://localhost:3000`)로 같은 출처를 만든다. 프론트는 상대 경로(`/api/...`)만 쓰고 백엔드 주소를 코드에 넣지 않는다. CORS 미들웨어는 두지 않는다. k6는 백엔드를 직접 호출한다(쿠키 저장소 사용). | P-04. 같은 출처면 CORS와 쿠키 SameSite 문제가 없다. | P-04, PD-04 |
 | PR-S-05 | 인증은 기본 적용이다. `routes/index.js`에서 `/api/auth/signup`·`/api/auth/login`·`/api/auth/refresh`·`/api/auth/logout`·`/api/health`를 제외한 모든 라우트에 `auth` 미들웨어를 먼저 건다. access 토큰 쿠키가 없거나 만료·위조면 401 `UNAUTHORIZED`다. | 새 라우트가 실수로 공개되는 것을 막는다. | BR-01, FR-04 |
 | PR-S-06 | 비밀번호는 bcrypt(cost 10)로만 저장한다. 평문·해시·토큰을 로그·응답에 내보내지 않으며, 사용자 조회 SQL은 컬럼을 명시한다. | 민감 정보 노출 방지. | NFR-06, PR-L-04 |
-| PR-S-07 | 모든 입력은 서버에서 검증한다. 문자열은 trim한 뒤 검사하고(BR-22), 본문에서 필요한 필드만 꺼내 쓰며, `express.json`의 본문 한도는 16kb로 낮춘다. | 신뢰 경계 검증, 불필요 필드 무시. | NFR-09, BR-21, BR-22 |
+| PR-S-07 | 모든 입력은 서버에서 검증한다. 문자열은 trim한 뒤 검사하고(BR-22, 비밀번호는 trim하지 않음), 본문에서 필요한 필드만 꺼내 쓰며, `express.json`의 본문 한도는 16kb로 낮춘다. 한도 초과(`express.json`의 413 `entity.too.large`)와 JSON 파싱 실패는 `middleware/error.js`가 400 `VALIDATION_ERROR`로 바꾼다(새 오류 코드 없음). | 신뢰 경계 검증, 불필요 필드 무시. | NFR-09, BR-21, BR-22 |
 | PR-S-08 | 오류 로그는 stderr에 JSON 한 줄(시각, 메서드, 경로, 오류 메시지, stack)로 남기고 500 응답에는 상세를 넣지 않는다. 요청 본문·쿠키·비밀번호는 기록하지 않는다. 구조화 로깅 라이브러리·메트릭은 두지 않는다. 헬스 체크는 DB를 조회하지 않는 `GET /api/health` 한 줄만 둔다. | 로컬 단일 프로세스, 판정은 k6 출력. 기동 확인만 필요하다. | NFR-15, P-10, P-25, PD-14 |
 | PR-S-09 | DB 연결은 프로세스당 `pg.Pool` 하나(`db.js`)다. 크기는 `DB_POOL_MAX`. DATE 타입(OID 1082)은 문자열로 받도록 pg 타입 파서를 `db.js`에서 한 번 설정한다. `SIGINT`·`SIGTERM`에서 `pool.end()`를 호출한다. | 풀 설정·날짜 파싱 한 곳. | NFR-03, NFR-11 |
 | PR-S-10 | 스키마의 단일 출처는 `backend/sql/schema.sql` 하나다(테이블·제약·NFR-04 인덱스). 변경은 이 파일을 고치고 `npm run db:init -- --reset`로 다시 만든다. 마이그레이션 도구는 쓰지 않는다. 상태 컬럼은 만들지 않는다(NFR-12). | 운영 데이터가 없다(P-10). | NFR-04, NFR-12, PD-08 |
@@ -211,7 +218,7 @@ backend/
 |---|---|---|---|
 | `/api/auth/signup`, `/login`, `/refresh`, `/logout` | POST | 가입(자동 로그인, 토큰 쌍 쿠키 발급), 로그인(토큰 쌍 발급), 토큰 갱신(refresh 토큰 회전), 로그아웃(refresh 토큰 삭제·쿠키 삭제) | FR-01~04, P-04 |
 | `/api/me` | GET, PATCH | 내 정보 조회(화면 첫 진입 시 로그인 여부 확인), 이름 수정 | FR-14 |
-| `/api/me/password` | PUT | 비밀번호 변경 | FR-15 |
+| `/api/me/password` | PUT | 비밀번호 변경(204, 새 토큰 쌍 쿠키 발급) | FR-15 |
 | `/api/categories`, `/api/categories/:id` | GET, POST / PATCH, DELETE | BR-23 순서 목록, 등록, 이름 수정, 삭제 | FR-13 |
 | `/api/todos?categoryId&status&today` | GET | 목록(필터·`today` 필수, `status` 값은 PD-19) | FR-09 |
 | `/api/todos`, `/api/todos/:id` | POST / GET, PATCH, DELETE | 등록, 단건 조회(편집 화면), 수정(본문은 PD-20), 삭제 | FR-05, FR-06, FR-08 |
@@ -232,7 +239,7 @@ backend/
 | `services/categories.js` | 카테고리 CRUD, 기본 카테고리 보호, 삭제 시 할일 이동 + 삭제(한 트랜잭션), BR-23 순서 | FR-13, BR-12~14, BR-23, NFR-10 |
 | `services/todos.js` | 할일 CRUD, 완료 전환, 목록(카테고리 필터는 SQL, 상태 필터는 판정 후 JS), 기간 조회(겹침 조건은 SQL, 상태는 판정 함수), BR-20 정렬, 소유권 | FR-05~12, BR-04, BR-15~20, NFR-07, NFR-12, P-11, P-12, P-14 |
 | `domain/status.js` | ST-01~04 판정(한 곳) | ST-01~04, NFR-12, G-04 |
-| `domain/validate.js` | 이메일 형식, 비밀번호·길이 제한, 필수·trim, 시작일 ≤ 종료일, `YYYY-MM-DD` 실제 날짜 검사, `today`·`status`·`from`·`to` | NFR-09, BR-06, BR-07, BR-21, BR-22, P-12, P-14 |
+| `domain/validate.js` | 이메일 형식, 비밀번호·길이 제한, 필수·trim(비밀번호 제외), NOT NULL 필드의 `null` 거부(PD-27), 시작일 ≤ 종료일, `YYYY-MM-DD` 실제 날짜 검사, `categoryId`·`today`·`status`·`from`·`to` | NFR-09, BR-06, BR-07, BR-21, BR-22, P-12, P-14 |
 | `test/unit` | domain 단위 테스트 | G-04, R-03 |
 | `test/api` | API·소유권 테스트, 시나리오 예외 ID | R-04, PR-T-02, PR-T-03 |
 
@@ -335,20 +342,23 @@ PRD·도메인의 기능·규칙 수준 결정은 하지 않았다. 아래는 �
 | PD-10 | 날짜 라이브러리를 쓰지 않는다. 백엔드는 pg DATE 파서로 문자열을 받아 문자열 비교(ISO 형식은 사전순 = 날짜순)하고, 프론트는 `lib/date.ts`에서 로컬 `new Date(y, m, d)`로 계산해 문자열로 돌려준다. | 필요한 연산이 오늘·±일·월·주 범위뿐이다. NFR-11. | dayjs·date-fns: 의존성 추가 |
 | PD-11 | 포맷·린트는 Biome 하나(루트 `biome.json`)다. | 의존성 1개로 JS·TS를 처리한다. | ESLint + Prettier: 패키지·설정이 늘어남 |
 | PD-12 | 커버리지 수치 게이트를 두지 않는다. 필수 대상은 PR-T-02·03이다. | 대상은 규칙(G-04)·소유권(R-04)이 정한다. 수치는 가치를 보장하지 않는다. | 80% 게이트: 2일 일정에서 비규칙 코드 테스트 부담 |
-| PD-13 | API 경로·메서드는 7.2의 표로 정한다. `:id`는 정수(`INTEGER GENERATED ALWAYS AS IDENTITY`)이고, 정수가 아닌 `:id`는 존재하지 않는 것으로 보아 404 `NOT_FOUND`다. 단건 조회(`GET /api/todos/:id`)는 `today`를 받지 않고 상태를 포함하지 않는다. | PRD P-25가 이 표에 위임한다. 문자열 `:id` 400은 NFR-15에 없는 코드 조합을 만든다. | UUID: 길이·가독성 부담 |
+| PD-13 | API 경로·메서드는 7.2의 표로 정한다. `:id`는 정수(`INTEGER GENERATED ALWAYS AS IDENTITY`)이고, 정수가 아닌 `:id`는 존재하지 않는 것으로 보아 404 `NOT_FOUND`다. 단건 조회(`GET /api/todos/:id`)는 `today`를 받지 않고 상태를 포함하지 않는다. 쿼리 파라미터(`categoryId`·`status`·`today`·`from`·`to`)의 형식 오류(정수 아님, 날짜 아님, 허용 값 아님)는 400 `VALIDATION_ERROR`이고, 형식이 맞는 `categoryId`가 본인 카테고리가 아니거나 없으면 404 `NOT_FOUND`(P-14)다. | PRD P-25가 이 표에 위임한다. 문자열 `:id` 400은 NFR-15에 없는 코드 조합을 만든다. | UUID: 길이·가독성 부담 |
 | PD-14 | 메트릭·구조화 로깅 라이브러리는 두지 않고, 헬스 체크는 DB를 조회하지 않는 `GET /api/health`만 둔다. | 로컬 단일 프로세스(P-10), 부하 판정은 k6가 한다. 부하 테스트 전 기동 확인에는 한 줄이면 충분하다(P-25). | pino, DB 포함 readiness 체크: 운영 배포 시 도입 |
 | PD-15 | `jsonwebtoken`과 `bcrypt`(네이티브)를 쓰고, 쿠키 읽기는 `req.headers.cookie`를 직접 파싱한다(`cookie-parser` 없음). | JWT·bcrypt는 직접 구현이 불가·위험하다. 쿠키 파싱은 약 5줄이다. refresh 토큰 생성·해시는 내장 `node:crypto`로 한다. 네이티브 bcrypt는 로그인 CPU 부하(NFR-05)에 유리하다. Windows에서 미리 빌드된 바이너리가 맞지 않아 설치가 실패하면 API가 같은 `bcryptjs`로 바꾸고 이 행을 갱신한다. | bcryptjs: 설치는 쉬우나 느림. cookie-parser |
 | PD-16 | SQL은 별도 repository 파일 없이 `services/`에 둔다. | 3.3 근거. | `repositories/` 계층: 파일 2배, mock 유혹 |
 | PD-17 | 상태 판정과 상태 필터는 `domain/status.js` 한 곳(JS)에 둔다. SQL은 사용자·카테고리·기간으로만 거른다. | 판정 로직 이중화 방지(NFR-12), DB 없이 단위 테스트 가능. P-11(사용자당 약 100건)에서 행 수가 작다. | SQL `CASE`: 판정 2곳. 사용자당 건수가 크게 늘면 재검토 |
 | PD-18 | SCR-04의 진입 화면 복귀는 `navigate`의 `state.from`(경로 + 쿼리)으로 구현하고 없으면 `/todos`다. | P-17·P-23의 '진입 화면이 없을 때'를 만족하며, 캘린더 URL(뷰·날짜)도 복원된다. | `navigate(-1)`: 직접 접근 시 앱 밖으로 나갈 수 있음 |
 | PD-19 | 상태 값 문자열은 ST-01~04 순으로 `completed`·`not_started`·`in_progress`·`overdue`다. 응답의 `status` 필드와 목록 `status` 쿼리 파라미터가 같은 값을 쓰고, 화면 표시 문구(완료·시작 전·진행 중·지연)는 프론트 `api/types.ts`의 표 하나가 바꾼다. 다른 값은 400 `VALIDATION_ERROR`(P-14). | 한글 값은 URL 인코딩·오타 위험. 값과 표시 문구를 분리한다. | 한글 값 그대로: URL에 인코딩 필요 |
-| PD-20 | 할일 수정(`PATCH /api/todos/:id`) 본문은 편집 폼의 값 전체를 보낸다: `title`·`startDate`·`endDate` 필수, `description`·`categoryId` 선택. `categoryId`가 없으면 기존 카테고리를 유지한다(BR-11). BR-07은 본문의 두 날짜만으로 `domain/validate.js`가 판정한다. | 편집 폼은 항상 전체 값을 가진다. 기존 값과 합치는 코드 없이 순수 함수로 BR-07을 판정한다. | 부분 수정: 기존 행 조회 후 병합 판정이 필요 |
+| PD-20 | 할일 수정(`PATCH /api/todos/:id`) 본문은 편집 폼의 값 전체를 보낸다: `title`·`startDate`·`endDate` 필수, `description`·`categoryId` 선택. `categoryId`가 없으면 기존 카테고리를 유지한다(BR-11). `description`을 생략해도 기존 값을 유지하며, 비우려면 `null` 또는 빈 문자열을 보낸다. `null` 처리는 PD-27을 따른다. BR-07은 본문의 두 날짜만으로 `domain/validate.js`가 판정한다. | 편집 폼은 항상 전체 값을 가진다. 기존 값과 합치는 코드 없이 순수 함수로 BR-07을 판정한다. | 부분 수정: 기존 행 조회 후 병합 판정이 필요 |
 | PD-21 | 완료 토글 본문은 `{ "completed": boolean }`이다. `true`면 `completed_at = now()`, `false`면 `completed_at = NULL`이다. 같은 값을 다시 보내도 오류가 아니다(멱등, `true` 재전송 시 `completed_at`은 유지). 응답은 상태를 포함하지 않는 할일이며 화면은 재조회 결과로 표시한다(P-15). | 연타·재시도에도 결과가 같다. `completedAt`은 표시하지 않는 기록용이다. | 서버 반전(toggle): 재시도 시 결과가 뒤집힘 |
 | PD-22 | 오류 판정 순서는 인증(401) → 입력 형식·값(400 `VALIDATION_ERROR`) → 존재·소유권(404 `NOT_FOUND`) → 규칙(400 `DEFAULT_CATEGORY_IMMUTABLE`·`INVALID_PASSWORD`) → 중복(409)이다. 여러 입력 오류는 `fields`에 함께 담는다. | 타인 데이터는 규칙 위반보다 먼저 404가 되어 존재가 드러나지 않는다(BR-03). DB 없이 판정할 수 있는 것을 먼저 거른다. | - |
 | PD-23 | 데스크톱 월 뷰 격자의 앞뒤 채움 칸(이전·다음 달 날짜)은 날짜 숫자와 할일을 표시하지 않는 빈 칸이며 선택할 수 없다. 모바일 월 뷰도 같다. | BR-17의 화면 기간(1일~말일) 밖이라 표시하면 '일부만 보이는' 오해가 생긴다. 칸 배치(`cellTodos.ts`)에서 분기 없이 처리된다. | 이전·다음 달 할일 함께 조회: 조회 기간이 BR-17과 달라짐 |
 | PD-24 | 앱 첫 진입의 로그인 확인 `GET /api/me`는 query `meta`로 전역 401 처리(PR-L-12)에서 빼고, 401이면 '로그인 안 됨'으로 보관한다. 이후 `RequireAuth`가 보호 경로는 `/login`으로, 공개 경로(`/login`·`/signup`)는 그대로 보여 준다. 그 밖의 401은 PR-L-12대로 처리한다. | 미로그인 상태가 정상인 첫 진입에서 오류 처리·이동이 반복되지 않는다. | - |
-| PD-25 | 성공 상태 코드: 생성(가입, 할일·카테고리 등록)은 201과 생성된 객체, 삭제(할일·카테고리), 로그아웃, 토큰 갱신은 204 본문 없음, 그 외(조회·수정·완료 토글·로그인)는 200이다. | REST 관례, 프론트는 상태 코드가 아닌 성공 여부로만 분기한다. | 전부 200: 의미 손실 |
+| PD-25 | 성공 상태 코드: 생성(가입, 할일·카테고리 등록)은 201과 생성된 객체, 삭제(할일·카테고리), 로그아웃, 토큰 갱신, 비밀번호 변경은 204 본문 없음(비밀번호 변경은 새 토큰 쌍 쿠키 발급), 그 외(조회·수정·완료 토글·로그인)는 200이다. 200 본문: 로그인은 사용자(가입과 같은 형태), 이름 수정은 수정된 사용자, 카테고리 이름 수정은 수정된 카테고리, 할일 수정·완료 토글은 할일이다. | REST 관례, 프론트는 상태 코드가 아닌 성공 여부로만 분기한다. | 전부 200: 의미 손실 |
 | PD-26 | refresh 토큰은 불투명 난수 + DB 해시 저장이며 JWT로 만들지 않는다. 같은 refresh 토큰으로 동시에 갱신하면(여러 탭) 먼저 도착한 요청만 성공하고 나머지 탭은 401로 로그인 화면에 간다. 같은 탭 안의 동시 401은 `api/client.ts`가 갱신 요청 하나로 묶는다. | 회전·폐기에 DB 조회가 필요해 refresh 토큰을 JWT로 만들어도 stateless 이점이 없고, 불투명 값은 서명 검증 코드가 필요 없다. 탭 간 경쟁 처리(유예 시간)는 2일 일정 대비 과설계. | refresh JWT(stateless): 로그아웃·비밀번호 변경 시 무효화 불가. 재사용 탐지(사용한 토큰을 보관하다 재사용 시 사용자 전체 폐기): 탈취 대응이 필요해지면 도입 |
+| PD-27 | 요청 본문의 `null`은 ERD에서 NULL 허용인 컬럼에 대응하는 필드에만 허용한다. 요청으로 받는 필드 중 해당하는 것은 할일 `description`뿐이다(`completed_at`은 서버가 정한다). 등록에서 `null`은 생략과 같고, 수정(`PATCH`)에서 `null`을 보내면 값을 비운다. NOT NULL 컬럼에 대응하는 필드(`email`·`password`·`name`·`title`·`startDate`·`endDate`·`categoryId`·`completed` 등)에 `null`을 보내면 400 `VALIDATION_ERROR`다. `categoryId`의 BR-11(등록은 기본, 수정은 유지)은 생략일 때만 적용된다. | `null`의 의미를 컬럼 NULL 허용 여부 하나로 정한다(7-erd.md 4장, DB-11). | `null`을 생략과 같게 처리: 수정에서 값을 비울 수단이 빈 문자열뿐이 됨 |
+| PD-28 | API의 시각 필드(`createdAt`·`updatedAt`·`completedAt`)는 ISO 8601 UTC, `Date.prototype.toISOString()` 형식(`2026-11-04T09:00:00.000Z`)이다. 날짜 필드는 PR-C-05대로 `YYYY-MM-DD`다. | pg가 `TIMESTAMPTZ`를 `Date`로 돌려주고 `JSON.stringify`가 이 형식으로 직렬화해 변환 코드가 없다. | 오프셋 포함 현지 시각: 직렬화 코드 필요 |
+| PD-29 | 응답 필드: 할일 응답(단건 조회·등록·수정·완료 토글·목록·캘린더)은 모두 `categoryName`(JOIN)을 포함한다. `todos.category_id`가 NOT NULL·FK라 `categoryName`은 `null`이 되지 않는다. 상태(`status`)는 `today`를 받는 목록·캘린더에만 있다(PD-13). 사용자 응답(가입·로그인·내 정보 조회·이름 수정)은 항상 `id`·`email`·`name`·`createdAt`·`updatedAt`을 포함한다. | 프론트가 응답마다 다른 모양을 다루지 않게 할일·사용자 형태를 하나로 통일한다. | 응답별 필드 차등: 타입이 여러 개로 늘어남 |
 
 ### 8.1 커버리지 확인
 
