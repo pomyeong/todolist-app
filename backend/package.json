@@ -1,0 +1,25 @@
+{
+  "name": "todolist-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file=.env src/server.js",
+    "start": "node --env-file=.env src/server.js",
+    "test": "node --env-file=.env.test --test --test-concurrency=1",
+    "db:init": "node --env-file=.env scripts/db-init.js",
+    "seed:load": "node --env-file=.env scripts/seed-load.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4"
+  }
+}

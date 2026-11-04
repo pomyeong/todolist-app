@@ -24,6 +24,6 @@
 | [docs/5-project-principle.md](docs/5-project-principle.md) | 프로젝트 구조 설계 원칙             |
 | [docs/6-arch-diagram.md](docs/6-arch-diagram.md)           | 기술 아키텍처 다이어그램            |
 | [docs/7-erd.md](docs/7-erd.md)                             | ERD(개념·물리 데이터 구조)          |
-| [docs/schema.sql](docs/schema.sql)                         | DB 스키마 DDL                       |
+| [backend/sql/schema.sql](backend/sql/schema.sql)           | DB 스키마 DDL                       |
 | [docs/8-plan.md](docs/8-plan.md)                           | 실행 계획(WBS)                      |
 | [backend/swagger.yaml](backend/swagger.yaml)               | REST API 명세(OpenAPI 3.0.3)        |

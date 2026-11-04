@@ -146,10 +146,10 @@ flowchart LR
 4. 루트 `README.md`에 실행 순서(7.4: DB 생성 → 백엔드 → 프론트) 뼈대를 쓴다.
 
 **완료 조건**
-- [ ] 루트에 `backend/`, `frontend/`, `load-test/`, `biome.json`, `.gitignore`, `README.md`가 있고 루트 `package.json`이 없다.
-- [ ] `.gitignore`에 `node_modules`, `.env`, `.env.test`, `dist`가 들어 있다.
-- [ ] `biome.json`의 포맷 설정이 PR-N-11과 일치한다.
-- [ ] `README.md`에 DB → 백엔드 → 프론트 실행 순서가 적혀 있다.
+- [x] 루트에 `backend/`, `frontend/`, `load-test/`, `biome.json`, `.gitignore`, `README.md`가 있고 루트 `package.json`이 없다.
+- [x] `.gitignore`에 `node_modules`, `.env`, `.env.test`, `dist`가 들어 있다.
+- [x] `biome.json`의 포맷 설정이 PR-N-11과 일치한다.
+- [x] `README.md`에 DB → 백엔드 → 프론트 실행 순서가 적혀 있다.
 
 ## 4. 데이터베이스 Task
 
@@ -165,9 +165,9 @@ flowchart LR
 3. 두 DB의 접속 URL을 `DATABASE_URL` 형식으로 정리해 둔다(T-BE-01의 `.env`·`.env.test`에 사용).
 
 **완료 조건**
-- [ ] `SELECT version();`이 PostgreSQL 17.x를 반환한다.
-- [ ] `todolist`, `todolist_test` 두 DB에 같은 계정으로 접속된다.
-- [ ] 두 DB의 접속 URL이 확정되어 있다(커밋하지 않음).
+- [x] `SELECT version();`이 PostgreSQL 17.x를 반환한다.
+- [x] `todolist`, `todolist_test` 두 DB에 같은 계정으로 접속된다.
+- [x] 두 DB의 접속 URL이 확정되어 있다(커밋하지 않음).
 
 ### T-DB-02 스키마 파일 배치
 
@@ -181,10 +181,10 @@ flowchart LR
 3. 파일 내용이 7-erd 4장 테이블 명세·5장 제약·인덱스 목록과 일치하는지 대조한다.
 
 **완료 조건**
-- [ ] `backend/sql/schema.sql`이 있고 `docs/schema.sql`은 없다(스키마 파일이 저장소에 하나).
-- [ ] 문서 안에 `docs/schema.sql`을 가리키는 링크가 남아 있지 않다.
-- [ ] 테이블 4개(`users`, `categories`, `todos`, `refresh_tokens`)가 있고 상태(status) 컬럼이 없다(NFR-12).
-- [ ] 제약·인덱스 이름이 PR-N-04·DB-12와 일치한다: `uq_users_email`, `ck_users_email_lower`, `uq_categories_user_name`, `uq_categories_user_default`, `fk_categories_user`, `fk_todos_user`, `fk_todos_category`, `ck_todos_dates`, `ck_todos_completed`, `idx_todos_user_dates`, `idx_todos_user_category`, `fk_refresh_tokens_user`, `uq_refresh_tokens_hash`, `idx_refresh_tokens_user`(DB-13).
+- [x] `backend/sql/schema.sql`이 있고 `docs/schema.sql`은 없다(스키마 파일이 저장소에 하나).
+- [x] 문서 안에 `docs/schema.sql`을 가리키는 링크가 남아 있지 않다.
+- [x] 테이블 4개(`users`, `categories`, `todos`, `refresh_tokens`)가 있고 상태(status) 컬럼이 없다(NFR-12).
+- [x] 제약·인덱스 이름이 PR-N-04·DB-12와 일치한다: `uq_users_email`, `ck_users_email_lower`, `uq_categories_user_name`, `uq_categories_user_default`, `fk_categories_user`, `fk_todos_user`, `fk_todos_category`, `ck_todos_dates`, `ck_todos_completed`, `idx_todos_user_dates`, `idx_todos_user_category`, `fk_refresh_tokens_user`, `uq_refresh_tokens_hash`, `idx_refresh_tokens_user`(DB-13).
 
 ### T-DB-03 스키마 적용 스크립트(`db-init.js`)
 
@@ -275,10 +275,10 @@ flowchart LR
 5. Windows에서 `bcrypt` 설치가 실패하면 `bcryptjs`로 바꾸고 PD-15를 갱신한다.
 
 **완료 조건**
-- [ ] `npm ci`가 성공하고 `package-lock.json`이 커밋되어 있다.
-- [ ] `dependencies`가 `express`, `pg`, `jsonwebtoken`, `bcrypt`(또는 PD-15 갱신 후 `bcryptjs`)뿐이다.
-- [ ] `.env.example`만 커밋되고 `.env`, `.env.test`는 `git status`에 나오지 않는다.
-- [ ] scripts 5개(`dev`, `start`, `test`, `db:init`, `seed:load`)가 정의되어 있다.
+- [x] `npm ci`가 성공하고 `package-lock.json`이 커밋되어 있다.
+- [x] `dependencies`가 `express`, `pg`, `jsonwebtoken`, `bcrypt`(또는 PD-15 갱신 후 `bcryptjs`)뿐이다.
+- [x] `.env.example`만 커밋되고 `.env`, `.env.test`는 `git status`에 나오지 않는다.
+- [x] scripts 5개(`dev`, `start`, `test`, `db:init`, `seed:load`)가 정의되어 있다.
 
 ### T-BE-02 설정·DB 연결 모듈
 
