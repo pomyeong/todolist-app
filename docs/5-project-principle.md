@@ -13,6 +13,8 @@
 | v0.5 | 2026-11-04 | Claude | 초안 | API 명세 작성 중 발견한 미정의 사항 결정(PD-27~29) |
 | v0.6 | 2026-11-05 | Claude | 초안 | 부하 테스트 제외(PRD v0.13) |
 | v0.7 | 2026-11-05 | Claude | 초안 | 프론트 구현 중 결정 반영(`app/session.ts`, 연결 실패 문구) |
+| v0.8 | 2026-11-05 | Claude | 초안 | 헬스 체크에 DB 연결 상태 추가 |
+| v0.9 | 2026-11-05 | Claude | 초안 | 개발 환경 한정 Swagger UI(PD-30) |
 
 ### 변경 이력
 
@@ -37,8 +39,10 @@
 | v0.5 | 2026-11-04 | 참조 문서 | 도메인 v0.6 → v0.7, PRD v0.11 → v0.12, 시나리오 v0.9 → v0.10, 와이어프레임 v0.4 → v0.5 | 버전 동기화 | Claude |
 | v0.6 | 2026-11-05 | 범위, PR-T-08, PR-S-04, PR-S-08, 7.1, 7.2 `scripts/seed-load.js`, PD-01, PD-14, 커버리지, 참조 문서 | `load-test/`와 k6 원칙 폐기, 시드는 실행 계획 확인용(NFR-04). PRD v0.12 → v0.13 | PRD v0.13 부하 테스트 제외 | Claude |
 | v0.7 | 2026-11-05 | PR-C-04, 7.3 | 서버가 NFR-15 형식을 주지 못한 경우(연결 실패·빈 본문) `api/client.ts`의 대체 문구 상수 하나를 예외로 허용, 401 전역 처리와 로그아웃이 함께 쓰는 `app/session.ts`(`clearSession`) 추가 | 백엔드 중단 시 Vite 프록시가 빈 본문 500을 줌(E-06-2), features 간 import 금지(PR-L-09) | Claude |
+| v0.8 | 2026-11-05 | PR-S-08, PD-14, 7.2 `/api/health` | 헬스 체크가 `SELECT 1`로 DB 연결을 확인(정상 200 `db: 'up'`, 실패 503 `db: 'down'`) | 사용자 요청(서버 기동만으로는 DB 연결을 알 수 없음) | Claude |
+| v0.9 | 2026-11-05 | PR-S-05, 7.2, PD-30 | `NODE_ENV=development`일 때만 `GET /api/docs`(Swagger UI)·`GET /api/docs/swagger.yaml` 제공, npm 의존성 없이 CDN `swagger-ui-dist` 사용 | 사용자 요청(개발 중 API 명세 열람·호출) | Claude |
 
-> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.13](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
+> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.14](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
 > ID 운영 원칙: PR-C·PR-L·PR-N·PR-T·PR-S·PD의 ID는 재사용하거나 재번호하지 않는다. 원칙·결정을 없애면 행을 지우지 말고 '폐기'로 표시한다.
 
@@ -147,10 +151,10 @@
 | PR-S-02 | PRD가 확정한 값은 설정이 아닌 상수로 코드에 둔다: bcrypt cost 10, 서명 알고리즘 HS384, access 토큰 만료 15분, refresh 토큰 만료 7일, 쿠키 이름(`access_token`, `refresh_token`). | 환경마다 달라지면 안 되는 값. | NFR-06, P-04 |
 | PR-S-03 | 인증은 access 토큰과 refresh 토큰 두 개를 쓴다(P-04). access 토큰은 JWT(HS384, 페이로드는 `sub`=사용자 ID만, 만료 15분)이고 `access_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/`, `maxAge` 15분)로 보낸다. 검증할 때 `algorithms: ['HS384']`를 명시해 다른 알고리즘(`none`, HS256 등)으로 서명된 토큰을 거부한다. refresh 토큰은 JWT가 아닌 `crypto.randomBytes(32)`의 base64url 문자열이고 `refresh_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/api/auth`, `maxAge` 7일)로 보낸다. DB `refresh_tokens`에는 SHA-256 해시만 저장한다(DB-13). `POST /api/auth/refresh`는 해시가 맞고 만료되지 않은 행을 한 문장으로 삭제(`DELETE … RETURNING user_id`)한 뒤 새 쌍을 발급한다(회전, 재사용 불가). 로그아웃은 그 refresh 토큰 행을 지우고 같은 옵션으로 두 쿠키를 지운다. `secure`는 `NODE_ENV=production`일 때만 켠다(HTTPS는 범위 외). access 토큰 블랙리스트는 만들지 않는다. 상태 변경 API는 GET을 쓰지 않고 JSON 본문(`express.json`)만 받아, `SameSite=Lax`와 함께 CSRF를 막는다. | access 검증은 stateless(NFR-02), 세션 종료는 refresh 토큰 삭제로 한다. 토큰 JS 접근 차단. refresh 쿠키 경로를 좁혀 일반 API 요청에 실리지 않게 한다. | P-04, NFR-02, FR-03, DB-13, PD-26 |
 | PR-S-04 | 개발은 Vite 프록시(`/api` → `http://localhost:3000`)로 같은 출처를 만든다. 프론트는 상대 경로(`/api/...`)만 쓰고 백엔드 주소를 코드에 넣지 않는다. CORS 미들웨어는 두지 않는다. | P-04. 같은 출처면 CORS와 쿠키 SameSite 문제가 없다. | P-04, PD-04 |
-| PR-S-05 | 인증은 기본 적용이다. `routes/index.js`에서 `/api/auth/signup`·`/api/auth/login`·`/api/auth/refresh`·`/api/auth/logout`·`/api/health`를 제외한 모든 라우트에 `auth` 미들웨어를 먼저 건다. access 토큰 쿠키가 없거나 만료·위조면 401 `UNAUTHORIZED`다. | 새 라우트가 실수로 공개되는 것을 막는다. | BR-01, FR-04 |
+| PR-S-05 | 인증은 기본 적용이다. `routes/index.js`에서 `/api/auth/signup`·`/api/auth/login`·`/api/auth/refresh`·`/api/auth/logout`·`/api/health`와 개발 환경 한정 `/api/docs`(PD-30)를 제외한 모든 라우트에 `auth` 미들웨어를 먼저 건다. access 토큰 쿠키가 없거나 만료·위조면 401 `UNAUTHORIZED`다. | 새 라우트가 실수로 공개되는 것을 막는다. | BR-01, FR-04 |
 | PR-S-06 | 비밀번호는 bcrypt(cost 10)로만 저장한다. 평문·해시·토큰을 로그·응답에 내보내지 않으며, 사용자 조회 SQL은 컬럼을 명시한다. | 민감 정보 노출 방지. | NFR-06, PR-L-04 |
 | PR-S-07 | 모든 입력은 서버에서 검증한다. 문자열은 trim한 뒤 검사하고(BR-22, 비밀번호는 trim하지 않음), 본문에서 필요한 필드만 꺼내 쓰며, `express.json`의 본문 한도는 16kb로 낮춘다. 한도 초과(`express.json`의 413 `entity.too.large`)와 JSON 파싱 실패는 `middleware/error.js`가 400 `VALIDATION_ERROR`로 바꾼다(새 오류 코드 없음). | 신뢰 경계 검증, 불필요 필드 무시. | NFR-09, BR-21, BR-22 |
-| PR-S-08 | 오류 로그는 stderr에 JSON 한 줄(시각, 메서드, 경로, 오류 메시지, stack)로 남기고 500 응답에는 상세를 넣지 않는다. 요청 본문·쿠키·비밀번호는 기록하지 않는다. 구조화 로깅 라이브러리·메트릭은 두지 않는다. 헬스 체크는 DB를 조회하지 않는 `GET /api/health` 한 줄만 둔다. | 로컬 단일 프로세스라 기동 확인만 필요하다. | NFR-15, P-10, P-25, PD-14 |
+| PR-S-08 | 오류 로그는 stderr에 JSON 한 줄(시각, 메서드, 경로, 오류 메시지, stack)로 남기고 500 응답에는 상세를 넣지 않는다. 요청 본문·쿠키·비밀번호는 기록하지 않는다. 구조화 로깅 라이브러리·메트릭은 두지 않는다. 헬스 체크는 `GET /api/health`는 `SELECT 1`로 DB 연결까지 확인해 정상이면 200 `{ ok: true, db: 'up' }`, DB 실패면 503 `{ ok: false, db: 'down' }`이다. | 로컬 단일 프로세스라 기동과 DB 연결 확인이면 충분하다. | NFR-15, P-10, P-25, PD-14 |
 | PR-S-09 | DB 연결은 프로세스당 `pg.Pool` 하나(`db.js`)다. 크기는 `DB_POOL_MAX`. DATE 타입(OID 1082)은 문자열로 받도록 pg 타입 파서를 `db.js`에서 한 번 설정한다. `SIGINT`·`SIGTERM`에서 `pool.end()`를 호출한다. | 풀 설정·날짜 파싱 한 곳. | NFR-03, NFR-11 |
 | PR-S-10 | 스키마의 단일 출처는 `backend/sql/schema.sql` 하나다(테이블·제약·NFR-04 인덱스). 변경은 이 파일을 고치고 `npm run db:init -- --reset`로 다시 만든다. 마이그레이션 도구는 쓰지 않는다. 상태 컬럼은 만들지 않는다(NFR-12). | 운영 데이터가 없다(P-10). | NFR-04, NFR-12, PD-08 |
 | PR-S-11 | 운영 범위는 로컬 단일 머신이다. Docker·프로세스 관리자·CI·배포 스크립트는 만들지 않는다. PostgreSQL 17은 로컬 설치를 쓴다. | 배포는 범위 외. | P-10, PRD 3.2 |
@@ -225,7 +229,8 @@ backend/
 | `/api/todos`, `/api/todos/:id` | POST / GET, PATCH, DELETE | 등록, 단건 조회(편집 화면), 수정(본문은 PD-20), 삭제 | FR-05, FR-06, FR-08 |
 | `/api/todos/:id/completed` | PATCH | 완료 / 완료 취소, 본문 `{ "completed": boolean }`(PD-21) | FR-07 |
 | `/api/calendar?from&to&today` | GET | 기간과 겹치는 할일(월·주·일 뷰 공통) | FR-10~12 |
-| `/api/health` | GET | 인증 없이 `{ "ok": true }`, DB 미조회(기동 확인) | P-25 |
+| `/api/docs`, `/api/docs/swagger.yaml` | GET | 개발 환경(`NODE_ENV=development`)에서만 Swagger UI와 명세 원본(PD-30). 그 밖의 환경은 404 | - |
+| `/api/health` | GET | 인증 없이 기동·DB 연결 확인: 200 `{ "ok": true, "db": "up" }`, DB 실패 503 `{ "ok": false, "db": "down" }` | P-25 |
 
 | 위치 | 역할 | 구현하는 ID |
 |---|---|---|
@@ -345,7 +350,7 @@ PRD·도메인의 기능·규칙 수준 결정은 하지 않았다. 아래는 �
 | PD-11 | 포맷·린트는 Biome 하나(루트 `biome.json`)다. | 의존성 1개로 JS·TS를 처리한다. | ESLint + Prettier: 패키지·설정이 늘어남 |
 | PD-12 | 커버리지 수치 게이트를 두지 않는다. 필수 대상은 PR-T-02·03이다. | 대상은 규칙(G-04)·소유권(R-04)이 정한다. 수치는 가치를 보장하지 않는다. | 80% 게이트: 2일 일정에서 비규칙 코드 테스트 부담 |
 | PD-13 | API 경로·메서드는 7.2의 표로 정한다. `:id`는 정수(`INTEGER GENERATED ALWAYS AS IDENTITY`)이고, 정수가 아닌 `:id`는 존재하지 않는 것으로 보아 404 `NOT_FOUND`다. 단건 조회(`GET /api/todos/:id`)는 `today`를 받지 않고 상태를 포함하지 않는다. 쿼리 파라미터(`categoryId`·`status`·`today`·`from`·`to`)의 형식 오류(정수 아님, 날짜 아님, 허용 값 아님)는 400 `VALIDATION_ERROR`이고, 형식이 맞는 `categoryId`가 본인 카테고리가 아니거나 없으면 404 `NOT_FOUND`(P-14)다. | PRD P-25가 이 표에 위임한다. 문자열 `:id` 400은 NFR-15에 없는 코드 조합을 만든다. | UUID: 길이·가독성 부담 |
-| PD-14 | 메트릭·구조화 로깅 라이브러리는 두지 않고, 헬스 체크는 DB를 조회하지 않는 `GET /api/health`만 둔다. | 로컬 단일 프로세스(P-10)라 기동 확인에는 한 줄이면 충분하다(P-25). | pino, DB 포함 readiness 체크: 운영 배포 시 도입 |
+| PD-14 | 메트릭·구조화 로깅 라이브러리는 두지 않고, 헬스 체크는 `GET /api/health`는 `SELECT 1`로 DB 연결까지 확인해 정상이면 200 `{ ok: true, db: 'up' }`, DB 실패면 503 `{ ok: false, db: 'down' }`이다(v0.8). | 서버 기동만으로는 DB 연결 여부를 알 수 없다. `SELECT 1` 한 번이라 비용이 작다(P-10, P-25). | pino, 풀 상태·지연 시간 등 상세 지표: 운영 배포 시 도입 |
 | PD-15 | `jsonwebtoken`과 `bcrypt`(네이티브)를 쓰고, 쿠키 읽기는 `req.headers.cookie`를 직접 파싱한다(`cookie-parser` 없음). | JWT·bcrypt는 직접 구현이 불가·위험하다. 쿠키 파싱은 약 5줄이다. refresh 토큰 생성·해시는 내장 `node:crypto`로 한다. 네이티브 bcrypt는 로그인 CPU 부하(NFR-05)에 유리하다. Windows에서 미리 빌드된 바이너리가 맞지 않아 설치가 실패하면 API가 같은 `bcryptjs`로 바꾸고 이 행을 갱신한다. | bcryptjs: 설치는 쉬우나 느림. cookie-parser |
 | PD-16 | SQL은 별도 repository 파일 없이 `services/`에 둔다. | 3.3 근거. | `repositories/` 계층: 파일 2배, mock 유혹 |
 | PD-17 | 상태 판정과 상태 필터는 `domain/status.js` 한 곳(JS)에 둔다. SQL은 사용자·카테고리·기간으로만 거른다. | 판정 로직 이중화 방지(NFR-12), DB 없이 단위 테스트 가능. P-11(사용자당 약 100건)에서 행 수가 작다. | SQL `CASE`: 판정 2곳. 사용자당 건수가 크게 늘면 재검토 |
@@ -361,6 +366,7 @@ PRD·도메인의 기능·규칙 수준 결정은 하지 않았다. 아래는 �
 | PD-27 | 요청 본문의 `null`은 ERD에서 NULL 허용인 컬럼에 대응하는 필드에만 허용한다. 요청으로 받는 필드 중 해당하는 것은 할일 `description`뿐이다(`completed_at`은 서버가 정한다). 등록에서 `null`은 생략과 같고, 수정(`PATCH`)에서 `null`을 보내면 값을 비운다. NOT NULL 컬럼에 대응하는 필드(`email`·`password`·`name`·`title`·`startDate`·`endDate`·`categoryId`·`completed` 등)에 `null`을 보내면 400 `VALIDATION_ERROR`다. `categoryId`의 BR-11(등록은 기본, 수정은 유지)은 생략일 때만 적용된다. | `null`의 의미를 컬럼 NULL 허용 여부 하나로 정한다(7-erd.md 4장, DB-11). | `null`을 생략과 같게 처리: 수정에서 값을 비울 수단이 빈 문자열뿐이 됨 |
 | PD-28 | API의 시각 필드(`createdAt`·`updatedAt`·`completedAt`)는 ISO 8601 UTC, `Date.prototype.toISOString()` 형식(`2026-11-04T09:00:00.000Z`)이다. 날짜 필드는 PR-C-05대로 `YYYY-MM-DD`다. | pg가 `TIMESTAMPTZ`를 `Date`로 돌려주고 `JSON.stringify`가 이 형식으로 직렬화해 변환 코드가 없다. | 오프셋 포함 현지 시각: 직렬화 코드 필요 |
 | PD-29 | 응답 필드: 할일 응답(단건 조회·등록·수정·완료 토글·목록·캘린더)은 모두 `categoryName`(JOIN)을 포함한다. `todos.category_id`가 NOT NULL·FK라 `categoryName`은 `null`이 되지 않는다. 상태(`status`)는 `today`를 받는 목록·캘린더에만 있다(PD-13). 사용자 응답(가입·로그인·내 정보 조회·이름 수정)은 항상 `id`·`email`·`name`·`createdAt`·`updatedAt`을 포함한다. | 프론트가 응답마다 다른 모양을 다루지 않게 할일·사용자 형태를 하나로 통일한다. | 응답별 필드 차등: 타입이 여러 개로 늘어남 |
+| PD-30 | Swagger UI는 `NODE_ENV=development`일 때만 `app.js`가 `GET /api/docs`(HTML 한 장)와 `GET /api/docs/swagger.yaml`(`backend/swagger.yaml` 원본)로 제공한다. UI는 CDN의 버전 고정 `swagger-ui-dist`를 불러오고 npm 의존성은 추가하지 않는다. 명세의 `servers`는 상대 경로(`/`)라 3000번·5173번(Vite 프록시) 어디서 열어도 같은 출처로 호출된다. | 명세(`swagger.yaml`)는 이미 단일 출처로 있고 화면만 필요하다. 개발 도구라 운영·테스트 환경에서는 노출하지 않는다. PR-C-02(몇 줄로 되면 의존성 추가 금지). | swagger-ui-express + yaml 파서: 의존성 2개. 오프라인 개발이 필요해지면 `swagger-ui-dist`를 devDependency로 받아 정적 제공 |
 
 ### 8.1 커버리지 확인
 

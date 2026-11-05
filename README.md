@@ -22,6 +22,9 @@
    npm run db:init        # 스키마 적용
    npm run dev
    ```
+
+   - 헬스 체크: http://localhost:3000/api/health → 정상 `{"ok":true,"db":"up"}`, DB 실패 503 `{"ok":false,"db":"down"}`
+   - API 문서(Swagger UI): http://localhost:3000/api/docs — `NODE_ENV=development`일 때만 열린다(PD-30). 명세 원본은 `backend/swagger.yaml`, UI 스크립트는 CDN에서 받는다.
 3. **프론트**
 
    ```

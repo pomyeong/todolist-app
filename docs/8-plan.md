@@ -11,6 +11,7 @@
 | v0.3 | 2026-11-04 | pmsong | 초안 | 문서 간 정합성 검토 반영 |
 | v0.4 | 2026-11-04 | Claude | 초안 | API 명세 작성 중 결정 반영 |
 | v0.5 | 2026-11-05 | Claude | 초안 | 부하 테스트 제외 |
+| v0.6 | 2026-11-05 | Claude | 초안 | 헬스 체크 DB 연결 확인 반영 |
 
 ### 변경 이력
 
@@ -25,8 +26,9 @@
 | v0.4 | 2026-11-04 | T-BE-08, T-BE-10, T-BE-15 | 로그인·카테고리 수정·이름 수정 응답 본문, 비밀번호 변경 200 → 204 | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
 | v0.4 | 2026-11-04 | 참조 문서 | 도메인 v0.6 → v0.7, PRD v0.11 → v0.12, 시나리오 v0.9 → v0.10, 와이어프레임 v0.4 → v0.5, 구조 설계 원칙 v0.4 → v0.5 | 버전 동기화 | Claude |
 | v0.5 | 2026-11-05 | T-CM-01, T-DB-05, T-DB-06, T-QA-01, 2장, 9장, 참조 문서 | T-QA-01 폐기, 시드는 실행 계획 확인용으로 이름 변경, 기록 위치를 루트 `README.md`로. PRD v0.12 → v0.13, 구조 설계 원칙 v0.5 → v0.6 | PRD v0.13 부하 테스트 제외 | Claude |
+| v0.6 | 2026-11-05 | T-BE-03 | `/api/health`가 `SELECT 1`로 DB 연결 확인(200 `db: 'up'` / 503 `db: 'down'`) | 구조 설계 원칙 v0.8 PD-14 | Claude |
 
-> 단일 출처 원칙: 규칙(ST·BR·UC)은 [도메인 정의서 v0.7](./1-domain-definition.md), 기능·비기능·일정(FR·NFR·SCR·M·P)은 [PRD v0.13](./2-PRD.md), 시나리오·예외(SC·E)는 [사용자 시나리오 v0.10](./3-user-scenario.md), 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md), 구조·레이어·파일 위치(PR·PD)는 [프로젝트 구조 설계 원칙 v0.6](./5-project-principle.md), 흐름(AD·SD)은 [아키텍처 다이어그램](./6-arch-diagram.md), 테이블·제약(DB)은 [ERD](./7-erd.md)가 정의한다. 이 문서는 **작업 순서·완료 조건만** 정하며 규칙·코드·수치를 다시 정의하지 않는다. 충돌하면 위 문서를 따른다.
+> 단일 출처 원칙: 규칙(ST·BR·UC)은 [도메인 정의서 v0.7](./1-domain-definition.md), 기능·비기능·일정(FR·NFR·SCR·M·P)은 [PRD v0.14](./2-PRD.md), 시나리오·예외(SC·E)는 [사용자 시나리오 v0.10](./3-user-scenario.md), 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md), 구조·레이어·파일 위치(PR·PD)는 [프로젝트 구조 설계 원칙 v0.8](./5-project-principle.md), 흐름(AD·SD)은 [아키텍처 다이어그램](./6-arch-diagram.md), 테이블·제약(DB)은 [ERD](./7-erd.md)가 정의한다. 이 문서는 **작업 순서·완료 조건만** 정하며 규칙·코드·수치를 다시 정의하지 않는다. 충돌하면 위 문서를 따른다.
 >
 > ID 운영 원칙: T-CM·T-DB·T-BE·T-FE·T-QA의 ID는 재사용하거나 재번호하지 않는다. Task를 없애면 행을 지우지 말고 '폐기'로 표시한다.
 
@@ -306,12 +308,12 @@ flowchart LR
 **수행 작업**
 1. `src/errors.js`: `AppError(status, code, message, fields?)`와 오류 코드 상수(NFR-15의 코드 전체).
 2. `src/middleware/error.js`: 알 수 없는 `/api` 경로는 404 `NOT_FOUND`, `AppError`는 NFR-15 형식으로 응답, 그 밖의 오류는 500 `INTERNAL_ERROR` + stderr JSON 한 줄 로그(본문·쿠키·비밀번호 미기록). `express.json` 파싱 실패와 본문 한도 초과(413 `entity.too.large`)는 400 `VALIDATION_ERROR`로 변환(PR-S-07).
-3. `src/app.js`: `createApp()` — `express.json({ limit: '16kb' })`, `/api/health`(`{ ok: true }`, DB 미조회), 라우터, 오류 미들웨어 조립.
+3. `src/app.js`: `createApp()` — `express.json({ limit: '16kb' })`, `/api/health`(`SELECT 1`로 DB 연결 확인, 200 `{ ok: true, db: 'up' }` / 503 `{ ok: false, db: 'down' }`), 라우터, 오류 미들웨어 조립.
 4. `src/server.js`: `createApp().listen(PORT)`, `SIGINT`·`SIGTERM`에서 `pool.end()`.
 5. `src/routes/index.js`: `/api` 라우터 뼈대(인증 경계는 T-BE-07).
 
 **완료 조건**
-- [x] `npm run dev` 후 `GET /api/health`가 인증 없이 200 `{ "ok": true }`를 반환한다.
+- [x] `npm run dev` 후 `GET /api/health`가 인증 없이 200 `{ "ok": true, "db": "up" }`을 반환하고, DB를 쓸 수 없으면 503 `{ "ok": false, "db": "down" }`이다.
 - [x] `GET /api/없는경로`가 404 `{ "error": { "code": "NOT_FOUND", "message": ... } }`를 반환한다.
 - [x] 임시로 던진 일반 `Error`가 500 `INTERNAL_ERROR`로 응답되고, 응답 본문에 stack·내부 메시지가 없으며 stderr에 JSON 한 줄이 남는다.
 - [x] 16kb를 넘는 본문이 400 `VALIDATION_ERROR`로 거부되고(413을 오류 미들웨어가 변환) 서버가 죽지 않는다.
