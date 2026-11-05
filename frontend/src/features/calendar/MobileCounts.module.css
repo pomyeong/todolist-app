@@ -11,8 +11,13 @@
 }
 
 .weekday {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
   text-align: center;
-  font-size: var(--fs-sm);
+}
+
+.weekday:first-child {
+  color: var(--sunday);
 }
 
 .cell,
@@ -23,7 +28,7 @@
 
 .blank {
   background: var(--surface-muted);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
 }
 
 .cell {
@@ -31,41 +36,46 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   padding: 0;
-  border: 1.5px solid transparent;
-  border-radius: var(--radius-md);
+  border: 0;
+  border-radius: var(--radius-sm);
   background: transparent;
 }
 
+.cell[data-today="true"] {
+  background: var(--today-bg);
+}
+
 .cell[data-selected="true"] {
-  background: var(--primary-soft);
-  border-color: var(--primary);
+  box-shadow: inset 0 0 0 2px var(--primary);
 }
 
 .day {
-  min-width: 24px;
-  height: 24px;
-  line-height: 24px;
-  border-radius: var(--radius-pill);
+  color: var(--text);
   font-size: var(--fs-sm);
 }
 
 .cell[data-dow="0"] .day {
-  color: var(--danger);
-}
-
-.cell[data-dow="6"] .day {
-  color: var(--primary-text);
+  color: var(--sunday);
 }
 
 .cell[data-today="true"] .day {
-  background: var(--primary-strong);
-  color: #ffffff;
+  font-weight: 700;
 }
 
 .count {
+  display: flex;
+  align-items: center;
+  gap: 3px;
   height: 16px;
-  color: var(--primary-text);
+  color: var(--text-muted);
   font-size: var(--fs-xs);
-  line-height: 16px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
 }

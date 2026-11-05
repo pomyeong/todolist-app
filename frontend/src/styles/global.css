@@ -8,22 +8,35 @@
   margin: 0;
 }
 
+/* 토큰 단일 출처. 값은 docs/style-guide.md 2~4장과 같다(SG-04). */
 :root {
   --bg: #ffffff;
-  --surface-muted: #f8f9fa;
-  --border: #dadce0;
-  --divider: #f1f3f4;
-  --text-strong: #1f1f1f;
+  --surface-muted: #f7f8fa;
+  --border: #dcdfe4;
+  --divider: #eceef1;
+  --text-strong: #1f2328;
   --text: #3c4043;
   --text-muted: #5f6368;
   --text-hint: #9aa0a6;
-  --primary: #1a73e8;
-  --primary-strong: #0b57d0;
-  --primary-soft: #e8f0fe;
-  --primary-text: #1967d2;
+  --primary: #6a5ae0;
+  --primary-strong: #5646c8;
+  --primary-soft: #f0eefd;
+  --primary-text: #4b3fb8;
+  --today-bg: #f2f6fb;
+  --sunday: #c5221f;
   --danger: #c5221f;
-  --outline: #747775;
-  --segment-on: #c2e7ff;
+  --danger-soft: #fce8e6;
+  --overlay: rgba(31, 35, 40, 0.4);
+
+  /* 상태색 ST-01~04 (style-guide 2.2) */
+  --st-progress-bg: #6a5ae0;
+  --st-progress-fg: #ffffff;
+  --st-todo-bg: #f0eefd;
+  --st-todo-fg: #4b3fb8;
+  --st-overdue-bg: #c24e28;
+  --st-overdue-fg: #ffffff;
+  --st-done-bg: #e8eaed;
+  --st-done-fg: #5f6368;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -32,9 +45,10 @@
   --space-5: 24px;
   --space-6: 32px;
 
-  --radius-sm: 6px;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 16px;
+  --radius-lg: 12px;
   --radius-pill: 999px;
 
   --font: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
@@ -43,18 +57,21 @@
   --fs-md: 14px;
   --fs-base: 15px;
   --fs-lg: 17px;
-  --fs-xl: 24px;
+  --fs-xl: 22px;
 
   --page-gutter: 16px;
+  --control-h: 40px;
 }
 
 @media (min-width: 768px) {
   :root {
     --page-gutter: 32px;
+    --control-h: 36px;
   }
 }
 
 body {
+  accent-color: var(--primary);
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
@@ -66,6 +83,22 @@ a {
   color: var(--primary-text);
 }
 
+/* 등록 이동처럼 페이지를 옮기는 주 동작은 링크를 주 버튼 모양으로(5.1) */
+a.primary {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+a.primary:hover {
+  background: var(--primary-strong);
+}
+
 button,
 input,
 select,
@@ -75,17 +108,29 @@ textarea {
 }
 
 button {
-  height: 36px;
+  height: var(--control-h);
   padding: 0 var(--space-4);
   background: var(--bg);
-  border: 1px solid var(--outline);
-  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
   cursor: pointer;
 }
 
 button.primary {
   background: var(--primary);
   border-color: var(--primary);
+  color: #ffffff;
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--primary-strong);
+  border-color: var(--primary-strong);
+}
+
+button.danger {
+  background: var(--danger);
+  border-color: var(--danger);
   color: #ffffff;
 }
 
@@ -103,7 +148,18 @@ textarea {
   padding: 0 var(--space-3);
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary);
+}
+
+/* 5.3 오류 상태: 같은 필드 묶음에 FieldError가 있으면 입력란 테두리를 빨강으로 */
+:has(> [data-field-error]) > :is(input, select, textarea) {
+  border-color: var(--danger);
 }
 
 textarea {
@@ -121,29 +177,35 @@ textarea {
 .chip {
   display: inline-flex;
   align-items: center;
-  height: 24px;
+  height: 22px;
   padding: 0 var(--space-2);
-  border-radius: 12px;
+  border-radius: var(--radius-pill);
   font-size: var(--fs-sm);
   white-space: nowrap;
 }
 
-.chip[data-status="completed"] {
-  background: #e6f4ea;
-  color: #137333;
+/* 상태 칩·캘린더 막대 공통: data-status로 상태색 쌍을 고른다 */
+[data-status="in_progress"] {
+  --st-bg: var(--st-progress-bg);
+  --st-fg: var(--st-progress-fg);
 }
 
-.chip[data-status="not_started"] {
-  background: #e8eaed;
-  color: #3c4043;
+[data-status="not_started"] {
+  --st-bg: var(--st-todo-bg);
+  --st-fg: var(--st-todo-fg);
 }
 
-.chip[data-status="in_progress"] {
-  background: #1a73e8;
-  color: #ffffff;
+[data-status="overdue"] {
+  --st-bg: var(--st-overdue-bg);
+  --st-fg: var(--st-overdue-fg);
 }
 
-.chip[data-status="overdue"] {
-  background: #c5221f;
-  color: #ffffff;
+[data-status="completed"] {
+  --st-bg: var(--st-done-bg);
+  --st-fg: var(--st-done-fg);
+}
+
+.chip[data-status] {
+  background: var(--st-bg);
+  color: var(--st-fg);
 }

@@ -28,7 +28,12 @@ export function MonthGrid({ date, todos, today, selected, onSelect }: Props) {
         if (d === null) return <div key={`blank-${i}`} className={styles.blank} />;
         const { shown, more } = cellSummary(todos, d);
         return (
-          <div key={d} className={styles.cell} data-selected={d === selected}>
+          <div
+            key={d}
+            className={styles.cell}
+            data-selected={d === selected}
+            data-today={d === today}
+          >
             <button
               type="button"
               className={styles.day}
@@ -41,7 +46,7 @@ export function MonthGrid({ date, todos, today, selected, onSelect }: Props) {
             </button>
             <ul className={styles.items}>
               {shown.map((t) => (
-                <li key={t.id} className={styles.item}>
+                <li key={t.id} className={styles.item} data-status={t.status}>
                   <Link
                     to={`/todos/${t.id}/edit`}
                     state={{ from: pathname + search }}

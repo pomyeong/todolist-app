@@ -35,7 +35,14 @@ export function MobileCounts({ cells, todos, today, selected, onSelect }: Props)
             onClick={() => onSelect(d)}
           >
             <span className={styles.day}>{Number(d.slice(8))}</span>
-            <span className={styles.count}>{count > 0 ? `•${count}` : ''}</span>
+            <span className={styles.count}>
+              {count > 0 && (
+                <>
+                  <span className={styles.dot} aria-hidden="true" />
+                  {count}
+                </>
+              )}
+            </span>
           </button>
         );
       })}

@@ -41,18 +41,20 @@ export function CalendarToolbar({ view, date, onChange }: Props) {
       <div className={styles.nav}>
         <button
           type="button"
+          className={styles.step}
           aria-label="이전"
           onClick={() => onChange(view, shiftDate(view, date, -1))}
         >
-          &lt;
+          ‹
         </button>
         <span className={styles.label}>{periodLabel(view, date)}</span>
         <button
           type="button"
+          className={styles.step}
           aria-label="다음"
           onClick={() => onChange(view, shiftDate(view, date, 1))}
         >
-          &gt;
+          ›
         </button>
       </div>
     </div>

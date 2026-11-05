@@ -5,7 +5,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--overlay);
 }
 
 .panel {
@@ -13,12 +13,13 @@
   padding: var(--space-5);
   background: var(--bg);
   border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(31, 35, 40, 0.16);
 }
 
 .title {
   color: var(--text-strong);
   font-size: var(--fs-lg);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .message {

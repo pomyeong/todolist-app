@@ -1,5 +1,8 @@
 .error {
   margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  background: var(--danger-soft);
+  border-left: 3px solid var(--danger);
   color: var(--danger);
   font-size: var(--fs-md);
 }

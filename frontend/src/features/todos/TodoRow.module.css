@@ -18,15 +18,26 @@
 
 .title {
   grid-area: title;
+  color: var(--text-strong);
+  text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.title:hover {
+  text-decoration: underline;
+}
+
+.row[data-status="completed"] .title {
+  color: var(--text-muted);
 }
 
 .period {
   grid-area: period;
   font-size: var(--fs-md);
   color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .meta {
@@ -46,7 +57,12 @@
     grid-template-columns: 48px minmax(0, 1fr) 220px 120px 80px 64px;
     grid-template-areas: "check title period category status del";
     gap: var(--space-3);
+    min-height: 48px;
     padding: var(--space-2) 0;
+  }
+
+  .row:hover {
+    background: var(--surface-muted);
   }
 
   .meta {

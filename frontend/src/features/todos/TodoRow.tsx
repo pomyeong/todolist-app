@@ -19,7 +19,7 @@ export function TodoRow({ todo, onError }: Props) {
   const busy = toggle.isPending || remove.isPending;
 
   return (
-    <li className={styles.row}>
+    <li className={styles.row} data-status={todo.status}>
       <input
         className={styles.check}
         type="checkbox"

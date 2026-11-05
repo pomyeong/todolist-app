@@ -16,7 +16,7 @@ export function TodoListPage() {
       <h1>할일 목록</h1>
       <FormError message={(actionError ?? error)?.message} />
       <p>
-        <Link to="/todos/new" state={{ from: '/todos' }}>
+        <Link to="/todos/new" state={{ from: '/todos' }} className="primary">
           + 할일 등록
         </Link>
       </p>

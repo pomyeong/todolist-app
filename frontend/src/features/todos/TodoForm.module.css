@@ -13,8 +13,8 @@
 }
 
 .field label {
-  font-size: var(--fs-md);
-  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  color: var(--text-strong);
 }
 
 .dates {

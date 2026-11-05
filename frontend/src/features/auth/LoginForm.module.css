@@ -11,6 +11,7 @@
 .form h1 {
   color: var(--text-strong);
   font-size: var(--fs-xl);
+  font-weight: 700;
 }
 
 .field {
@@ -20,6 +21,6 @@
 }
 
 .field label {
-  font-size: var(--fs-md);
-  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  color: var(--text-strong);
 }

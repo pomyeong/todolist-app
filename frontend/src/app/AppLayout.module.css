@@ -5,7 +5,7 @@
   align-items: center;
   gap: var(--space-1) var(--space-3);
   padding: var(--space-2) var(--page-gutter);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--divider);
 }
 
 .name {
@@ -13,7 +13,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text-strong);
+  color: var(--text-muted);
   font-size: var(--fs-md);
 }
 
@@ -29,7 +29,7 @@
 
 .link {
   padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   color: var(--text);
   font-size: var(--fs-md);
   text-decoration: none;
@@ -38,6 +38,7 @@
 .link:global(.active) {
   background: var(--primary-soft);
   color: var(--primary-text);
+  font-weight: 700;
 }
 
 .main {
@@ -46,7 +47,7 @@
 
 @media (min-width: 768px) {
   .header {
-    min-height: 64px;
+    min-height: 56px;
     grid-template-columns: auto minmax(0, 1fr) auto auto;
     grid-template-areas: "nav . name logout";
   }

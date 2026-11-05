@@ -40,7 +40,7 @@ export function ConfirmDialog({ title, message, pending, onConfirm, onCancel }: 
           <button type="button" disabled={pending} onClick={onCancel}>
             취소
           </button>
-          <button type="button" className="primary" disabled={pending} onClick={onConfirm}>
+          <button type="button" className="danger" disabled={pending} onClick={onConfirm}>
             확인
           </button>
         </div>
