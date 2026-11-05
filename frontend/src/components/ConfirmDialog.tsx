@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useT } from '../i18n';
 import styles from './ConfirmDialog.module.css';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function ConfirmDialog({ title, message, pending, onConfirm, onCancel }: Props) {
+  const t = useT();
   useEffect(() => {
     if (pending) return;
     const onKey = (e: KeyboardEvent) => {
@@ -38,10 +40,10 @@ export function ConfirmDialog({ title, message, pending, onConfirm, onCancel }: 
         )}
         <div className={styles.actions}>
           <button type="button" disabled={pending} onClick={onCancel}>
-            취소
+            {t('common.cancel')}
           </button>
           <button type="button" className="danger" disabled={pending} onClick={onConfirm}>
-            확인
+            {t('common.confirm')}
           </button>
         </div>
       </div>

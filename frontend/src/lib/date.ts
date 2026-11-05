@@ -1,5 +1,3 @@
-export const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'] as const;
-
 // PR-C-05: 로컬 날짜 컴포넌트만 사용, toISOString 금지
 function format(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');

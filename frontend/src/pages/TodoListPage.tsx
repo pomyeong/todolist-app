@@ -7,17 +7,19 @@ import { LoadingNotice } from '../components/LoadingNotice';
 import { TodoFilters } from '../features/todos/TodoFilters';
 import { TodoListHeader, TodoRow } from '../features/todos/TodoRow';
 import { useTodoList } from '../features/todos/useTodos';
+import { useT } from '../i18n';
 
 export function TodoListPage() {
+  const t = useT();
   const { data, isPending, error } = useTodoList();
   const [actionError, setActionError] = useState<ApiError | null>(null);
   return (
     <>
-      <h1>할일 목록</h1>
+      <h1>{t('todo.listTitle')}</h1>
       <FormError message={(actionError ?? error)?.message} />
       <p>
         <Link to="/todos/new" state={{ from: '/todos' }} className="primary">
-          + 할일 등록
+          {t('todo.newLink')}
         </Link>
       </p>
       <TodoFilters />

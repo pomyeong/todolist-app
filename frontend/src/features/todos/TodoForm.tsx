@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { ApiError, TodoInput } from '../../api/types';
 import { FieldError } from '../../components/FieldError';
 import { FormError } from '../../components/FormError';
+import { useCategoryLabel, useT } from '../../i18n';
 import styles from './TodoForm.module.css';
 import { useCategoryOptions } from './useTodos';
 
@@ -15,6 +16,8 @@ interface Props {
 }
 
 export function TodoForm({ initial, error, pending, onSubmit, onCancel }: Props) {
+  const t = useT();
+  const categoryLabel = useCategoryLabel();
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description);
   const [startDate, setStartDate] = useState(initial.startDate);
@@ -43,12 +46,12 @@ export function TodoForm({ initial, error, pending, onSubmit, onCancel }: Props)
     <form className={styles.form} onSubmit={submit} noValidate>
       <FormError message={fields ? undefined : error?.message} />
       <div className={styles.field}>
-        <label htmlFor="title">제목</label>
+        <label htmlFor="title">{t('todo.title')}</label>
         <input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
         <FieldError message={fields?.title} />
       </div>
       <div className={styles.field}>
-        <label htmlFor="description">설명</label>
+        <label htmlFor="description">{t('todo.description')}</label>
         <textarea
           id="description"
           value={description}
@@ -58,7 +61,7 @@ export function TodoForm({ initial, error, pending, onSubmit, onCancel }: Props)
       </div>
       <div className={styles.dates}>
         <div className={styles.field}>
-          <label htmlFor="startDate">시작일</label>
+          <label htmlFor="startDate">{t('todo.startDate')}</label>
           <input
             id="startDate"
             type="date"
@@ -68,7 +71,7 @@ export function TodoForm({ initial, error, pending, onSubmit, onCancel }: Props)
           <FieldError message={fields?.startDate} />
         </div>
         <div className={styles.field}>
-          <label htmlFor="endDate">종료일</label>
+          <label htmlFor="endDate">{t('todo.endDate')}</label>
           <input
             id="endDate"
             type="date"
@@ -78,7 +81,7 @@ export function TodoForm({ initial, error, pending, onSubmit, onCancel }: Props)
           <FieldError message={fields?.endDate} />
         </div>
         <div className={styles.field}>
-          <label htmlFor="startTime">시작 시간</label>
+          <label htmlFor="startTime">{t('todo.startTime')}</label>
           <input
             id="startTime"
             type="time"
@@ -88,7 +91,7 @@ export function TodoForm({ initial, error, pending, onSubmit, onCancel }: Props)
           <FieldError message={fields?.startTime} />
         </div>
         <div className={styles.field}>
-          <label htmlFor="endTime">종료 시간</label>
+          <label htmlFor="endTime">{t('todo.endTime')}</label>
           <input
             id="endTime"
             type="time"
@@ -99,12 +102,12 @@ export function TodoForm({ initial, error, pending, onSubmit, onCancel }: Props)
         </div>
       </div>
       <div className={styles.field}>
-        <label htmlFor="categoryId">카테고리</label>
+        <label htmlFor="categoryId">{t('todo.category')}</label>
         <select id="categoryId" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-          <option value="">선택 안 함</option>
+          <option value="">{t('common.none')}</option>
           {categories?.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.name}
+              {categoryLabel(c.name)}
             </option>
           ))}
         </select>
@@ -112,10 +115,10 @@ export function TodoForm({ initial, error, pending, onSubmit, onCancel }: Props)
       </div>
       <div className={styles.actions}>
         <button type="submit" className="primary" disabled={pending}>
-          저장
+          {t('common.save')}
         </button>
         <button type="button" disabled={pending} onClick={onCancel}>
-          취소
+          {t('common.cancel')}
         </button>
       </div>
     </form>

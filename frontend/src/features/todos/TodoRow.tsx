@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import type { ApiError, TodoWithStatus } from '../../api/types';
-import { STATUS_LABEL } from '../../api/types';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { TodoTitle } from '../../components/TodoTitle';
+import { useCategoryLabel, useT } from '../../i18n';
 import styles from './TodoRow.module.css';
 import { useDeleteTodo, useToggleTodo } from './useTodos';
 
@@ -14,19 +14,22 @@ interface Props {
 
 // WF-04 데스크톱 표 머리줄. 각 행의 조작 요소에 이미 접근 가능한 이름이 있어 보조기기에는 숨긴다.
 export function TodoListHeader() {
+  const t = useT();
   return (
     <div className={styles.head} aria-hidden="true">
-      <span>완료</span>
-      <span>제목</span>
-      <span>기간</span>
-      <span>카테고리</span>
-      <span>상태</span>
+      <span>{t('todo.done')}</span>
+      <span>{t('todo.title')}</span>
+      <span>{t('todo.period')}</span>
+      <span>{t('todo.category')}</span>
+      <span>{t('todo.status')}</span>
       <span />
     </div>
   );
 }
 
 export function TodoRow({ todo, onError }: Props) {
+  const t = useT();
+  const categoryLabel = useCategoryLabel();
   const { pathname, search } = useLocation();
   const [confirming, setConfirming] = useState(false);
   const toggle = useToggleTodo(todo.id);
@@ -38,7 +41,7 @@ export function TodoRow({ todo, onError }: Props) {
       <input
         className={styles.check}
         type="checkbox"
-        aria-label={`${todo.title} 완료`}
+        aria-label={t('todo.toggle')(todo.title)}
         checked={todo.completed}
         disabled={busy}
         onChange={(e) => {
@@ -52,18 +55,18 @@ export function TodoRow({ todo, onError }: Props) {
         to={`/todos/${todo.id}/edit`}
         state={{ from: pathname + search }}
       >
-        <TodoTitle title={todo.title} startTime={todo.startTime} />
+        <TodoTitle title={todo.title} description={todo.description} startTime={todo.startTime} />
       </Link>
       <span className={styles.period}>
         {todo.startDate} ~ {todo.endDate}
       </span>
       <span className={styles.meta}>
-        <span className={styles.category}>{todo.categoryName}</span>
+        <span className={styles.category}>{categoryLabel(todo.categoryName)}</span>
         <span className={styles.dot} aria-hidden="true">
           ·
         </span>
         <span className="chip" data-status={todo.status}>
-          {STATUS_LABEL[todo.status]}
+          {t(`status.${todo.status}`)}
         </span>
       </span>
       <button
@@ -75,11 +78,11 @@ export function TodoRow({ todo, onError }: Props) {
           setConfirming(true);
         }}
       >
-        삭제
+        {t('common.delete')}
       </button>
       {confirming && (
         <ConfirmDialog
-          title="이 할일을 삭제할까요?"
+          title={t('todo.deleteConfirm')}
           pending={remove.isPending}
           onCancel={() => setConfirming(false)}
           onConfirm={() =>

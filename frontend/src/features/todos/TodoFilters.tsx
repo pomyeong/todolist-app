@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 import type { Status } from '../../api/types';
-import { STATUS_LABEL, STATUSES } from '../../api/types';
+import { STATUSES } from '../../api/types';
+import { useCategoryLabel, useT } from '../../i18n';
 import { useFilterStore } from './filterStore';
 import styles from './TodoFilters.module.css';
 import { useCategoryOptions } from './useTodos';
 
 export function TodoFilters() {
+  const t = useT();
+  const categoryLabel = useCategoryLabel();
   const { filter, setFilter } = useFilterStore();
   const { data: categories } = useCategoryOptions();
 
@@ -21,33 +24,33 @@ export function TodoFilters() {
   return (
     <div className={styles.filters}>
       <label>
-        카테고리
+        {t('todo.category')}
         <select
           value={filter.categoryId ?? ''}
           onChange={(e) =>
             setFilter({ categoryId: e.target.value === '' ? undefined : Number(e.target.value) })
           }
         >
-          <option value="">전체</option>
+          <option value="">{t('common.all')}</option>
           {categories?.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.name}
+              {categoryLabel(c.name)}
             </option>
           ))}
         </select>
       </label>
       <label>
-        상태
+        {t('todo.status')}
         <select
           value={filter.status ?? ''}
           onChange={(e) =>
             setFilter({ status: e.target.value === '' ? undefined : (e.target.value as Status) })
           }
         >
-          <option value="">전체</option>
+          <option value="">{t('common.all')}</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {STATUS_LABEL[s]}
+              {t(`status.${s}`)}
             </option>
           ))}
         </select>

@@ -7,6 +7,7 @@
 - `backend/` — Node.js + Express 5 API 서버
 - `frontend/` — React 19 + TypeScript + Vite
 - `docs/` — 설계 문서
+- `guide/` — 개발 과정 튜토리얼([tutorial.md](guide/tutorial.md))과 비슷한 앱을 만들 때 AI에 한 번에 읽히는 플레이북([ai-playbook.md](guide/ai-playbook.md))
 
 ## 실행 순서
 
@@ -32,6 +33,31 @@
    npm install
    npm run dev            # .env.development의 VITE_API_BASE_URL(http://localhost:3000)로 API 직접 호출(CORS)
    ```
+
+## 기존 DB 업그레이드
+
+스키마 단일 출처는 `docs/schema.sql`이고 마이그레이션 도구는 쓰지 않는다(PR-S-10). 데이터를 버려도 되면 `npm run db:init -- --reset`으로 다시 만든다. 기존 데이터를 지키려면 해당 변경의 SQL을 개발 DB(`todolist`)에 직접 실행한다.
+
+### 할일 시작·종료 시간 (2026-11-05, BR-24, DB-14)
+
+`todos.start_time`·`end_time` 컬럼과 `ck_todos_times` 제약을 추가한다. 두 컬럼은 NULL 허용이라 기존 할일은 '시간 없음'으로 남는다. 여러 번 실행해도 결과가 같다.
+
+```sql
+BEGIN;
+ALTER TABLE todos
+  ADD COLUMN IF NOT EXISTS start_time TIME(0),
+  ADD COLUMN IF NOT EXISTS end_time   TIME(0);
+ALTER TABLE todos
+  DROP CONSTRAINT IF EXISTS ck_todos_times,
+  ADD CONSTRAINT ck_todos_times CHECK (
+    start_date < end_date OR start_time IS NULL OR end_time IS NULL OR start_time <= end_time
+  );
+COMMIT;
+```
+
+- 실행: `psql "$DATABASE_URL" -f <위 SQL 파일>` 또는 pgAdmin 쿼리 창.
+- 확인: `SELECT column_name FROM information_schema.columns WHERE table_name = 'todos' AND column_name LIKE '%_time';` → `start_time`, `end_time`
+- 테스트 DB(`todolist_test`)는 테스트가 데이터를 매번 비우므로 `node --env-file=.env.test scripts/db-init.js --reset`으로 다시 만든다.
 
 ## 포맷·린트
 

@@ -2,11 +2,13 @@ import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 import { FieldError } from '../../components/FieldError';
 import { FormError } from '../../components/FormError';
+import { useT } from '../../i18n';
 import { PASSWORD_MISMATCH } from './messages';
 import styles from './PasswordForm.module.css';
 import { useChangePassword } from './useAuth';
 
 export function PasswordForm() {
+  const t = useT();
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -30,10 +32,10 @@ export function PasswordForm() {
   };
   return (
     <form className={styles.form} onSubmit={onSubmit} noValidate>
-      <h2>비밀번호 변경</h2>
+      <h2>{t('me.passwordTitle')}</h2>
       <FormError message={error?.fields ? undefined : error?.message} />
       <div className={styles.field}>
-        <label htmlFor="pw-current">현재 비밀번호</label>
+        <label htmlFor="pw-current">{t('me.currentPassword')}</label>
         <input
           id="pw-current"
           type="password"
@@ -44,7 +46,7 @@ export function PasswordForm() {
         <FieldError message={error?.fields?.currentPassword} />
       </div>
       <div className={styles.field}>
-        <label htmlFor="pw-new">새 비밀번호</label>
+        <label htmlFor="pw-new">{t('me.newPassword')}</label>
         <input
           id="pw-new"
           type="password"
@@ -55,7 +57,7 @@ export function PasswordForm() {
         <FieldError message={error?.fields?.newPassword} />
       </div>
       <div className={styles.field}>
-        <label htmlFor="pw-confirm">새 비밀번호 확인</label>
+        <label htmlFor="pw-confirm">{t('me.newPasswordConfirm')}</label>
         <input
           id="pw-confirm"
           type="password"
@@ -66,7 +68,7 @@ export function PasswordForm() {
         <FieldError message={mismatch ? PASSWORD_MISMATCH : undefined} />
       </div>
       <button type="submit" className="primary" disabled={isPending}>
-        비밀번호 변경
+        {t('me.passwordTitle')}
       </button>
     </form>
   );

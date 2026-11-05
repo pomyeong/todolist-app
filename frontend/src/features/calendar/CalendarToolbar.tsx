@@ -1,4 +1,5 @@
-import { dayOfWeek, WEEKDAYS } from '../../lib/date';
+import { useT } from '../../i18n';
+import { dayOfWeek } from '../../lib/date';
 import styles from './CalendarToolbar.module.css';
 import type { CalendarView } from './range';
 import { rangeOf, shiftDate } from './range';
@@ -9,21 +10,22 @@ interface Props {
   onChange(view: CalendarView, date: string): void;
 }
 
-const VIEWS: { view: CalendarView; label: string }[] = [
-  { view: 'month', label: '월' },
-  { view: '4weeks', label: '4주' },
-  { view: 'week', label: '주' },
-  { view: 'day', label: '일' },
-];
+const VIEWS = [
+  { view: 'month', label: 'cal.month' },
+  { view: '4weeks', label: 'cal.4weeks' },
+  { view: 'week', label: 'cal.week' },
+  { view: 'day', label: 'cal.day' },
+] as const;
 
-function periodLabel(view: CalendarView, date: string): string {
+function periodLabel(view: CalendarView, date: string, weekdays: readonly string[]): string {
   if (view === 'month') return date.slice(0, 7);
-  if (view === 'day') return `${date} (${WEEKDAYS[dayOfWeek(date)]})`;
+  if (view === 'day') return `${date} (${weekdays[dayOfWeek(date)]})`;
   const { from, to } = rangeOf(view, date);
   return `${from} ~ ${to}`;
 }
 
 export function CalendarToolbar({ view, date, onChange }: Props) {
+  const t = useT();
   return (
     <div className={styles.toolbar}>
       <div className={styles.segments}>
@@ -35,7 +37,7 @@ export function CalendarToolbar({ view, date, onChange }: Props) {
             aria-pressed={v.view === view}
             onClick={() => onChange(v.view, date)}
           >
-            {v.label}
+            {t(v.label)}
           </button>
         ))}
       </div>
@@ -43,16 +45,16 @@ export function CalendarToolbar({ view, date, onChange }: Props) {
         <button
           type="button"
           className={styles.step}
-          aria-label="이전"
+          aria-label={t('cal.prev')}
           onClick={() => onChange(view, shiftDate(view, date, -1))}
         >
           ‹
         </button>
-        <span className={styles.label}>{periodLabel(view, date)}</span>
+        <span className={styles.label}>{periodLabel(view, date, t('weekdays'))}</span>
         <button
           type="button"
           className={styles.step}
-          aria-label="다음"
+          aria-label={t('cal.next')}
           onClick={() => onChange(view, shiftDate(view, date, 1))}
         >
           ›

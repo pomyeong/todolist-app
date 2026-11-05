@@ -17,13 +17,6 @@ export interface Category {
 // PD-19
 export type Status = 'completed' | 'not_started' | 'in_progress' | 'overdue';
 export const STATUSES: readonly Status[] = ['completed', 'not_started', 'in_progress', 'overdue'];
-export const STATUS_LABEL: Record<Status, string> = {
-  completed: '완료',
-  not_started: '시작 전',
-  in_progress: '진행 중',
-  overdue: '지연',
-};
-
 export interface Todo {
   id: number;
   categoryId: number;

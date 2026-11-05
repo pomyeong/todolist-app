@@ -1,5 +1,5 @@
 import type { TodoWithStatus } from '../../api/types';
-import { WEEKDAYS } from '../../lib/date';
+import { useT } from '../../i18n';
 import { todosOn } from './cellTodos';
 import styles from './MobileCounts.module.css';
 
@@ -12,9 +12,10 @@ interface Props {
 }
 
 export function MobileCounts({ cells, todos, today, selected, onSelect }: Props) {
+  const t = useT();
   return (
     <div className={styles.grid}>
-      {WEEKDAYS.map((w) => (
+      {t('weekdays').map((w) => (
         <div key={w} className={styles.weekday}>
           {w}
         </div>

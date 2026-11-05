@@ -16,6 +16,11 @@
   box-shadow: var(--shadow-dialog);
 }
 
+/* 어두운 바탕에서는 그림자가 잘 안 보여 테두리로 패널 경계를 보인다(style-guide 2.1.1) */
+:global([data-theme="dark"]) .panel {
+  border: 1px solid var(--border);
+}
+
 .title {
   color: var(--text-strong);
   font-size: var(--fs-lg);

@@ -4,6 +4,7 @@ import { FormError } from '../components/FormError';
 import { LoadingNotice } from '../components/LoadingNotice';
 import { TodoForm } from '../features/todos/TodoForm';
 import { useSaveTodo, useTodo } from '../features/todos/useTodos';
+import { useT } from '../i18n';
 
 const EMPTY: TodoInput = {
   title: '',
@@ -20,11 +21,12 @@ export function TodoFormPage() {
 }
 
 function EditLoader({ id }: { id: number }) {
+  const t = useT();
   const { data, error } = useTodo(id);
   if (error) {
     return (
       <>
-        <h1>할일 편집</h1>
+        <h1>{t('todo.edit')}</h1>
         <FormError message={error.message} />
       </>
     );
@@ -47,6 +49,7 @@ function EditLoader({ id }: { id: number }) {
 }
 
 function FormBody({ id, initial = EMPTY }: { id?: number; initial?: TodoInput }) {
+  const t = useT();
   const navigate = useNavigate();
   const state: unknown = useLocation().state;
   const stateFrom = (state as { from?: unknown } | null)?.from;
@@ -55,7 +58,7 @@ function FormBody({ id, initial = EMPTY }: { id?: number; initial?: TodoInput })
   const save = useSaveTodo(id);
   return (
     <>
-      <h1>{id === undefined ? '할일 등록' : '할일 편집'}</h1>
+      <h1>{id === undefined ? t('todo.new') : t('todo.edit')}</h1>
       <TodoForm
         initial={initial}
         error={save.error}

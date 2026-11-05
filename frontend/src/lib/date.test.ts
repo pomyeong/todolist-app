@@ -8,7 +8,6 @@ import {
   isValidDate,
   startOfMonth,
   todayLocal,
-  WEEKDAYS,
 } from './date';
 
 describe('addDays', () => {
@@ -98,13 +97,6 @@ describe('isValidDate', () => {
     '',
   ])('%s는 무효', (d) => {
     expect(isValidDate(d)).toBe(false);
-  });
-});
-
-describe('WEEKDAYS', () => {
-  it('일요일부터 7개', () => {
-    expect(WEEKDAYS).toHaveLength(7);
-    expect(WEEKDAYS[0]).toBe('일');
   });
 });
 

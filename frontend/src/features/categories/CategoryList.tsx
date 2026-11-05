@@ -4,10 +4,13 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { FieldError } from '../../components/FieldError';
 import { FormError } from '../../components/FormError';
 import { LoadingNotice } from '../../components/LoadingNotice';
+import { useCategoryLabel, useT } from '../../i18n';
 import styles from './CategoryList.module.css';
 import { useCategories, useDeleteCategory, useRenameCategory } from './useCategories';
 
 export function CategoryList() {
+  const t = useT();
+  const categoryLabel = useCategoryLabel();
   const { data, isPending, error: listError } = useCategories();
   const rename = useRenameCategory();
   const del = useDeleteCategory();
@@ -39,7 +42,7 @@ export function CategoryList() {
               <form className={styles.row} onSubmit={onSave} noValidate>
                 <div className={styles.name}>
                   <input
-                    aria-label="카테고리 이름"
+                    aria-label={t('category.name')}
                     // biome-ignore lint/a11y/noAutofocus: 사용자가 누른 '수정'으로 열린 입력란이라 포커스 이동이 예상된 동작이다(L-14)
                     autoFocus
                     value={editing.name}
@@ -49,15 +52,15 @@ export function CategoryList() {
                   <FieldError message={rename.error?.fields?.name} />
                 </div>
                 <button type="submit" className="primary" disabled={rename.isPending}>
-                  저장
+                  {t('common.save')}
                 </button>
                 <button type="button" disabled={rename.isPending} onClick={closeEdit}>
-                  닫기
+                  {t('common.close')}
                 </button>
               </form>
             ) : (
               <div className={styles.row}>
-                <span className={styles.name}>{c.name}</span>
+                <span className={styles.name}>{categoryLabel(c.name)}</span>
                 <button
                   type="button"
                   // BR-12: 기본 카테고리는 수정·삭제 조작 비활성
@@ -67,7 +70,7 @@ export function CategoryList() {
                     setEditing({ id: c.id, name: c.name });
                   }}
                 >
-                  수정
+                  {t('common.edit')}
                 </button>
                 <button
                   type="button"
@@ -77,7 +80,7 @@ export function CategoryList() {
                     setDeleting({ id: c.id, name: c.name });
                   }}
                 >
-                  삭제
+                  {t('common.delete')}
                 </button>
               </div>
             )}
@@ -86,9 +89,9 @@ export function CategoryList() {
       </ul>
       {deleting && (
         <ConfirmDialog
-          title={`'${deleting.name}' 카테고리를 삭제할까요?`}
+          title={t('category.deleteConfirm')(deleting.name)}
           // P-19, BR-14: 삭제 시 소속 할일 이동 안내
-          message="소속 할일은 '기본'으로 옮겨집니다."
+          message={t('category.deleteNote')}
           pending={del.isPending}
           onConfirm={onConfirmDelete}
           onCancel={() => setDeleting(null)}

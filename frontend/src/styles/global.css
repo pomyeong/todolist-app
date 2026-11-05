@@ -25,11 +25,13 @@
   --today-bg: #f2f6fb;
   --sunday: #c5221f;
   --danger: #c5221f;
+  --danger-fill: #c5221f; /* 위험 버튼 배경: 흰 글자 대비 5.8:1, 두 모드 공통 */
   --danger-soft: #fce8e6;
   --overlay: rgba(31, 35, 40, 0.4);
   --week-alt-bg: #f8f9fb;
   --on-primary: #ffffff;
   --shadow-dialog: 0 8px 24px rgba(31, 35, 40, 0.16);
+  --shadow-card: 0 1px 3px rgba(31, 35, 40, 0.08);
 
   /* 상태색 ST-01~04 (style-guide 2.2) */
   --st-progress-bg: #6a5ae0;
@@ -64,34 +66,35 @@
 
   --page-gutter: 16px;
   --control-h: 40px;
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
-/* P-29: OS 어두운 모드. 값은 style-guide 2.1.1 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #16181d;
-    --surface-muted: #1e2128;
-    --border: #3a3f4a;
-    --divider: #2a2e36;
-    --text-strong: #eceef1;
-    --text: #c9ccd2;
-    --text-muted: #9aa0aa;
-    --text-hint: #6b717c;
-    --primary-strong: #7d6ff0;
-    --primary-soft: #2a2550;
-    --primary-text: #b8afff;
-    --today-bg: #1f2836;
-    --week-alt-bg: #1b1e24;
-    --sunday: #ff7b72;
-    --danger: #ff7b72;
-    --danger-soft: #3b1d1d;
-    --overlay: rgba(0, 0, 0, 0.6);
-    --st-todo-bg: #2a2550;
-    --st-todo-fg: #c4bdff;
-    --st-done-bg: #2c3038;
-    --st-done-fg: #a5abb5;
-  }
+/* P-29·FR-19: 어두운 모드. data-theme은 lib/themeStore.ts·index.html이 정한다. 값은 style-guide 2.1.1 */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #16181d;
+  --surface-muted: #1e2128;
+  --border: #3a3f4a;
+  --divider: #2a2e36;
+  --text-strong: #eceef1;
+  --text: #c9ccd2;
+  --text-muted: #9aa0aa;
+  --text-hint: #6b717c;
+  --primary-strong: #7d6ff0;
+  --primary-soft: #2a2550;
+  --primary-text: #b8afff;
+  --today-bg: #1f2836;
+  --week-alt-bg: #1b1e24;
+  --sunday: #ff7b72;
+  --danger: #ff7b72;
+  --danger-soft: #3b1d1d;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --st-todo-bg: #2a2550;
+  --st-todo-fg: #c4bdff;
+  --st-done-bg: #2c3038;
+  --st-done-fg: #a5abb5;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-dialog: 0 12px 32px rgba(0, 0, 0, 0.6);
 }
 
 @media (min-width: 768px) {
@@ -168,8 +171,8 @@ button.primary:hover:not(:disabled) {
 }
 
 button.danger {
-  background: var(--danger);
-  border-color: var(--danger);
+  background: var(--danger-fill);
+  border-color: var(--danger-fill);
   color: var(--on-primary);
 }
 
@@ -229,6 +232,20 @@ textarea {
 
 .todo-time {
   font-variant-numeric: tabular-nums;
+}
+
+/* FR-18·L-23 언어 선택 상자(style-guide 5.5) */
+.lang-select {
+  width: auto;
+  height: 32px;
+  padding: 0 var(--space-2);
+  font-size: var(--fs-sm);
+}
+
+.lang-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-1);
 }
 
 .chip {

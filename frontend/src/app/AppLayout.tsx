@@ -1,18 +1,22 @@
 import { useIsFetching, useIsMutating } from '@tanstack/react-query';
 import { NavLink, Outlet } from 'react-router';
+import { LanguageSelect } from '../components/LanguageSelect';
 import { LoadingNotice } from '../components/LoadingNotice';
+import { ThemeSelect } from '../components/ThemeSelect';
 import { useAuthStore } from '../features/auth/authStore';
 import { useLogout } from '../features/auth/useAuth';
+import { useT } from '../i18n';
 import styles from './AppLayout.module.css';
 
 const LINKS = [
-  ['/todos', '목록'],
-  ['/calendar', '캘린더'],
-  ['/categories', '카테고리'],
-  ['/me', '내 정보'],
+  ['/todos', 'nav.todos'],
+  ['/calendar', 'nav.calendar'],
+  ['/categories', 'nav.categories'],
+  ['/me', 'nav.me'],
 ] as const;
 
 export function AppLayout() {
+  const t = useT();
   const name = useAuthStore((s) => s.user?.name);
   const logout = useLogout();
   const fetching = useIsFetching({ predicate: (q) => q.state.data !== undefined });
@@ -27,14 +31,16 @@ export function AppLayout() {
           disabled={logout.isPending}
           onClick={() => logout.mutate()}
         >
-          로그아웃
+          {t('nav.logout')}
         </button>
-        <nav className={styles.nav} aria-label="주요 메뉴">
+        <nav className={styles.nav} aria-label={t('nav.menu')}>
           {LINKS.map(([to, label]) => (
             <NavLink key={to} to={to} className={styles.link}>
-              {label}
+              {t(label)}
             </NavLink>
           ))}
+          <LanguageSelect />
+          <ThemeSelect />
         </nav>
       </header>
       <main className={styles.main}>

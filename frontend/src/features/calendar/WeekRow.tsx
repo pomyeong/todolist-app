@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router';
 import type { TodoWithStatus } from '../../api/types';
-import { STATUS_LABEL } from '../../api/types';
 import { TodoTitle } from '../../components/TodoTitle';
+import { useT } from '../../i18n';
 import { addDays, isoWeek } from '../../lib/date';
 import { CELL_LIMIT, weekBars } from './cellTodos';
 import styles from './WeekRow.module.css';
@@ -19,6 +19,7 @@ interface Props {
 
 // P-16: 데스크톱 월·주 뷰의 한 주. 칸 배경·날짜·'+N'과 기간을 잇는 막대를 한 격자에 겹쳐 그린다.
 export function WeekRow({ days, alt = false, label, todos, today, selected, onSelect }: Props) {
+  const t = useT();
   const { pathname, search } = useLocation();
   const { bars, more } = weekBars(days, todos);
   const at = (col: number, row: string): CSSProperties => ({ gridColumn: col + 1, gridRow: row });
@@ -71,13 +72,17 @@ export function WeekRow({ days, alt = false, label, todos, today, selected, onSe
         >
           <span className={styles.title}>
             {/* 지난 주에서 이어지는 줄에는 시작 시간을 쓰지 않는다(P-26) */}
-            <TodoTitle title={todo.title} startTime={fromPrev ? null : todo.startTime} />
+            <TodoTitle
+              title={todo.title}
+              description={todo.description}
+              startTime={fromPrev ? null : todo.startTime}
+            />
           </span>
-          <span className={styles.status}>({STATUS_LABEL[todo.status]})</span>
+          <span className={styles.status}>({t(`status.${todo.status}`)})</span>
         </Link>
       ))}
       <span className={styles.weekNo} style={at(0, String(CELL_LIMIT + 2))}>
-        {week}주차
+        {t('cal.weekNo')(week)}
       </span>
       {days.map(
         (d, i) =>

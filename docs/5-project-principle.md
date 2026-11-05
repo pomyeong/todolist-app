@@ -20,6 +20,8 @@
 | v0.12 | 2026-11-05 | Claude | 초안 | 스키마 원본을 docs/schema.sql로(PR-S-10) |
 | v0.13 | 2026-11-05 | Claude | 초안 | 현재 백엔드 코드 기준 동기화 |
 | v0.14 | 2026-11-05 | Claude | 초안 | 할일 시작·종료 시간 요청 규칙 |
+| v0.15 | 2026-11-05 | Claude | 초안 | 다국어 구조(i18n) |
+| v0.16 | 2026-11-05 | Claude | 초안 | 화면 모드 구조 |
 
 ### 변경 이력
 
@@ -51,6 +53,8 @@
 | v0.12 | 2026-11-05 | PR-S-10, PD-08, 7.1, 7.2 | 스키마 단일 출처를 `backend/sql/schema.sql`에서 `docs/schema.sql`로 옮기고 `backend/sql/` 삭제, `db-init.js`가 `docs/schema.sql`을 읽음 | 사용자 결정(설계 문서와 DDL을 한곳에) | Claude |
 | v0.13 | 2026-11-05 | PR-S-03, 7.1 | 토큰 만료·쿠키 `maxAge`를 환경변수 기본값으로 표기, `.env.example` 키 목록과 테스트 파일 목록(config·me·health·cors·scenarios)을 코드와 맞춤 | 백엔드 코드 기준 문서 동기화 | Claude |
 | v0.14 | 2026-11-05 | PD-20, PD-27 | `startTime`·`endTime` 선택 필드, 수정에서 생략 시 `null`, `null` 허용 필드에 추가 | 도메인 v0.9 BR-24, ERD v0.7 DB-14 | Claude |
+| v0.15 | 2026-11-05 | PR-C-04, 7.3 | `src/i18n/` 추가, 화면 문구는 사전에서만, 서버 오류 문구는 표시할 때 번역 | PRD v0.22 FR-18, P-31 | Claude |
+| v0.16 | 2026-11-05 | 7.3 | `lib/theme.ts`·`themeStore.ts`, `components/ThemeSelect`, index.html 선적용 | PRD v0.23 FR-19 | Claude |
 
 > 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.14](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
@@ -75,7 +79,7 @@
 | PR-C-01 | 문서가 정의한 것은 코드에서 다시 정의하지 않고 한 곳에 상수로 두고 ID로 추적한다. 오류 코드·상태 값은 상수(백엔드 `errors.js`·`domain/status.js`, 프론트 `api/types.ts`)로 두고, 규칙을 구현한 곳에는 한 줄 주석으로 ID를 단다(`// BR-07`).<br>하지 말 것: 오류 코드 문자열을 라우트마다 리터럴로 쓰기 | 단일 출처가 코드까지 이어져야 문서 변경 시 수정 지점을 찾을 수 있다. | NFR-15, ST-01~04 |
 | PR-C-02 | 가장 단순한 구조를 먼저 쓴다. 몇 줄로 직접 쓸 수 있으면 의존성을 추가하지 않고, 추가하려면 8장 PD에 이유를 적는다.<br>하지 말 것: DI 컨테이너, 리포지토리 인터페이스, ORM, 캐시 서버, 메시지 큐, 마이크로서비스, 모노레포 도구(Nx·Turborepo), 상태 관리 라이브러리 추가(Redux 등), 폼 라이브러리 | 2일·1인. 스택은 PRD 6장·3.2에서 확정됐고, 나머지는 과설계다. | PRD 3.2, 6장, P-10, R-01 |
 | PR-C-03 | 규칙 판정은 서버 한 곳에서 한다. 상태(ST) 판정, 입력 검증, 소유권 검증은 서버가 하고 화면은 결과를 표시만 한다. 화면 검증은 보조이며 P-24의 비밀번호 확인 일치 검사처럼 PRD가 화면에 맡긴 것만 한다.<br>하지 말 것: 프론트에서 상태 계산, 완료 토글 낙관적 업데이트 | 판정 로직 이중화는 불일치를 낳는다. | NFR-09, NFR-12, P-15, P-24 |
-| PR-C-04 | 오류는 서버 형식 그대로 다룬다. 프론트는 `code`로 분기하고 `message`·`fields`를 그대로 표시한다. 표시 위치는 PRD 4장 머리말을 따른다. 예외: 서버가 NFR-15 형식을 주지 못한 경우(연결 실패·빈 본문)만 `api/client.ts`의 대체 문구 상수 하나로 `INTERNAL_ERROR`를 만든다.<br>하지 말 것: 프론트가 오류 문구를 새로 만들기 | 문구 단일 출처. | NFR-15, P-13 |
+| PR-C-04 | 오류는 서버 형식 그대로 다룬다. 프론트는 `code`로 분기하고 `message`·`fields`를 표시한다. 다국어(P-31)에서는 `FormError`·`FieldError`가 서버의 알려진 한국어 문구를 `src/i18n/`의 번역으로 바꿔 보여주고, 모르는 문구는 그대로 둔다. 표시 위치는 PRD 4장 머리말을 따른다. 예외: 서버가 NFR-15 형식을 주지 못한 경우(연결 실패·빈 본문)만 `api/client.ts`의 대체 문구 상수 하나로 `INTERNAL_ERROR`를 만든다.<br>하지 말 것: 프론트가 오류 문구를 새로 만들기 | 문구 단일 출처. | NFR-15, P-13 |
 | PR-C-05 | 날짜는 'YYYY-MM-DD' 문자열로 다룬다. DB(DATE) → API → 화면 전 구간에서 `Date` 객체 변환을 피하고, 프론트의 '오늘' 계산만 단말 현지 날짜로 한다.<br>하지 말 것: `new Date('2026-11-04')`(UTC로 해석되어 날짜가 밀림), `toISOString().slice(0, 10)`으로 오늘 구하기 | 시간대 변환으로 하루씩 어긋나는 오류 방지. | NFR-11, NFR-12, P-12, R-03 |
 | PR-C-06 | 기능은 파일 단위로 떼어 둔다. Should·Could(주·일 뷰, 내 정보, 캘린더 편집 이동)는 별도 파일에 두어, 일정이 밀리면 파일 제외로 끝나게 한다. 미리 만들어 두는 확장 구조는 두지 않는다. | MoSCoW 순서 준수. | R-01, P-03, M-06 |
 | PR-C-07 | 커밋은 Conventional Commits 한국어(`feat:`, `fix:`, `test:`, `docs:`, `chore:`)로 하고 가능하면 FR·BR ID를 넣는다. 기능 하나를 백엔드 → 프론트 순으로 끝까지 닫은 뒤 다음으로 간다. | 기존 커밋 컨벤션 유지, 리뷰어 없는 1인 개발의 셀프 추적. | R-05, 기존 커밋 이력 |
@@ -297,7 +301,9 @@ frontend/
    │  ├─ types.ts         # API 타입, 오류 코드 유니온, 상태 값
    │  ├─ queryKeys.ts     # 쿼리 키 + 무효화 헬퍼 (PR-L-11)
    │  └─ auth.ts, categories.ts, todos.ts, calendar.ts   # 엔드포인트 함수
-   ├─ components/         # ConfirmDialog, FieldError, FormError, LoadingNotice, EmptyNotice
+   ├─ components/         # ConfirmDialog, FieldError, FormError, LoadingNotice, EmptyNotice, TodoTitle, LanguageSelect
+   ├─ lib/theme.ts, themeStore.ts  # 화면 모드(P-29): 판정 순수 함수 / 스토어(localStorage)·<html data-theme> 적용. index.html이 첫 화면 전에 같은 규칙으로 먼저 적용
+   ├─ i18n/               # 다국어(P-31): ko·ja·en 사전, 언어 스토어(localStorage), useT(), 서버 문구 번역. 화면 문구는 여기서만 가져온다
    ├─ lib/
    │  ├─ date.ts          # todayLocal(), addDays 등 문자열 날짜 연산 (PR-C-05)
    │  ├─ useToday.ts      # 포커스·가시성 복귀 시 today 재계산 (P-12)

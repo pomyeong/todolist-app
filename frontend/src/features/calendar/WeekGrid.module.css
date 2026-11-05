@@ -8,5 +8,6 @@
     display: block;
     border-top: 1px solid var(--divider);
     border-left: 1px solid var(--divider);
+    box-shadow: var(--shadow-card);
   }
 }

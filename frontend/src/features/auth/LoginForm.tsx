@@ -3,10 +3,14 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { FieldError } from '../../components/FieldError';
 import { FormError } from '../../components/FormError';
+import { LanguageSelect } from '../../components/LanguageSelect';
+import { ThemeSelect } from '../../components/ThemeSelect';
+import { useT } from '../../i18n';
 import styles from './LoginForm.module.css';
 import { useLogin } from './useAuth';
 
 export function LoginForm() {
+  const t = useT();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { mutate, isPending, error } = useLogin();
@@ -16,10 +20,14 @@ export function LoginForm() {
   };
   return (
     <form className={styles.form} onSubmit={onSubmit} noValidate>
-      <h1>로그인</h1>
+      <div className="lang-row">
+        <LanguageSelect />
+        <ThemeSelect />
+      </div>
+      <h1>{t('auth.login')}</h1>
       <FormError message={error?.fields ? undefined : error?.message} />
       <div className={styles.field}>
-        <label htmlFor="email">이메일</label>
+        <label htmlFor="email">{t('auth.email')}</label>
         <input
           id="email"
           type="email"
@@ -30,7 +38,7 @@ export function LoginForm() {
         <FieldError message={error?.fields?.email} />
       </div>
       <div className={styles.field}>
-        <label htmlFor="password">비밀번호</label>
+        <label htmlFor="password">{t('auth.password')}</label>
         <input
           id="password"
           type="password"
@@ -41,9 +49,9 @@ export function LoginForm() {
         <FieldError message={error?.fields?.password} />
       </div>
       <button type="submit" className="primary" disabled={isPending}>
-        로그인
+        {t('auth.login')}
       </button>
-      <Link to="/signup">회원가입</Link>
+      <Link to="/signup">{t('auth.signup')}</Link>
     </form>
   );
 }

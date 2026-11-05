@@ -3,11 +3,15 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { FieldError } from '../../components/FieldError';
 import { FormError } from '../../components/FormError';
+import { LanguageSelect } from '../../components/LanguageSelect';
+import { ThemeSelect } from '../../components/ThemeSelect';
+import { useT } from '../../i18n';
 import { PASSWORD_MISMATCH } from './messages';
 import styles from './SignupForm.module.css';
 import { useSignup } from './useAuth';
 
 export function SignupForm() {
+  const t = useT();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -22,10 +26,14 @@ export function SignupForm() {
   };
   return (
     <form className={styles.form} onSubmit={onSubmit} noValidate>
-      <h1>회원가입</h1>
+      <div className="lang-row">
+        <LanguageSelect />
+        <ThemeSelect />
+      </div>
+      <h1>{t('auth.signup')}</h1>
       <FormError message={error?.fields ? undefined : error?.message} />
       <div className={styles.field}>
-        <label htmlFor="email">이메일</label>
+        <label htmlFor="email">{t('auth.email')}</label>
         <input
           id="email"
           type="email"
@@ -36,7 +44,7 @@ export function SignupForm() {
         <FieldError message={error?.fields?.email} />
       </div>
       <div className={styles.field}>
-        <label htmlFor="password">비밀번호</label>
+        <label htmlFor="password">{t('auth.password')}</label>
         <input
           id="password"
           type="password"
@@ -47,7 +55,7 @@ export function SignupForm() {
         <FieldError message={error?.fields?.password} />
       </div>
       <div className={styles.field}>
-        <label htmlFor="confirm">비밀번호 확인</label>
+        <label htmlFor="confirm">{t('auth.passwordConfirm')}</label>
         <input
           id="confirm"
           type="password"
@@ -58,7 +66,7 @@ export function SignupForm() {
         <FieldError message={mismatch ? PASSWORD_MISMATCH : undefined} />
       </div>
       <div className={styles.field}>
-        <label htmlFor="name">이름</label>
+        <label htmlFor="name">{t('auth.name')}</label>
         <input
           id="name"
           type="text"
@@ -69,10 +77,10 @@ export function SignupForm() {
         <FieldError message={error?.fields?.name} />
       </div>
       <button type="submit" className="primary" disabled={isPending}>
-        가입
+        {t('auth.signupSubmit')}
       </button>
       <p>
-        이미 계정이 있나요? <Link to="/login">로그인</Link>
+        {t('auth.haveAccount')} <Link to="/login">{t('auth.login')}</Link>
       </p>
     </form>
   );

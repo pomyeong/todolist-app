@@ -1,5 +1,5 @@
 import type { TodoWithStatus } from '../../api/types';
-import { WEEKDAYS } from '../../lib/date';
+import { useT } from '../../i18n';
 import styles from './MonthGrid.module.css';
 import { WeekRow } from './WeekRow';
 
@@ -13,6 +13,7 @@ interface Props {
 }
 
 export function MonthGrid({ cells, showMonth = false, todos, today, selected, onSelect }: Props) {
+  const t = useT();
   const label = (d: string) =>
     showMonth && (d === cells[0] || d.endsWith('-01'))
       ? `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`
@@ -21,7 +22,7 @@ export function MonthGrid({ cells, showMonth = false, todos, today, selected, on
   return (
     <div className={styles.grid}>
       <div className={styles.weekdays}>
-        {WEEKDAYS.map((w) => (
+        {t('weekdays').map((w) => (
           <div key={w} className={styles.weekday}>
             {w}
           </div>
