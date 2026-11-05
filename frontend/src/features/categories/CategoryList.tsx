@@ -21,6 +21,11 @@ export function CategoryList() {
   const onConfirmDelete = () => {
     if (deleting) del.mutate(deleting.id, { onSettled: () => setDeleting(null) });
   };
+  // 편집을 닫으면 그 편집의 오류도 지운다(남은 409 문구 방지)
+  const closeEdit = () => {
+    rename.reset();
+    setEditing(null);
+  };
   const topError = listError ?? del.error ?? rename.error;
 
   return (
@@ -39,14 +44,14 @@ export function CategoryList() {
                     autoFocus
                     value={editing.name}
                     onChange={(e) => setEditing({ id: c.id, name: e.target.value })}
-                    onKeyDown={(e) => e.key === 'Escape' && setEditing(null)}
+                    onKeyDown={(e) => e.key === 'Escape' && closeEdit()}
                   />
                   <FieldError message={rename.error?.fields?.name} />
                 </div>
                 <button type="submit" className="primary" disabled={rename.isPending}>
                   저장
                 </button>
-                <button type="button" disabled={rename.isPending} onClick={() => setEditing(null)}>
+                <button type="button" disabled={rename.isPending} onClick={closeEdit}>
                   닫기
                 </button>
               </form>
