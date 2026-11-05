@@ -9,8 +9,8 @@
   grid-template-columns: 64px minmax(0, 1fr);
   align-items: center;
   gap: var(--space-2);
-  font-size: var(--fs-md);
-  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  color: var(--text-strong);
 }
 
 @media (min-width: 768px) {

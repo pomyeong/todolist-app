@@ -81,6 +81,14 @@ body {
   line-height: 1.5;
 }
 
+/* 3장: 화면 제목 22px, 굵기는 400·700 두 가지만 */
+h1 {
+  margin-bottom: var(--space-3);
+  color: var(--text-strong);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
 a {
   color: var(--primary-text);
 }
@@ -157,6 +165,14 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--primary);
+}
+
+/* 5.3 읽기 전용: 수정할 수 없음을 모양으로 보여 준다 */
+input[readonly],
+input[readonly]:focus {
+  background: var(--surface-muted);
+  border-color: var(--divider);
+  color: var(--text-muted);
 }
 
 /* 5.3 오류 상태: 같은 필드 묶음에 FieldError가 있으면 입력란 테두리를 빨강으로 */

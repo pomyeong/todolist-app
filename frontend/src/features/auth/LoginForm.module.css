@@ -8,12 +8,6 @@
   padding: 0 var(--page-gutter);
 }
 
-.form h1 {
-  color: var(--text-strong);
-  font-size: var(--fs-xl);
-  font-weight: 700;
-}
-
 .field {
   display: flex;
   flex-direction: column;

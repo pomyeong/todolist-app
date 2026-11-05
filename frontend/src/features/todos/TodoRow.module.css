@@ -4,8 +4,11 @@
   grid-template-areas: "check title del" ". period ." ". meta .";
   align-items: center;
   gap: var(--space-1) var(--space-3);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--divider);
+  /* 5.7 모바일 카드 */
+  margin-bottom: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-md);
   list-style: none;
 }
 
@@ -67,7 +70,10 @@
   .row {
     grid-template-areas: "check title period category status del";
     min-height: 48px;
+    margin-bottom: 0;
     padding: var(--space-2) 0;
+    border-width: 0 0 1px;
+    border-radius: 0;
   }
 
   .head {
