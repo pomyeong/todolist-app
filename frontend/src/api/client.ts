@@ -1,3 +1,4 @@
+import { log, logError } from '../lib/log';
 import type { ErrorCode } from './types';
 import { ApiError } from './types';
 
@@ -27,6 +28,8 @@ function isErrorBody(v: unknown): v is ErrorBody {
 }
 
 async function send<T>(method: Method, path: string, body: unknown, retried: boolean): Promise<T> {
+  const started = performance.now();
+  const ms = () => `${Math.round(performance.now() - started)}ms`;
   let res: Response;
   try {
     res = await fetch(API_BASE + path, {
@@ -35,11 +38,13 @@ async function send<T>(method: Method, path: string, body: unknown, retried: boo
       headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-  } catch {
+  } catch (e) {
+    logError('api', method, path, '연결 실패', ms(), e);
     throw new ApiError(0, 'INTERNAL_ERROR', FALLBACK_MESSAGE);
   }
 
   if (res.ok) {
+    log('api', method, path, res.status, ms());
     if (res.status === 204) return undefined as T;
     return (await res.json()) as T;
   }
@@ -50,9 +55,13 @@ async function send<T>(method: Method, path: string, body: unknown, retried: boo
   } catch {
     parsed = undefined;
   }
-  if (!isErrorBody(parsed)) throw new ApiError(res.status, 'INTERNAL_ERROR', FALLBACK_MESSAGE);
+  if (!isErrorBody(parsed)) {
+    logError('api', method, path, res.status, ms(), '오류 형식 아님');
+    throw new ApiError(res.status, 'INTERNAL_ERROR', FALLBACK_MESSAGE);
+  }
   const { code, message, fields } = parsed.error;
   const err = new ApiError(res.status, code, message, fields);
+  logError('api', method, path, res.status, code, ms());
 
   if (code === 'UNAUTHORIZED' && !path.startsWith('/api/auth/') && !retried) {
     refreshing ??= fetch(`${API_BASE}/api/auth/refresh`, { method: 'POST', credentials: 'include' })
@@ -60,6 +69,10 @@ async function send<T>(method: Method, path: string, body: unknown, retried: boo
         (r) => r.ok,
         () => false,
       )
+      .then((ok) => {
+        log('auth', ok ? '토큰 갱신 성공, 재요청' : '토큰 갱신 실패');
+        return ok;
+      })
       .finally(() => {
         refreshing = null;
       });

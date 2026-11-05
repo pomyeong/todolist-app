@@ -22,6 +22,7 @@
 | v0.14 | 2026-11-05 | Claude | 초안 | 할일 시작·종료 시간 요청 규칙 |
 | v0.15 | 2026-11-05 | Claude | 초안 | 다국어 구조(i18n) |
 | v0.16 | 2026-11-05 | Claude | 초안 | 화면 모드 구조 |
+| v0.17 | 2026-11-05 | Claude | 초안 | 프론트 개발 모드 콘솔 로그(PR-S-13) |
 
 ### 변경 이력
 
@@ -55,6 +56,7 @@
 | v0.14 | 2026-11-05 | PD-20, PD-27 | `startTime`·`endTime` 선택 필드, 수정에서 생략 시 `null`, `null` 허용 필드에 추가 | 도메인 v0.9 BR-24, ERD v0.7 DB-14 | Claude |
 | v0.15 | 2026-11-05 | PR-C-04, 7.3 | `src/i18n/` 추가, 화면 문구는 사전에서만, 서버 오류 문구는 표시할 때 번역 | PRD v0.22 FR-18, P-31 | Claude |
 | v0.16 | 2026-11-05 | 7.3 | `lib/theme.ts`·`themeStore.ts`, `components/ThemeSelect`, index.html 선적용 | PRD v0.23 FR-19 | Claude |
+| v0.17 | 2026-11-05 | PR-S-13, 7.3 | 프론트 주요 지점(API 요청·응답·실패, 토큰 갱신, 쿼리·변경 오류, 세션 정리, 화면 이동) 콘솔 로그를 `lib/log.ts` 한 곳에서 개발 모드에만 출력 | 개발 중 흐름 추적. 운영 콘솔 노출·민감 정보 유출 방지 | Claude |
 
 > 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.14](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
@@ -173,6 +175,7 @@
 | PR-S-10 | 스키마의 단일 출처는 `docs/schema.sql` 하나다(설계 문서와 함께 둔다)(테이블·제약·NFR-04 인덱스). 변경은 이 파일을 고치고 `npm run db:init -- --reset`로 다시 만든다. 마이그레이션 도구는 쓰지 않는다. 상태 컬럼은 만들지 않는다(NFR-12). | 운영 데이터가 없다(P-10). | NFR-04, NFR-12, PD-08 |
 | PR-S-11 | 운영 범위는 로컬 단일 머신이다. Docker·프로세스 관리자·CI·배포 스크립트는 만들지 않는다. PostgreSQL 17은 로컬 설치를 쓴다. | 배포는 범위 외. | P-10, PRD 3.2 |
 | PR-S-12 | 의존성은 `package-lock.json`을 커밋하고 `npm ci`로 설치한다. `engines.node`로 Node LTS(22 이상)를 명시한다. 의존성을 추가하면 8장 PD를 먼저 갱신한다. | 재현 가능한 설치, PR-C-02 준수. | PR-C-02 |
+| PR-S-13 | 프론트 콘솔 로그는 `lib/log.ts`만 쓰고 개발 모드(`import.meta.env.DEV`, vitest 제외)에서만 출력한다. 대상은 주요 지점뿐이다: API 요청(메서드·경로·상태·소요 ms)·연결 실패, 토큰 갱신 결과, 쿼리·변경 오류, 401 세션 정리, 화면 이동. 요청·응답 본문, 쿠키, 비밀번호는 남기지 않는다. 로깅 라이브러리는 두지 않는다.<br>하지 말 것: 컴포넌트에서 `console.*` 직접 호출 | 개발 중 흐름 추적. 운영 빌드에서는 출력이 없어 사용자 콘솔에 내부 경로·오류가 노출되지 않는다. | PR-S-08, NFR-06, PR-C-02 |
 
 ## 7. 디렉토리 구조
 
@@ -307,6 +310,7 @@ frontend/
    ├─ lib/
    │  ├─ date.ts          # todayLocal(), addDays 등 문자열 날짜 연산 (PR-C-05)
    │  ├─ useToday.ts      # 포커스·가시성 복귀 시 today 재계산 (P-12)
+   │  ├─ log.ts           # 개발 모드 전용 콘솔 로그 (PR-S-13)
    │  └─ date.test.ts, ... # 단위 테스트는 대상 파일 옆에 둔다
    └─ styles/
       └─ global.css       # 리셋, 360px 기준 기본, 변수
@@ -324,7 +328,7 @@ frontend/
 | `pages/TodoFormPage.tsx` | 진입 화면 복귀: 진입 시 `navigate(path, { state: { from } })`로 현재 경로(쿼리 포함)를 넘기고, 저장·취소 후 `state.from`으로, 없으면 `/todos`로 이동 | P-17, P-23 |
 | `api/client.ts` | `VITE_API_BASE_URL` + `/api/...`, `credentials: 'include'`(PR-S-04), 오류 형식 파싱, 401 시 토큰 갱신 1회 후 재요청(PR-L-12). 토큰 접근 코드 없음(쿠키는 httpOnly) | P-04, NFR-15, PR-L-12 |
 | `components/` | 삭제·카테고리 삭제 공용 확인 대화상자, 입력란 오류, 폼·화면 상단 오류, '불러오는 중…'/'갱신 중…'(이전 데이터 유지는 `placeholderData: keepPreviousData`), '할일이 없습니다.' | P-19, P-21, P-22, PRD 4장 |
-| `lib/` | 날짜 문자열 연산, 오늘 계산·재계산 | NFR-11, NFR-12, P-12 |
+| `lib/` | 날짜 문자열 연산, 오늘 계산·재계산, 개발 모드 로그(PR-S-13) | NFR-11, NFR-12, P-12 |
 | `styles/`, `*.module.css` | 360px 기준, 768px 중단점 | NFR-13, P-08 |
 
 프론트 의존성: `react`, `react-dom`, `react-router`, `@tanstack/react-query`, `zustand`. 개발용: `vite`, `@vitejs/plugin-react`, `typescript`, `vitest`, `@types/react`, `@types/react-dom`.
