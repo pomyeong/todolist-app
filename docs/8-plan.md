@@ -14,6 +14,7 @@
 | v0.6 | 2026-11-05 | Claude | 초안 | 헬스 체크 DB 연결 확인 반영 |
 | v0.7 | 2026-11-05 | Claude | 초안 | 스키마 원본 경로 변경 반영 |
 | v0.8 | 2026-11-05 | Claude | 초안 | 개발 순서와 진행 현황(2.3) 추가 |
+| v0.9 | 2026-11-05 | Claude | 초안 | 완료 Task 본문을 바뀐 상위 문서와 맞춤 |
 
 ### 변경 이력
 
@@ -31,6 +32,7 @@
 | v0.6 | 2026-11-05 | T-BE-03 | `/api/health`가 `SELECT 1`로 DB 연결 확인(200 `db: 'up'` / 503 `db: 'down'`) | 구조 설계 원칙 v0.8 PD-14 | Claude |
 | v0.7 | 2026-11-05 | T-DB-02, T-DB-03 | 스키마 단일 출처가 `docs/schema.sql`로 바뀜(T-DB-02의 이동을 되돌림, `backend/sql/` 삭제). 완료 기록은 그대로 둔다 | 구조 설계 원칙 v0.12 PR-S-10 | Claude |
 | v0.8 | 2026-11-05 | 2.3 | 선후행 관계로 나눈 개발 단계(13단계)와 Task별 완료 조건 충족 현황, 계획 밖 후속 변경 정리 | 사용자 요청(진행 현황 한눈에 보기) | Claude |
+| v0.9 | 2026-11-05 | T-BE-01, T-BE-02, T-BE-07, T-BE-08, T-FE-01, T-FE-02, T-FE-04, T-DB-02 | 완료 기록은 두고 이후 결정을 본문에 표시: 환경변수 3개 추가, 토큰 만료 환경변수 기본값, Vite 프록시 → CORS, 전역 스타일의 단일 출처는 스타일 가이드, 스키마 파일 위치 | 완료 Task와 PRD v0.15·v0.16, 구조 설계 원칙 v0.10~v0.12, 스타일 가이드 점검 | Claude |
 
 > 단일 출처 원칙: 규칙(ST·BR·UC)은 [도메인 정의서 v0.7](./1-domain-definition.md), 기능·비기능·일정(FR·NFR·SCR·M·P)은 [PRD v0.14](./2-PRD.md), 시나리오·예외(SC·E)는 [사용자 시나리오 v0.10](./3-user-scenario.md), 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md), 구조·레이어·파일 위치(PR·PD)는 [프로젝트 구조 설계 원칙 v0.8](./5-project-principle.md), 흐름(AD·SD)은 [아키텍처 다이어그램](./6-arch-diagram.md), 테이블·제약(DB)은 [ERD](./7-erd.md)가 정의한다. 이 문서는 **작업 순서·완료 조건만** 정하며 규칙·코드·수치를 다시 정의하지 않는다. 충돌하면 위 문서를 따른다.
 >
@@ -246,7 +248,7 @@ flowchart LR
 3. 파일 내용이 7-erd 4장 테이블 명세·5장 제약·인덱스 목록과 일치하는지 대조한다.
 
 **완료 조건**
-- [x] `backend/sql/schema.sql`이 있고 `docs/schema.sql`은 없다(스키마 파일이 저장소에 하나).
+- [x] `backend/sql/schema.sql`이 있고 `docs/schema.sql`은 없다(스키마 파일이 저장소에 하나). (v0.7: 반대로 `docs/schema.sql` 하나만 남김. 파일이 하나라는 조건은 유지)
 - [x] 문서 안에 `docs/schema.sql`을 가리키는 링크가 남아 있지 않다.
 - [x] 테이블 4개(`users`, `categories`, `todos`, `refresh_tokens`)가 있고 상태(status) 컬럼이 없다(NFR-12).
 - [x] 제약·인덱스 이름이 PR-N-04·DB-12와 일치한다: `uq_users_email`, `ck_users_email_lower`, `uq_categories_user_name`, `uq_categories_user_default`, `fk_categories_user`, `fk_todos_user`, `fk_todos_category`, `ck_todos_dates`, `ck_todos_completed`, `idx_todos_user_dates`, `idx_todos_user_category`, `fk_refresh_tokens_user`, `uq_refresh_tokens_hash`, `idx_refresh_tokens_user`(DB-13).
@@ -336,7 +338,7 @@ flowchart LR
 1. `backend/package.json`: `"type": "module"`, `engines.node` `>=22`.
 2. 의존성 설치: `express`(5), `pg`, `jsonwebtoken`, `bcrypt`. 개발용 `@biomejs/biome`. 그 외 의존성은 추가하지 않는다(PR-C-02).
 3. scripts: `dev`(`node --watch --env-file=.env src/server.js`), `start`, `test`(`node --env-file=.env.test --test --test-concurrency=1`), `db:init`, `seed:load`.
-4. `.env.example` 작성: `DATABASE_URL`, `JWT_SECRET`, `PORT`, `DB_POOL_MAX`, `NODE_ENV`. 로컬 `.env`, `.env.test`(DB만 `todolist_test`)를 만든다.
+4. `.env.example` 작성: `DATABASE_URL`, `JWT_SECRET`, `PORT`, `DB_POOL_MAX`, `NODE_ENV` (v0.9: 이후 `CORS_ORIGIN`, `JWT_ACCESS_EXPIRES_MINUTES`, `REFRESH_TOKEN_TTL_DAYS` 추가, 구조 설계 원칙 PR-S-01). 로컬 `.env`, `.env.test`(DB만 `todolist_test`)를 만든다.
 5. Windows에서 `bcrypt` 설치가 실패하면 `bcryptjs`로 바꾸고 PD-15를 갱신한다.
 
 **완료 조건**
@@ -352,7 +354,7 @@ flowchart LR
 - **근거**: PR-S-01, PR-S-09, PR-L-06, NFR-03, NFR-11, AD-02
 
 **수행 작업**
-1. `src/config.js`: 환경변수를 한 곳에서 읽고 검증한다. `DATABASE_URL` 누락, `JWT_SECRET` 48자 미만이면(HS384, PR-S-01) 기동 시 즉시 종료. `PORT` 기본 3000, `DB_POOL_MAX` 기본 20.
+1. `src/config.js`: 환경변수를 한 곳에서 읽고 검증한다. `DATABASE_URL` 누락, `JWT_SECRET` 48자 미만이면(HS384, PR-S-01) 기동 시 즉시 종료. `PORT` 기본 3000, `DB_POOL_MAX` 기본 20 (v0.9: `CORS_ORIGIN` 기본 `http://localhost:5173`·production 필수, 토큰 만료 두 값은 양의 정수 검증. `test/unit/config.test.js`).
 2. `src/db.js`: `pg.Pool` 하나(크기 `DB_POOL_MAX`), `query(text, params)`, `withTransaction(fn)`(BEGIN/COMMIT/ROLLBACK, 커넥션 반납 보장), DATE(OID 1082) 문자열 파서 설정, `close()`.
 
 **완료 조건**
@@ -453,14 +455,14 @@ flowchart LR
 
 **수행 작업**
 1. `src/middleware/auth.js`: `req.headers.cookie`를 직접 파싱해 `access_token`의 JWT를 `algorithms: ['HS384']`로 검증하고 `req.userId = sub`를 넣는다. 쿠키 없음·만료·위조면 401 `UNAUTHORIZED`.
-2. 서명 알고리즘 HS384, 만료(access 15분·refresh 7일), 쿠키 이름(`access_token`·`refresh_token`), 쿠키 옵션(httpOnly, `SameSite=Lax`, access `path=/`·refresh `path=/api/auth`, production에서만 `secure`)을 상수로 둔다(PR-S-02, PR-S-03).
+2. 서명 알고리즘 HS384, 만료(access 15분·refresh 7일. v0.9: 상수가 아닌 환경변수 기본값, PR-S-02 예외), 쿠키 이름(`access_token`·`refresh_token`), 쿠키 옵션(httpOnly, `SameSite=Lax`, access `path=/`·refresh `path=/api/auth`, production에서만 `secure`)을 상수로 둔다(PR-S-02, PR-S-03).
 3. `routes/index.js`: `/api/auth/signup`·`/login`·`/refresh`·`/logout`·`/api/health`를 제외한 모든 라우트 앞에 `auth`를 건다.
 
 **완료 조건**
 - [x] 쿠키 없이 보호된 라우트 호출 시 401 `UNAUTHORIZED`다(E-02-2).
 - [x] 서명이 다른 토큰, 만료된 토큰 모두 401 `UNAUTHORIZED`다(E-C1).
 - [x] 같은 비밀키로 HS256 서명한 토큰과 `alg: none` 토큰이 401이다(HS384만 허용, PR-S-03).
-- [x] access 토큰의 `exp - iat`가 900초(15분)다.
+- [x] access 토큰의 `exp - iat`가 900초(15분, 기본값)다.
 - [x] JWT 페이로드에 `sub` 외 사용자 정보가 없다.
 - [x] 새 라우터를 `routes/index.js`에 추가하면 별도 코드 없이 인증이 적용되는 구조다.
 
@@ -474,12 +476,12 @@ flowchart LR
 1. `services/auth.js`
    - 가입: 검증 → bcrypt(cost 10) 해시를 **트랜잭션 밖에서** 계산 → `withTransaction`으로 사용자 INSERT + '기본' 카테고리 INSERT + refresh 토큰 해시 INSERT → 23505 `uq_users_email`이면 409 `DUPLICATE_EMAIL`.
    - 로그인: 소문자 이메일로 조회(컬럼 명시, `SELECT *` 금지) → bcrypt 비교 → 이메일 없음·비밀번호 틀림 모두 401 `INVALID_CREDENTIALS` → 성공 시 그 사용자의 만료 refresh 토큰 삭제 후 새 refresh 토큰 INSERT(DB-13).
-   - 토큰 발급 함수: access 토큰 JWT(HS384, `sub`만, 15분) 서명, refresh 토큰 `crypto.randomBytes(32)` base64url 생성과 SHA-256 해시(PR-S-03). T-BE-16·T-BE-15가 재사용한다.
+   - 토큰 발급 함수: access 토큰 JWT(HS384, `sub`만, 기본 15분) 서명, refresh 토큰 `crypto.randomBytes(32)` base64url 생성과 SHA-256 해시(PR-S-03). T-BE-16·T-BE-15가 재사용한다.
 2. `routes/auth.js`: 가입 201 + 사용자(비밀번호 해시 제외) + `access_token`·`refresh_token` 쿠키 발급, 로그인 200 + 사용자(가입과 같은 형태, PD-25) + 두 쿠키 발급, 로그아웃 204 + `refresh_token`에 해당하는 행 삭제 + 같은 옵션으로 두 쿠키 삭제(쿠키가 없거나 이미 무효여도 204).
 3. `test/api/auth.test.js`.
 
 **완료 조건**
-- [x] 가입 성공 시 201, `access_token`(`Path=/`, 15분)·`refresh_token`(`Path=/api/auth`, 7일) 두 `Set-Cookie`가 모두 httpOnly·`SameSite=Lax`이고 응답 본문에 `passwordHash`·토큰 값이 없다(FR-01, P-04).
+- [x] 가입 성공 시 201, `access_token`(`Path=/`, 기본 15분)·`refresh_token`(`Path=/api/auth`, 기본 7일) 두 `Set-Cookie`가 모두 httpOnly·`SameSite=Lax`이고 응답 본문에 `passwordHash`·토큰 값이 없다(FR-01, P-04).
 - [x] 가입 직후 해당 사용자의 `is_default = true` 카테고리 '기본'이 정확히 1개다(BR-10).
 - [x] 가입 쿠키로 바로 보호 API 호출이 성공한다(자동 로그인).
 - [x] 중복 이메일(대소문자만 다른 경우 포함)은 409 `DUPLICATE_EMAIL`이고 사용자 수가 늘지 않는다(E-01-1).
@@ -671,12 +673,12 @@ flowchart LR
 **수행 작업**
 1. `npm create vite@latest frontend -- --template react-ts`.
 2. 의존성: `react-router`, `@tanstack/react-query`, `zustand`. 개발용: `vitest`. 그 외 추가하지 않는다.
-3. `tsconfig.json` `strict: true`. `vite.config.ts`: `server.proxy` `/api` → `http://localhost:3000`, Vitest 설정.
+3. `tsconfig.json` `strict: true`. `vite.config.ts`: `server.proxy` `/api` → `http://localhost:3000`, Vitest 설정 (v0.9: 프록시 삭제. `.env.development`의 `VITE_API_BASE_URL`로 API를 CORS 직접 호출, 구조 설계 원칙 PR-S-04).
 4. `package.json` scripts: `dev`, `build`, `test`(`vitest run`).
 5. 템플릿 예제 코드·이미지를 지운다.
 
 **완료 조건**
-- [x] `npm run dev`로 5173번에서 빈 화면이 뜨고, 백엔드가 켜진 상태에서 브라우저 `/api/health`가 프록시를 거쳐 `{ "ok": true }`를 받는다.
+- [x] `npm run dev`로 5173번에서 빈 화면이 뜨고, 백엔드가 켜진 상태에서 브라우저 `/api/health`가 프록시를 거쳐 `{ "ok": true }`를 받는다 (v0.9: 지금은 화면이 `http://localhost:3000/api/...`를 CORS로 호출. `test/api/cors.test.js`).
 - [x] `tsc --noEmit`, `npm test`(테스트 0건 허용)가 통과한다.
 - [x] `dependencies`가 React 2종 + `react-router`, `@tanstack/react-query`, `zustand`뿐이다.
 - [x] 템플릿 예제 파일(카운터·로고)이 남아 있지 않다.
@@ -688,7 +690,7 @@ flowchart LR
 - **근거**: NFR-15, P-04, P-12, P-15, PD-19, PR-C-01, PR-C-04, PR-L-09, PR-L-11, 7.3 `api/`
 
 **수행 작업**
-1. `api/client.ts`: `/api/...` 상대 경로 `fetch` 래퍼(JSON, 같은 출처 쿠키), 실패 시 `ApiError{ status, code, message, fields }` throw, 204 처리.
+1. `api/client.ts`: `/api/...` 상대 경로 `fetch` 래퍼(JSON, 같은 출처 쿠키. v0.9: `VITE_API_BASE_URL` + 경로, `credentials: 'include'`), 실패 시 `ApiError{ status, code, message, fields }` throw, 204 처리.
    - 401 `UNAUTHORIZED`이고 요청이 `/api/auth/*`가 아니면 `POST /api/auth/refresh`를 호출하고(진행 중인 갱신 Promise 하나를 공유), 성공하면 원래 요청을 1회 다시 보낸다. 갱신이 실패하면 원래 401을 그대로 throw한다(PR-L-12).
 2. `api/types.ts`: 요청·응답 타입(도메인 속성명 camelCase), 오류 코드 유니온, 상태 값 유니온과 표시 문구 표(완료·시작 전·진행 중·지연, PD-19).
 3. `api/queryKeys.ts`: `['me']`, `['categories']`, `['todos', filter, today]`, `['calendar', from, to, today]`와 무효화 헬퍼(할일 변경 → todos·calendar, 카테고리 변경 → categories·todos·calendar).
@@ -728,7 +730,7 @@ flowchart LR
 
 **수행 작업**
 1. `components/`: `ConfirmDialog`(취소/확인, 안내 문구 props), `FieldError`(`fields[name]`), `FormError`(`message`), `LoadingNotice`('불러오는 중…', '갱신 중…'), `EmptyNotice`('할일이 없습니다.').
-2. `styles/global.css`: 리셋, 360px 기준 기본 스타일, 색·간격 변수. 컴포넌트 스타일은 CSS Modules.
+2. `styles/global.css`: 리셋, 360px 기준 기본 스타일, 색·간격 변수 (v0.9: 토큰 값은 [스타일 가이드](./style-guide.md)가 단일 출처). 컴포넌트 스타일은 CSS Modules.
 
 **완료 조건**
 - [x] P-21·P-22의 고정 문구가 각 컴포넌트에 한 번씩만 있다(코드 검색으로 중복 없음).

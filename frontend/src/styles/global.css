@@ -27,6 +27,8 @@
   --danger: #c5221f;
   --danger-soft: #fce8e6;
   --overlay: rgba(31, 35, 40, 0.4);
+  --on-primary: #ffffff;
+  --shadow-dialog: 0 8px 24px rgba(31, 35, 40, 0.16);
 
   /* 상태색 ST-01~04 (style-guide 2.2) */
   --st-progress-bg: #6a5ae0;
@@ -91,7 +93,7 @@ a.primary {
   padding: 0 var(--space-4);
   border-radius: var(--radius-sm);
   background: var(--primary);
-  color: #ffffff;
+  color: var(--on-primary);
   text-decoration: none;
 }
 
@@ -120,7 +122,7 @@ button {
 button.primary {
   background: var(--primary);
   border-color: var(--primary);
-  color: #ffffff;
+  color: var(--on-primary);
 }
 
 button.primary:hover:not(:disabled) {
@@ -131,7 +133,7 @@ button.primary:hover:not(:disabled) {
 button.danger {
   background: var(--danger);
   border-color: var(--danger);
-  color: #ffffff;
+  color: var(--on-primary);
 }
 
 button:disabled {
