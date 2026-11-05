@@ -44,11 +44,11 @@
 
 모든 Task의 완료 조건에 암묵적으로 포함된다.
 
-- [ ] 루트 `biome check`가 통과한다(PR-N-11).
-- [ ] 백엔드 Task는 `backend`에서 `npm test`, 프론트 Task는 `frontend`에서 `npm test`와 `tsc --noEmit`이 통과한다(PR-T-07).
-- [ ] 규칙을 구현한 곳에 한 줄 ID 주석(`// BR-07`)이 있다(PR-C-01, PR-N-08).
-- [ ] Conventional Commits 한국어로 커밋하고 메시지에 관련 FR·BR ID를 넣었다(PR-C-07).
-- [ ] 구조가 [5-project-principle.md](./5-project-principle.md)와 달라졌다면 그 문서를 먼저 고쳤다(PR-C-08).
+- [x] 루트 `biome check`가 통과한다(PR-N-11).
+- [x] 백엔드 Task는 `backend`에서 `npm test`, 프론트 Task는 `frontend`에서 `npm test`와 `tsc --noEmit`이 통과한다(PR-T-07).
+- [x] 규칙을 구현한 곳에 한 줄 ID 주석(`// BR-07`)이 있다(PR-C-01, PR-N-08).
+- [x] Conventional Commits 한국어로 커밋하고 메시지에 관련 FR·BR ID를 넣었다(PR-C-07).
+- [x] 구조가 [5-project-principle.md](./5-project-principle.md)와 달라졌다면 그 문서를 먼저 고쳤다(PR-C-08).
 
 ### 1.2 우선순위 표기
 

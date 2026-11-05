@@ -41,6 +41,7 @@ function FormBody({ id, initial = EMPTY }: { id?: number; initial?: TodoInput })
   const navigate = useNavigate();
   const state: unknown = useLocation().state;
   const stateFrom = (state as { from?: unknown } | null)?.from;
+  // P-17, PD-18: 진입 화면(state.from)으로 복귀, 없으면 /todos
   const back = typeof stateFrom === 'string' ? stateFrom : '/todos';
   const save = useSaveTodo(id);
   return (

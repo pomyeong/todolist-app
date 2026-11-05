@@ -20,6 +20,7 @@ function isUnauthorized(err: unknown): boolean {
 
 const queryClient: QueryClient = new QueryClient({
   queryCache: new QueryCache({
+    // PR-L-12, PD-24: 갱신까지 실패한 401은 세션을 비우고 RequireAuth가 /login으로 보낸다(첫 진입 /api/me 제외)
     onError(err, query) {
       if (isUnauthorized(err) && !query.meta?.skipAuthRedirect) clearSession(queryClient);
     },

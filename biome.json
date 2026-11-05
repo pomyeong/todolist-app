@@ -1,4 +1,7 @@
 {
+  "files": {
+    "includes": ["backend/**", "frontend/**", "!**/dist", "biome.json"]
+  },
   "formatter": {
     "indentStyle": "space",
     "indentWidth": 2,

@@ -28,6 +28,7 @@ export function TodoRow({ todo, onError }: Props) {
         disabled={busy}
         onChange={(e) => {
           onError(null);
+          // P-15: 낙관적 업데이트 없이 저장 성공 후 재조회 결과로 표시
           toggle.mutate(e.target.checked, { onError });
         }}
       />

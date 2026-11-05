@@ -45,7 +45,7 @@ async function findOwned(userId, id) {
     userId,
   ]);
   if (rows.length === 0) throw notFound();
-  if (rows[0].is_default) throw immutable();
+  if (rows[0].is_default) throw immutable(); // BR-12: 기본 카테고리는 수정·삭제 불가
 }
 
 export async function rename(userId, id, { name }) {

@@ -60,6 +60,7 @@ export function CategoryList() {
                 <span className={styles.name}>{c.name}</span>
                 <button
                   type="button"
+                  // BR-12: 기본 카테고리는 수정·삭제 조작 비활성
                   disabled={c.isDefault}
                   onClick={() => {
                     rename.reset();
@@ -86,6 +87,7 @@ export function CategoryList() {
       {deleting && (
         <ConfirmDialog
           title={`'${deleting.name}' 카테고리를 삭제할까요?`}
+          // P-19, BR-14: 삭제 시 소속 할일 이동 안내
           message="소속 할일은 '기본'으로 옮겨집니다."
           pending={del.isPending}
           onConfirm={onConfirmDelete}
