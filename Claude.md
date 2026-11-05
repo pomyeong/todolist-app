@@ -21,6 +21,7 @@
 | [docs/2-PRD.md](docs/2-PRD.md)                             | 제품 요구사항 문서(PRD)             |
 | [docs/3-user-scenario.md](docs/3-user-scenario.md)         | 사용자 시나리오                     |
 | [docs/4-wireframe.md](docs/4-wireframe.md)                 | 와이어프레임(그림: docs/wireframe/) |
+| [docs/style-guide.md](docs/style-guide.md)                 | 스타일 가이드(색·글꼴·간격·컴포넌트) |
 | [docs/5-project-principle.md](docs/5-project-principle.md) | 프로젝트 구조 설계 원칙             |
 | [docs/6-arch-diagram.md](docs/6-arch-diagram.md)           | 기술 아키텍처 다이어그램            |
 | [docs/7-erd.md](docs/7-erd.md)                             | ERD(개념·물리 데이터 구조)          |
