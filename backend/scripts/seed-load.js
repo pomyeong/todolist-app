@@ -1,4 +1,4 @@
-// 부하 테스트 시드(P-02): 사용자 1000명(각자 기본 카테고리) × 할일 100건.
+// 실행 계획 확인용 시드(T-DB-06, NFR-04): 사용자 1000명(각자 기본 카테고리) × 할일 100건.
 // 계정: load1@test.local ~ load1000@test.local / 비밀번호 LOAD_PASSWORD. 다시 실행하면 기존 시드 계정을 지우고 새로 넣는다.
 import { close, query, withTransaction } from '../src/db.js';
 import { hashPassword } from '../src/services/auth.js';

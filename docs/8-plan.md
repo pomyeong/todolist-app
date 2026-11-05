@@ -10,6 +10,7 @@
 | v0.2 | 2026-11-04 | pmsong | 초안 | 인증 방식 변경(JWT HS384 + refresh 토큰) 반영 |
 | v0.3 | 2026-11-04 | pmsong | 초안 | 문서 간 정합성 검토 반영 |
 | v0.4 | 2026-11-04 | Claude | 초안 | API 명세 작성 중 결정 반영 |
+| v0.5 | 2026-11-05 | Claude | 초안 | 부하 테스트 제외 |
 
 ### 변경 이력
 
@@ -23,8 +24,9 @@
 | v0.4 | 2026-11-04 | T-BE-04, T-BE-11, T-BE-12 | 비밀번호 trim 예외, `null` 처리, 쿼리 형식 오류 400, 할일 응답 `categoryName` | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
 | v0.4 | 2026-11-04 | T-BE-08, T-BE-10, T-BE-15 | 로그인·카테고리 수정·이름 수정 응답 본문, 비밀번호 변경 200 → 204 | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
 | v0.4 | 2026-11-04 | 참조 문서 | 도메인 v0.6 → v0.7, PRD v0.11 → v0.12, 시나리오 v0.9 → v0.10, 와이어프레임 v0.4 → v0.5, 구조 설계 원칙 v0.4 → v0.5 | 버전 동기화 | Claude |
+| v0.5 | 2026-11-05 | T-CM-01, T-DB-05, T-DB-06, T-QA-01, 2장, 9장, 참조 문서 | T-QA-01 폐기, 시드는 실행 계획 확인용으로 이름 변경, 기록 위치를 루트 `README.md`로. PRD v0.12 → v0.13, 구조 설계 원칙 v0.5 → v0.6 | PRD v0.13 부하 테스트 제외 | Claude |
 
-> 단일 출처 원칙: 규칙(ST·BR·UC)은 [도메인 정의서 v0.7](./1-domain-definition.md), 기능·비기능·일정(FR·NFR·SCR·M·P)은 [PRD v0.12](./2-PRD.md), 시나리오·예외(SC·E)는 [사용자 시나리오 v0.10](./3-user-scenario.md), 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md), 구조·레이어·파일 위치(PR·PD)는 [프로젝트 구조 설계 원칙 v0.5](./5-project-principle.md), 흐름(AD·SD)은 [아키텍처 다이어그램](./6-arch-diagram.md), 테이블·제약(DB)은 [ERD](./7-erd.md)가 정의한다. 이 문서는 **작업 순서·완료 조건만** 정하며 규칙·코드·수치를 다시 정의하지 않는다. 충돌하면 위 문서를 따른다.
+> 단일 출처 원칙: 규칙(ST·BR·UC)은 [도메인 정의서 v0.7](./1-domain-definition.md), 기능·비기능·일정(FR·NFR·SCR·M·P)은 [PRD v0.13](./2-PRD.md), 시나리오·예외(SC·E)는 [사용자 시나리오 v0.10](./3-user-scenario.md), 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md), 구조·레이어·파일 위치(PR·PD)는 [프로젝트 구조 설계 원칙 v0.6](./5-project-principle.md), 흐름(AD·SD)은 [아키텍처 다이어그램](./6-arch-diagram.md), 테이블·제약(DB)은 [ERD](./7-erd.md)가 정의한다. 이 문서는 **작업 순서·완료 조건만** 정하며 규칙·코드·수치를 다시 정의하지 않는다. 충돌하면 위 문서를 따른다.
 >
 > ID 운영 원칙: T-CM·T-DB·T-BE·T-FE·T-QA의 ID는 재사용하거나 재번호하지 않는다. Task를 없애면 행을 지우지 말고 '폐기'로 표시한다.
 
@@ -65,7 +67,7 @@
 | T-DB-02 | 스키마 파일 배치 | DB | Must | M-01 | T-CM-01, T-BE-01 |
 | T-DB-03 | 스키마 적용 스크립트(`db-init.js`) | DB | Must | M-01 | T-DB-01, T-DB-02, T-BE-02 |
 | T-DB-04 | 스키마 제약 동작 검증 | DB | Must | M-01 | T-DB-03 |
-| T-DB-05 | 부하 테스트 시드(`seed-load.js`) | DB | Must | M-05 | T-DB-03, T-BE-08 |
+| T-DB-05 | 실행 계획 확인용 시드(`seed-load.js`) | DB | Must | M-05 | T-DB-03, T-BE-08 |
 | T-DB-06 | 실행 계획 기반 인덱스 검증 | DB | Must | M-05 | T-DB-05, T-BE-12, T-BE-13 |
 | T-BE-01 | 백엔드 패키지 셋업 | BE | Must | M-01 | T-CM-01 |
 | T-BE-02 | 설정·DB 연결 모듈 | BE | Must | M-01 | T-BE-01 |
@@ -98,7 +100,7 @@
 | T-FE-13 | 캘린더 주·일 뷰 | FE | Should | M-06 | T-FE-12 |
 | T-FE-14 | 내 정보 화면 | FE | Should | M-06 | T-FE-06, T-BE-15 |
 | T-FE-15 | 캘린더에서 편집 화면 이동 | FE | Could | M-06 | T-FE-09, T-FE-12 |
-| T-QA-01 | k6 부하 테스트 | 검증 | Must | M-05 | T-DB-05, T-BE-14 |
+| T-QA-01 | 폐기(v0.5): k6 부하 테스트 | 검증 | - | - | - |
 | T-QA-02 | 반응형·브라우저 점검 | 검증 | Must | M-05 | T-FE-10, T-FE-12 |
 | T-QA-03 | 시나리오 셀프 체크(G-03) | 검증 | Must | M-06 | T-QA-02 (Should·Could 반영분 포함) |
 
@@ -117,7 +119,6 @@ flowchart LR
   BE08 --> BE09[T-BE-09] --> FE05[T-FE-05] --> FE06[T-FE-06] --> FE08
   BE08 --> BE16[T-BE-16] --> FE05
   FE06 --> FE12 --> QA02[T-QA-02] --> QA03[T-QA-03]
-  BE12 --> BE14[T-BE-14] --> QA01[T-QA-01]
 ```
 
 ### 2.2 마일스톤별 배치
@@ -128,7 +129,7 @@ flowchart LR
 | M-02 | Day 1 오후 | T-BE-05, T-BE-10~14 | G-04 대상 단위·API 통합 테스트 통과 |
 | M-03 | Day 1 종료 | T-FE-01~09 | SC-01·02·04~08 화면에서 수행 가능 |
 | M-04 | Day 2 오전 | T-FE-10~12 | **Must 전체 완료** 점검(R-01). 미완이면 M-06 Should를 뺀다 |
-| M-05 | Day 2 오후 전반 | T-DB-05, T-DB-06, T-QA-01, T-QA-02 | 부하 테스트 결과 기록 |
+| M-05 | Day 2 오후 전반 | T-DB-05, T-DB-06, T-QA-02 | 실행 계획·반응형 점검 결과 기록 |
 | M-06 | Day 2 오후 후반 | T-BE-15, T-FE-13~15, T-QA-03 | 수용 기준 셀프 체크 |
 
 ## 3. 공통 Task
@@ -140,13 +141,13 @@ flowchart LR
 - **근거**: 5-project-principle 7.1, PD-01, PD-11, PR-S-01
 
 **수행 작업**
-1. 루트에 `backend/`, `frontend/`, `load-test/` 폴더를 만든다. 루트 `package.json`·워크스페이스는 만들지 않는다(PD-01).
+1. 루트에 `backend/`, `frontend/` 폴더를 만든다. 루트 `package.json`·워크스페이스는 만들지 않는다(PD-01).
 2. 루트 `biome.json` 작성: 2칸 들여쓰기, 작은따옴표, 세미콜론, 줄 폭 100(PR-N-11).
 3. `.gitignore` 작성: `node_modules`, `.env`, `.env.test`, `dist`.
 4. 루트 `README.md`에 실행 순서(7.4: DB 생성 → 백엔드 → 프론트) 뼈대를 쓴다.
 
 **완료 조건**
-- [x] 루트에 `backend/`, `frontend/`, `load-test/`, `biome.json`, `.gitignore`, `README.md`가 있고 루트 `package.json`이 없다.
+- [x] 루트에 `backend/`, `frontend/`, `biome.json`, `.gitignore`, `README.md`가 있고 루트 `package.json`이 없다.
 - [x] `.gitignore`에 `node_modules`, `.env`, `.env.test`, `dist`가 들어 있다.
 - [x] `biome.json`의 포맷 설정이 PR-N-11과 일치한다.
 - [x] `README.md`에 DB → 백엔드 → 프론트 실행 순서가 적혀 있다.
@@ -223,36 +224,36 @@ flowchart LR
 - [x] 할일이 있는 카테고리 DELETE가 FK RESTRICT(23503)로 실패한다.
 - [x] 같은 `token_hash`를 두 번 INSERT하면 23505 + `uq_refresh_tokens_hash`가 나온다(DB-13).
 
-### T-DB-05 부하 테스트 시드(`seed-load.js`)
+### T-DB-05 실행 계획 확인용 시드(`seed-load.js`)
 
 - **우선순위 / 마일스톤**: Must / M-05
 - **선행 Task**: T-DB-03, T-BE-08
-- **근거**: P-02, NFR-05, PR-T-08, 7.2 `scripts/seed-load.js`
+- **근거**: NFR-04, NFR-05, 7.2 `scripts/seed-load.js`
 
 **수행 작업**
 1. `backend/scripts/seed-load.js` 작성: 사용자 1000명(각자 기본 카테고리 포함, BR-10)과 사용자당 할일 100건을 넣는다.
 2. 비밀번호 해시는 bcrypt로 한 번만 만들어 모든 사용자에 재사용한다(NFR-05).
-3. 할일 기간은 월·주 경계에 걸치는 것, 완료된 것을 섞어 조회 부하가 실제와 비슷하게 만든다.
+3. 할일 기간은 월·주 경계에 걸치는 것, 완료된 것을 섞어 조회 데이터가 실제와 비슷하게 만든다.
 4. 대량 INSERT는 다중 VALUES 또는 배치로 실행하고 모두 파라미터 바인딩한다(NFR-08).
-5. `package.json` scripts에 `seed:load` 등록. k6가 쓸 계정 규칙(예: `load{n}@test.local` / 공통 비밀번호)을 `load-test/README.md`에 적는다.
+5. `package.json` scripts에 `seed:load` 등록. 시드 계정 규칙(예: `load{n}@test.local` / 공통 비밀번호)을 루트 `README.md`에 적는다.
 
 **완료 조건**
 - [x] `npm run seed:load` 후 `users` 1000행, `categories` 기본 1000행 이상, `todos` 100000행이다.
 - [x] 사용자마다 `is_default = true` 카테고리가 정확히 1개다.
 - [x] 시드 계정으로 `POST /api/auth/login`이 200을 반환한다.
 - [x] 시드가 1분 이내에 끝난다(bcrypt 1회).
-- [x] 계정 규칙이 `load-test/README.md`에 기록되어 있다.
+- [x] 계정 규칙이 루트 `README.md`에 기록되어 있다.
 
 ### T-DB-06 실행 계획 기반 인덱스 검증
 
 - **우선순위 / 마일스톤**: Must / M-05
 - **선행 Task**: T-DB-05, T-BE-12, T-BE-13
-- **근거**: NFR-04, PR-T-09, DB-10, R-02
+- **근거**: NFR-04, PR-T-09, DB-10
 
 **수행 작업**
 1. 시드 데이터 위에서 목록 조회(카테고리 필터 있음·없음), 캘린더 기간 조회, 카테고리 삭제 시 할일 이동 SQL을 `EXPLAIN (ANALYZE, BUFFERS)`로 실행한다.
 2. `todos` 전체 순차 스캔(Seq Scan)이 나오면 원인을 확인하고, 필요할 때만 `schema.sql`에 인덱스를 추가한 뒤 `db:init --reset` → 재시드로 다시 측정한다.
-3. 결과(쿼리, 사용 인덱스, 실행 시간)를 `load-test/README.md`에 기록한다.
+3. 결과(쿼리, 사용 인덱스, 실행 시간)를 루트 `README.md`에 기록한다.
 
 **완료 조건**
 - [x] 목록·캘린더 조회가 `idx_todos_user_dates` 또는 `idx_todos_user_category`를 사용한다(`todos` Seq Scan 없음).
@@ -890,23 +891,9 @@ flowchart LR
 
 ## 7. 검증 Task
 
-### T-QA-01 k6 부하 테스트
+### T-QA-01 k6 부하 테스트 (폐기)
 
-- **우선순위 / 마일스톤**: Must / M-05
-- **선행 Task**: T-DB-05, T-BE-14
-- **근거**: G-01, G-02, NFR-01, NFR-03, NFR-05, P-02, PR-T-08, R-02, R-06
-
-**수행 작업**
-1. `load-test/todolist.js`: 상단 상수 — 1000 VU, 1분 ramp-up, 5분 유지, think time 3초, 조회 70%(목록·캘린더)·변경 25%(등록·수정·완료·삭제)·로그인 5%. VU별 시드 계정으로 최초 1회 로그인 후 쿠키 저장소 유지(NFR-05). `setup()`에서 `GET /api/health` 확인. threshold: `http_req_duration p(95)<500`, 5xx·타임아웃 오류율 `<1%`. access 토큰 만료(15분)가 테스트 시간(약 6분)보다 길어 갱신 호출은 넣지 않는다(PR-T-08).
-2. 백엔드를 `npm start`(watch 없이)로 띄우고 1회 실행.
-3. 미달이면 T-DB-06 결과·풀 크기(`DB_POOL_MAX`)·N+1을 확인해 명백한 병목만 조치하고 1회 재측정(M-05).
-4. `load-test/README.md`에 실행 방법, 머신 사양(CPU·메모리), k6·서버·DB가 같은 머신이었다는 사실, p95·오류율, 조치 내용을 기록한다(R-06).
-
-**완료 조건**
-- [ ] 스크립트 상수가 P-02 값과 일치한다.
-- [ ] 1회 이상 끝까지 실행되어 k6 요약(p95, 오류율, 요청 수)이 README에 기록되어 있다.
-- [ ] 머신 사양과 동일 머신 실행 사실이 기록되어 있다(R-06).
-- [ ] p95 ≤ 500ms, 오류율 < 1%를 달성했거나, 미달이면 측정값·병목 원인·후속 과제(Node 다중화 등, R-02)가 기록되어 있다(미달이어도 릴리스는 막지 않음, PRD 2장).
+폐기(v0.5): 부하 테스트를 범위에서 제외했다(PRD v0.13).
 
 ### T-QA-02 반응형·브라우저 점검
 
@@ -955,7 +942,7 @@ flowchart LR
 | FR-13 | T-BE-10, T-FE-10 |
 | FR-14, FR-15 (Should) | T-BE-15, T-FE-14 |
 | FR-16 (Could) | T-FE-15 |
-| G-01, G-02, NFR-01, NFR-05 | T-DB-05, T-QA-01 |
+| NFR-05 | T-DB-05 |
 | G-03 | T-QA-03 |
 | G-04 (ST-01~04, BR-07, BR-15~22) | T-BE-04, T-BE-05, T-BE-12, T-BE-13 |
 | NFR-02, P-04 | T-BE-07, T-BE-08, T-BE-15, T-BE-16, T-DB-02, T-FE-02, T-FE-05 |

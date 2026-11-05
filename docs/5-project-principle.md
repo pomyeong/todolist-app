@@ -11,6 +11,7 @@
 | v0.3 | 2026-11-04 | pmsong | 초안 | PRD v0.10 인증 방식 변경(JWT HS384 + refresh 토큰) 반영 |
 | v0.4 | 2026-11-04 | pmsong | 초안 | 문서 간 정합성 검토 반영 |
 | v0.5 | 2026-11-04 | Claude | 초안 | API 명세 작성 중 발견한 미정의 사항 결정(PD-27~29) |
+| v0.6 | 2026-11-05 | Claude | 초안 | 부하 테스트 제외(PRD v0.13) |
 
 ### 변경 이력
 
@@ -33,8 +34,9 @@
 | v0.5 | 2026-11-04 | PD-25, 7.2 | 비밀번호 변경 200 → 204, 로그인·이름 수정·카테고리 수정의 200 응답 본문 | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
 | v0.5 | 2026-11-04 | PD-20, PD-27~29 | `null` 처리, 시각 형식(ISO 8601 UTC), 할일 `categoryName`·사용자 `createdAt`/`updatedAt` 응답 필드 | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
 | v0.5 | 2026-11-04 | 참조 문서 | 도메인 v0.6 → v0.7, PRD v0.11 → v0.12, 시나리오 v0.9 → v0.10, 와이어프레임 v0.4 → v0.5 | 버전 동기화 | Claude |
+| v0.6 | 2026-11-05 | 범위, PR-T-08, PR-S-04, PR-S-08, 7.1, 7.2 `scripts/seed-load.js`, PD-01, PD-14, 커버리지, 참조 문서 | `load-test/`와 k6 원칙 폐기, 시드는 실행 계획 확인용(NFR-04). PRD v0.12 → v0.13 | PRD v0.13 부하 테스트 제외 | Claude |
 
-> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.12](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
+> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.13](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
 > ID 운영 원칙: PR-C·PR-L·PR-N·PR-T·PR-S·PD의 ID는 재사용하거나 재번호하지 않는다. 원칙·결정을 없애면 행을 지우지 말고 '폐기'로 표시한다.
 
@@ -43,7 +45,7 @@
 | 항목 | 내용 |
 |---|---|
 | 목적 | 2일·1인 개발에서 Day 1 오전(M-01)에 바로 셋업하고, 이후 코드가 한 방향으로 쌓이게 하는 구조·규칙을 정한다. |
-| 범위 | 프론트엔드, 백엔드, DB 스크립트, 부하 테스트 스크립트의 디렉토리·레이어·네이밍·테스트·설정·보안·운영 원칙 |
+| 범위 | 프론트엔드, 백엔드, DB 스크립트의 디렉토리·레이어·네이밍·테스트·설정·보안·운영 원칙 |
 | 범위 외 | 기능·규칙·화면 결정(도메인·PRD·와이어프레임), 운영 배포(P-10), 시각 디자인 |
 | 스택 | PRD 6장 그대로. 이 문서가 스택을 바꾸지 않는다. 6장에 없는 선택만 8장 PD로 정한다. |
 | 기본 태도 | 과설계 금지(PR-C-02). 규칙·검증·소유권은 서버 한 곳, 화면은 표시(PR-C-03). |
@@ -132,7 +134,7 @@
 | PR-T-05 | 테스트 이름에 시나리오·예외 ID를 넣는다(`E-04-2 시작일 > 종료일은 400`). 새 시나리오 예외가 생기면 대응 테스트를 만든다. 셀프 체크(G-03)는 SC-01~13을 화면에서 수동 수행한다. | 추적성, 테스트 케이스는 시나리오에서 도출. | SC-01~13, G-03 |
 | PR-T-06 | 프론트 단위 테스트(Vitest)는 순수 함수만 대상으로 한다: 월·주 조회 기간 계산, 칸별 할일 필터, 날짜 문자열 연산, 오늘 계산. 반응형(360px·768px)은 M-05에서 수동 점검한다. | 캘린더 경계 계산이 R-03의 프론트 쪽 위험이다. | R-03, NFR-13, M-05 |
 | PR-T-07 | 커밋 전 게이트: 백엔드 `npm test`, 프론트 `npm test`와 `tsc --noEmit`, 루트 `biome check`. CI·pre-commit hook은 두지 않는다. 커버리지는 `node --test --experimental-test-coverage`로 참고만 하고 수치 게이트는 없다. | 로컬 단일 머신(P-10), 테스트 대상은 PR-T-02·03이 정한다. | P-10, PD-12 |
-| PR-T-08 | 부하 테스트(`load-test/`)는 P-02의 값을 스크립트 상단 상수로 둔다: 1000 VU, 1분 ramp-up, 5분 유지, think time 3초, 조회 70%·변경 25%·로그인 5%, 사용자당 할일 100건(`scripts/seed-load.js`로 사전 입력). 매 요청 로그인은 금지하고(NFR-05) 쿠키는 k6 쿠키 저장소가 유지한다. access 토큰 만료(15분)가 테스트 시간(약 6분)보다 길어 갱신 호출은 시나리오에 넣지 않는다. 시작 전 `setup()`에서 `GET /api/health`로 기동을 확인한다. 결과는 머신 사양·같은 머신에서 실행했다는 사실과 함께 기록한다(R-06). | 목표를 재현 가능하게 측정한다. | G-01, G-02, P-02, NFR-05, R-06 |
+| PR-T-08 | 폐기(v0.6): 부하 테스트 제외(PRD v0.13) | - | - |
 | PR-T-09 | 느린 쿼리는 `EXPLAIN (ANALYZE)`로 확인하고 인덱스는 그 결과로 보강한다. 코드에서 미리 최적화하지 않는다(N+1 제거는 PR-L-08). | M-05는 측정 후 조치. | NFR-04, R-02, M-05 |
 
 ## 6. 설정 / 보안 / 운영 원칙
@@ -142,11 +144,11 @@
 | PR-S-01 | 설정은 환경변수로만 받고 `src/config.js` 한 곳에서 읽는다(Node `--env-file`, dotenv 미사용). 필수 값이 없으면 기동 시 즉시 종료한다. 키: `DATABASE_URL`, `JWT_SECRET`(HS384 키가 384비트 이상이 되도록 48자 이상), `PORT`(기본 3000), `DB_POOL_MAX`(기본 20), `NODE_ENV`. `.env`·`.env.test`는 커밋하지 않고 `.env.example`만 커밋한다.<br>하지 말 것: 다른 파일에서 `process.env` 직접 접근 | 설정 오류를 기동 시점에 발견. | NFR-03, PD-07 |
 | PR-S-02 | PRD가 확정한 값은 설정이 아닌 상수로 코드에 둔다: bcrypt cost 10, 서명 알고리즘 HS384, access 토큰 만료 15분, refresh 토큰 만료 7일, 쿠키 이름(`access_token`, `refresh_token`). | 환경마다 달라지면 안 되는 값. | NFR-06, P-04 |
 | PR-S-03 | 인증은 access 토큰과 refresh 토큰 두 개를 쓴다(P-04). access 토큰은 JWT(HS384, 페이로드는 `sub`=사용자 ID만, 만료 15분)이고 `access_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/`, `maxAge` 15분)로 보낸다. 검증할 때 `algorithms: ['HS384']`를 명시해 다른 알고리즘(`none`, HS256 등)으로 서명된 토큰을 거부한다. refresh 토큰은 JWT가 아닌 `crypto.randomBytes(32)`의 base64url 문자열이고 `refresh_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/api/auth`, `maxAge` 7일)로 보낸다. DB `refresh_tokens`에는 SHA-256 해시만 저장한다(DB-13). `POST /api/auth/refresh`는 해시가 맞고 만료되지 않은 행을 한 문장으로 삭제(`DELETE … RETURNING user_id`)한 뒤 새 쌍을 발급한다(회전, 재사용 불가). 로그아웃은 그 refresh 토큰 행을 지우고 같은 옵션으로 두 쿠키를 지운다. `secure`는 `NODE_ENV=production`일 때만 켠다(HTTPS는 범위 외). access 토큰 블랙리스트는 만들지 않는다. 상태 변경 API는 GET을 쓰지 않고 JSON 본문(`express.json`)만 받아, `SameSite=Lax`와 함께 CSRF를 막는다. | access 검증은 stateless(NFR-02), 세션 종료는 refresh 토큰 삭제로 한다. 토큰 JS 접근 차단. refresh 쿠키 경로를 좁혀 일반 API 요청에 실리지 않게 한다. | P-04, NFR-02, FR-03, DB-13, PD-26 |
-| PR-S-04 | 개발은 Vite 프록시(`/api` → `http://localhost:3000`)로 같은 출처를 만든다. 프론트는 상대 경로(`/api/...`)만 쓰고 백엔드 주소를 코드에 넣지 않는다. CORS 미들웨어는 두지 않는다. k6는 백엔드를 직접 호출한다(쿠키 저장소 사용). | P-04. 같은 출처면 CORS와 쿠키 SameSite 문제가 없다. | P-04, PD-04 |
+| PR-S-04 | 개발은 Vite 프록시(`/api` → `http://localhost:3000`)로 같은 출처를 만든다. 프론트는 상대 경로(`/api/...`)만 쓰고 백엔드 주소를 코드에 넣지 않는다. CORS 미들웨어는 두지 않는다. | P-04. 같은 출처면 CORS와 쿠키 SameSite 문제가 없다. | P-04, PD-04 |
 | PR-S-05 | 인증은 기본 적용이다. `routes/index.js`에서 `/api/auth/signup`·`/api/auth/login`·`/api/auth/refresh`·`/api/auth/logout`·`/api/health`를 제외한 모든 라우트에 `auth` 미들웨어를 먼저 건다. access 토큰 쿠키가 없거나 만료·위조면 401 `UNAUTHORIZED`다. | 새 라우트가 실수로 공개되는 것을 막는다. | BR-01, FR-04 |
 | PR-S-06 | 비밀번호는 bcrypt(cost 10)로만 저장한다. 평문·해시·토큰을 로그·응답에 내보내지 않으며, 사용자 조회 SQL은 컬럼을 명시한다. | 민감 정보 노출 방지. | NFR-06, PR-L-04 |
 | PR-S-07 | 모든 입력은 서버에서 검증한다. 문자열은 trim한 뒤 검사하고(BR-22, 비밀번호는 trim하지 않음), 본문에서 필요한 필드만 꺼내 쓰며, `express.json`의 본문 한도는 16kb로 낮춘다. 한도 초과(`express.json`의 413 `entity.too.large`)와 JSON 파싱 실패는 `middleware/error.js`가 400 `VALIDATION_ERROR`로 바꾼다(새 오류 코드 없음). | 신뢰 경계 검증, 불필요 필드 무시. | NFR-09, BR-21, BR-22 |
-| PR-S-08 | 오류 로그는 stderr에 JSON 한 줄(시각, 메서드, 경로, 오류 메시지, stack)로 남기고 500 응답에는 상세를 넣지 않는다. 요청 본문·쿠키·비밀번호는 기록하지 않는다. 구조화 로깅 라이브러리·메트릭은 두지 않는다. 헬스 체크는 DB를 조회하지 않는 `GET /api/health` 한 줄만 둔다. | 로컬 단일 프로세스, 판정은 k6 출력. 기동 확인만 필요하다. | NFR-15, P-10, P-25, PD-14 |
+| PR-S-08 | 오류 로그는 stderr에 JSON 한 줄(시각, 메서드, 경로, 오류 메시지, stack)로 남기고 500 응답에는 상세를 넣지 않는다. 요청 본문·쿠키·비밀번호는 기록하지 않는다. 구조화 로깅 라이브러리·메트릭은 두지 않는다. 헬스 체크는 DB를 조회하지 않는 `GET /api/health` 한 줄만 둔다. | 로컬 단일 프로세스라 기동 확인만 필요하다. | NFR-15, P-10, P-25, PD-14 |
 | PR-S-09 | DB 연결은 프로세스당 `pg.Pool` 하나(`db.js`)다. 크기는 `DB_POOL_MAX`. DATE 타입(OID 1082)은 문자열로 받도록 pg 타입 파서를 `db.js`에서 한 번 설정한다. `SIGINT`·`SIGTERM`에서 `pool.end()`를 호출한다. | 풀 설정·날짜 파싱 한 곳. | NFR-03, NFR-11 |
 | PR-S-10 | 스키마의 단일 출처는 `backend/sql/schema.sql` 하나다(테이블·제약·NFR-04 인덱스). 변경은 이 파일을 고치고 `npm run db:init -- --reset`로 다시 만든다. 마이그레이션 도구는 쓰지 않는다. 상태 컬럼은 만들지 않는다(NFR-12). | 운영 데이터가 없다(P-10). | NFR-04, NFR-12, PD-08 |
 | PR-S-11 | 운영 범위는 로컬 단일 머신이다. Docker·프로세스 관리자·CI·배포 스크립트는 만들지 않는다. PostgreSQL 17은 로컬 설치를 쓴다. | 배포는 범위 외. | P-10, PRD 3.2 |
@@ -161,9 +163,6 @@ todolist-app/
 ├─ docs/                  # 1~8번 문서, wireframe/ (코드 없음)
 ├─ backend/               # Node.js + Express + pg (JavaScript)
 ├─ frontend/              # React 19 + TypeScript + Vite
-├─ load-test/             # k6 부하 테스트
-│  ├─ todolist.js         # P-02 시나리오 (상수는 PR-T-08)
-│  └─ README.md           # 실행 방법, 결과·머신 사양 기록(R-06)
 ├─ biome.json             # 포맷·린트 공통 설정 (PR-N-11)
 ├─ .gitignore             # node_modules, .env, .env.test, dist
 └─ README.md              # 실행 순서 (7.4)
@@ -181,7 +180,7 @@ backend/
 │  └─ schema.sql          # 테이블·제약·인덱스 (PR-S-10)
 ├─ scripts/
 │  ├─ db-init.js          # schema.sql 실행, --reset이면 삭제 후 생성
-│  └─ seed-load.js        # 부하 테스트용 사용자·할일 입력 (P-02)
+│  └─ seed-load.js        # 실행 계획 확인용 사용자·할일 입력 (NFR-04)
 ├─ src/
 │  ├─ server.js           # config 로드 → app.listen, 종료 시 pool.end
 │  ├─ app.js              # createApp(): 미들웨어·라우터 조립, /api/health (테스트가 import)
@@ -230,7 +229,7 @@ backend/
 |---|---|---|
 | `sql/schema.sql` | `users`·`categories`·`todos`·`refresh_tokens`(DB-13), `DATE` 컬럼, 이메일 유일, `(user_id, name)` 유일, 사용자당 기본 카테고리 1개 부분 유일 인덱스, `todos(user_id, start_date, end_date)`·`(user_id, category_id)` 인덱스, `start_date <= end_date` CHECK(방어용), 상태 컬럼 없음 | NFR-04, NFR-11, NFR-12, BR-02, BR-07, BR-10, BR-12, BR-13 |
 | `scripts/db-init.js` | 스키마 적용(PD-08) | M-01 |
-| `scripts/seed-load.js` | 사용자 1000명·사용자당 할일 100건, 비밀번호 해시는 한 번 만들어 재사용 | P-02, NFR-05 |
+| `scripts/seed-load.js` | 사용자 1000명·사용자당 할일 100건, 비밀번호 해시는 한 번 만들어 재사용 | NFR-04, NFR-05 |
 | `config.js`, `db.js` | 환경변수, 풀(기본 20), 트랜잭션 헬퍼, DATE 문자열 파서 | NFR-03, NFR-10, NFR-11, NFR-08 |
 | `errors.js`, `middleware/error.js` | 오류 클래스·코드 상수, 응답 형식, 500 상세 비노출 | NFR-15, P-13 |
 | `middleware/auth.js`, `routes/auth.js` | access 토큰 검증(HS384만 허용), 토큰 쌍 쿠키 발급·삭제, 갱신 | FR-02~04, BR-01, NFR-02, P-04 |
@@ -330,7 +329,7 @@ PRD·도메인의 기능·규칙 수준 결정은 하지 않았다. 아래는 �
 
 | ID | 결정 | 근거 | 대안 |
 |---|---|---|---|
-| PD-01 | 저장소는 `frontend/`·`backend/`·`load-test/` 평면 폴더이고 루트 `package.json`·워크스페이스는 두지 않는다. | 패키지 간 공유 코드가 없다. PR-C-02(모노레포 도구 금지). | npm workspaces: 공유 의존성이 없어 이득 없음 |
+| PD-01 | 저장소는 `frontend/`·`backend/` 평면 폴더이고 루트 `package.json`·워크스페이스는 두지 않는다. | 패키지 간 공유 코드가 없다. PR-C-02(모노레포 도구 금지). | npm workspaces: 공유 의존성이 없어 이득 없음 |
 | PD-02 | 백엔드는 Node.js LTS(22 이상)·ESM이고 `node --watch`·`--env-file`·`node:test`를 쓴다. | 추가 도구(nodemon, dotenv, Jest) 없이 해결, 최신 Express·pg는 ESM과 잘 맞는다. | CommonJS: 이점 없음 |
 | PD-03 | Express 5를 쓴다. | async 핸들러 오류가 자동 전달되어 래퍼가 필요 없다. | Express 4 + `asyncHandler` 래퍼 |
 | PD-04 | 프론트 빌드는 Vite, 라우터는 `react-router`(`createBrowserRouter`)다. | P-23의 경로·쿼리·가드·리다이렉트·`location.state`를 직접 구현할 수 없다. Vite는 PRD P-04가 전제한다. | TanStack Router: 학습 비용. 직접 구현: 규모 큼 |
@@ -343,7 +342,7 @@ PRD·도메인의 기능·규칙 수준 결정은 하지 않았다. 아래는 �
 | PD-11 | 포맷·린트는 Biome 하나(루트 `biome.json`)다. | 의존성 1개로 JS·TS를 처리한다. | ESLint + Prettier: 패키지·설정이 늘어남 |
 | PD-12 | 커버리지 수치 게이트를 두지 않는다. 필수 대상은 PR-T-02·03이다. | 대상은 규칙(G-04)·소유권(R-04)이 정한다. 수치는 가치를 보장하지 않는다. | 80% 게이트: 2일 일정에서 비규칙 코드 테스트 부담 |
 | PD-13 | API 경로·메서드는 7.2의 표로 정한다. `:id`는 정수(`INTEGER GENERATED ALWAYS AS IDENTITY`)이고, 정수가 아닌 `:id`는 존재하지 않는 것으로 보아 404 `NOT_FOUND`다. 단건 조회(`GET /api/todos/:id`)는 `today`를 받지 않고 상태를 포함하지 않는다. 쿼리 파라미터(`categoryId`·`status`·`today`·`from`·`to`)의 형식 오류(정수 아님, 날짜 아님, 허용 값 아님)는 400 `VALIDATION_ERROR`이고, 형식이 맞는 `categoryId`가 본인 카테고리가 아니거나 없으면 404 `NOT_FOUND`(P-14)다. | PRD P-25가 이 표에 위임한다. 문자열 `:id` 400은 NFR-15에 없는 코드 조합을 만든다. | UUID: 길이·가독성 부담 |
-| PD-14 | 메트릭·구조화 로깅 라이브러리는 두지 않고, 헬스 체크는 DB를 조회하지 않는 `GET /api/health`만 둔다. | 로컬 단일 프로세스(P-10), 부하 판정은 k6가 한다. 부하 테스트 전 기동 확인에는 한 줄이면 충분하다(P-25). | pino, DB 포함 readiness 체크: 운영 배포 시 도입 |
+| PD-14 | 메트릭·구조화 로깅 라이브러리는 두지 않고, 헬스 체크는 DB를 조회하지 않는 `GET /api/health`만 둔다. | 로컬 단일 프로세스(P-10)라 기동 확인에는 한 줄이면 충분하다(P-25). | pino, DB 포함 readiness 체크: 운영 배포 시 도입 |
 | PD-15 | `jsonwebtoken`과 `bcrypt`(네이티브)를 쓰고, 쿠키 읽기는 `req.headers.cookie`를 직접 파싱한다(`cookie-parser` 없음). | JWT·bcrypt는 직접 구현이 불가·위험하다. 쿠키 파싱은 약 5줄이다. refresh 토큰 생성·해시는 내장 `node:crypto`로 한다. 네이티브 bcrypt는 로그인 CPU 부하(NFR-05)에 유리하다. Windows에서 미리 빌드된 바이너리가 맞지 않아 설치가 실패하면 API가 같은 `bcryptjs`로 바꾸고 이 행을 갱신한다. | bcryptjs: 설치는 쉬우나 느림. cookie-parser |
 | PD-16 | SQL은 별도 repository 파일 없이 `services/`에 둔다. | 3.3 근거. | `repositories/` 계층: 파일 2배, mock 유혹 |
 | PD-17 | 상태 판정과 상태 필터는 `domain/status.js` 한 곳(JS)에 둔다. SQL은 사용자·카테고리·기간으로만 거른다. | 판정 로직 이중화 방지(NFR-12), DB 없이 단위 테스트 가능. P-11(사용자당 약 100건)에서 행 수가 작다. | SQL `CASE`: 판정 2곳. 사용자당 건수가 크게 늘면 재검토 |
@@ -364,6 +363,6 @@ PRD·도메인의 기능·규칙 수준 결정은 하지 않았다. 아래는 �
 
 | 대상 | 전체 | 어디에 구현되는가 |
 |---|---|---|
-| NFR-01~15 | 15 | NFR-01·05 PR-T-08/`load-test/`, 02 PR-S-03/`middleware/auth.js`, 03 PR-S-09/`db.js`, 04 `schema.sql`, 06 `services/auth.js`, 07 PR-L-05, 08 PR-L-04, 09 `domain/validate.js`, 10 PR-L-06, 11 PR-C-05, 12 `domain/status.js`/PR-L-11, 13·14 PR-N-10/Vite 기본 빌드, 15 `errors.js`/`middleware/error.js` |
+| NFR-01~15 | 15 | NFR-01 폐기, 05 `scripts/seed-load.js`, 02 PR-S-03/`middleware/auth.js`, 03 PR-S-09/`db.js`, 04 `schema.sql`, 06 `services/auth.js`, 07 PR-L-05, 08 PR-L-04, 09 `domain/validate.js`, 10 PR-L-06, 11 PR-C-05, 12 `domain/status.js`/PR-L-11, 13·14 PR-N-10/Vite 기본 빌드, 15 `errors.js`/`middleware/error.js` |
 | P-04·P-12·P-14~P-23 | 해당 항목 | 7.2·7.3 표의 '구현하는 ID' 열 |
 | 금지 목록(PR-C-02) | DI, 리포지토리 계층, ORM, 캐시, 큐, 마이크로서비스, 모노레포 도구, 상태 라이브러리 추가 | 3.3, PD-01, PD-16 |
