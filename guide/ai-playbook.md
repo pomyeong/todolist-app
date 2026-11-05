@@ -1096,6 +1096,7 @@ export default defineConfig({
 ````text
 # 개발 서버가 직접 호출할 API 주소(PR-S-04, CORS). 운영 빌드는 VITE_API_BASE_URL을 지정해 빌드한다.
 VITE_API_BASE_URL=http://localhost:3000
+NODE_ENV=development
 ````
 
 ## 부록 B. 재사용 기반 코드 (구현 단계 11·12의 출발점)
@@ -1573,6 +1574,7 @@ import { RouterProvider } from 'react-router';
 import { ApiError } from './api/types';
 import { router } from './app/router';
 import { clearSession } from './app/session';
+import { log, logError } from './lib/log';
 import './styles/global.css';
 
 // 401이면 세션을 비운다. 이동은 RequireAuth가 status=guest를 보고 처리한다.
@@ -1584,11 +1586,13 @@ const queryClient: QueryClient = new QueryClient({
   queryCache: new QueryCache({
     // PR-L-12, PD-24: 갱신까지 실패한 401은 세션을 비우고 RequireAuth가 /login으로 보낸다(첫 진입 /api/me 제외)
     onError(err, query) {
+      logError('query', query.queryKey, err);
       if (isUnauthorized(err) && !query.meta?.skipAuthRedirect) clearSession(queryClient);
     },
   }),
   mutationCache: new MutationCache({
     onError(err) {
+      logError('mutation', err);
       if (isUnauthorized(err)) clearSession(queryClient);
     },
   }),
@@ -1597,6 +1601,16 @@ const queryClient: QueryClient = new QueryClient({
     mutations: { retry: false },
   },
 });
+
+// 화면 이동: 로딩 등 다른 상태 변화는 건너뛰고 주소가 바뀔 때만 남긴다
+let lastPath = router.state.location.pathname + router.state.location.search;
+log('route', lastPath);
+router.subscribe(({ location }) => {
+  const path = location.pathname + location.search;
+  if (path !== lastPath) log('route', path);
+  lastPath = path;
+});
+log('app', '시작', import.meta.env.VITE_API_BASE_URL ?? '(같은 출처 API)');
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>
@@ -1612,6 +1626,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
 fetch 래퍼(401 시 refresh 1회 후 재요청, CORS 쿠키). 그대로 쓴다.
 
 ````ts
+import { log, logError } from '../lib/log';
 import type { ErrorCode } from './types';
 import { ApiError } from './types';
 
@@ -1641,6 +1656,8 @@ function isErrorBody(v: unknown): v is ErrorBody {
 }
 
 async function send<T>(method: Method, path: string, body: unknown, retried: boolean): Promise<T> {
+  const started = performance.now();
+  const ms = () => `${Math.round(performance.now() - started)}ms`;
   let res: Response;
   try {
     res = await fetch(API_BASE + path, {
@@ -1649,11 +1666,13 @@ async function send<T>(method: Method, path: string, body: unknown, retried: boo
       headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-  } catch {
+  } catch (e) {
+    logError('api', method, path, '연결 실패', ms(), e);
     throw new ApiError(0, 'INTERNAL_ERROR', FALLBACK_MESSAGE);
   }
 
   if (res.ok) {
+    log('api', method, path, res.status, ms());
     if (res.status === 204) return undefined as T;
     return (await res.json()) as T;
   }
@@ -1664,9 +1683,13 @@ async function send<T>(method: Method, path: string, body: unknown, retried: boo
   } catch {
     parsed = undefined;
   }
-  if (!isErrorBody(parsed)) throw new ApiError(res.status, 'INTERNAL_ERROR', FALLBACK_MESSAGE);
+  if (!isErrorBody(parsed)) {
+    logError('api', method, path, res.status, ms(), '오류 형식 아님');
+    throw new ApiError(res.status, 'INTERNAL_ERROR', FALLBACK_MESSAGE);
+  }
   const { code, message, fields } = parsed.error;
   const err = new ApiError(res.status, code, message, fields);
+  logError('api', method, path, res.status, code, ms());
 
   if (code === 'UNAUTHORIZED' && !path.startsWith('/api/auth/') && !retried) {
     refreshing ??= fetch(`${API_BASE}/api/auth/refresh`, { method: 'POST', credentials: 'include' })
@@ -1674,6 +1697,10 @@ async function send<T>(method: Method, path: string, body: unknown, retried: boo
         (r) => r.ok,
         () => false,
       )
+      .then((ok) => {
+        log('auth', ok ? '토큰 갱신 성공, 재요청' : '토큰 갱신 실패');
+        return ok;
+      })
       .finally(() => {
         refreshing = null;
       });
