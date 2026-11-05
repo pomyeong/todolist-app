@@ -12,6 +12,7 @@
 | v0.4 | 2026-11-04 | Claude | 초안 | API 명세 작성 중 결정 반영 |
 | v0.5 | 2026-11-05 | Claude | 초안 | 부하 테스트 제외 |
 | v0.6 | 2026-11-05 | Claude | 초안 | 헬스 체크 DB 연결 확인 반영 |
+| v0.7 | 2026-11-05 | Claude | 초안 | 스키마 원본 경로 변경 반영 |
 
 ### 변경 이력
 
@@ -27,6 +28,7 @@
 | v0.4 | 2026-11-04 | 참조 문서 | 도메인 v0.6 → v0.7, PRD v0.11 → v0.12, 시나리오 v0.9 → v0.10, 와이어프레임 v0.4 → v0.5, 구조 설계 원칙 v0.4 → v0.5 | 버전 동기화 | Claude |
 | v0.5 | 2026-11-05 | T-CM-01, T-DB-05, T-DB-06, T-QA-01, 2장, 9장, 참조 문서 | T-QA-01 폐기, 시드는 실행 계획 확인용으로 이름 변경, 기록 위치를 루트 `README.md`로. PRD v0.12 → v0.13, 구조 설계 원칙 v0.5 → v0.6 | PRD v0.13 부하 테스트 제외 | Claude |
 | v0.6 | 2026-11-05 | T-BE-03 | `/api/health`가 `SELECT 1`로 DB 연결 확인(200 `db: 'up'` / 503 `db: 'down'`) | 구조 설계 원칙 v0.8 PD-14 | Claude |
+| v0.7 | 2026-11-05 | T-DB-02, T-DB-03 | 스키마 단일 출처가 `docs/schema.sql`로 바뀜(T-DB-02의 이동을 되돌림, `backend/sql/` 삭제). 완료 기록은 그대로 둔다 | 구조 설계 원칙 v0.12 PR-S-10 | Claude |
 
 > 단일 출처 원칙: 규칙(ST·BR·UC)은 [도메인 정의서 v0.7](./1-domain-definition.md), 기능·비기능·일정(FR·NFR·SCR·M·P)은 [PRD v0.14](./2-PRD.md), 시나리오·예외(SC·E)는 [사용자 시나리오 v0.10](./3-user-scenario.md), 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md), 구조·레이어·파일 위치(PR·PD)는 [프로젝트 구조 설계 원칙 v0.8](./5-project-principle.md), 흐름(AD·SD)은 [아키텍처 다이어그램](./6-arch-diagram.md), 테이블·제약(DB)은 [ERD](./7-erd.md)가 정의한다. 이 문서는 **작업 순서·완료 조건만** 정하며 규칙·코드·수치를 다시 정의하지 않는다. 충돌하면 위 문서를 따른다.
 >
@@ -176,7 +178,7 @@ flowchart LR
 
 - **우선순위 / 마일스톤**: Must / M-01
 - **선행 Task**: T-CM-01, T-BE-01
-- **근거**: PR-S-10(스키마 단일 출처는 `backend/sql/schema.sql`), 7-erd 4·5장, DB-01~12
+- **근거**: PR-S-10(당시 스키마 단일 출처는 `backend/sql/schema.sql`. v0.7에서 `docs/schema.sql`로 되돌림), 7-erd 4·5장, DB-01~12
 
 **수행 작업**
 1. `docs/schema.sql`을 `git mv`로 `backend/sql/schema.sql`로 옮긴다(단일 출처를 하나로 유지).
@@ -196,7 +198,7 @@ flowchart LR
 - **근거**: PD-08, PR-S-10, 7.2 `scripts/db-init.js`
 
 **수행 작업**
-1. `backend/scripts/db-init.js` 작성: `config.js`의 `DATABASE_URL`로 접속해 `sql/schema.sql`을 실행한다(psql 불필요).
+1. `backend/scripts/db-init.js` 작성: `config.js`의 `DATABASE_URL`로 접속해 스키마 파일(v0.7부터 `docs/schema.sql`)을 실행한다(psql 불필요).
 2. `--reset` 인자가 있으면 `DROP TABLE IF EXISTS refresh_tokens, todos, categories, users`를 먼저 실행한다.
 3. `package.json` scripts에 `db:init`을 등록하고, `.env.test`로도 실행할 수 있게 한다(예: `node --env-file=.env.test scripts/db-init.js --reset`).
 

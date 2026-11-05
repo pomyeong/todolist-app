@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { close, query } from '../src/db.js';
 
 const reset = process.argv.includes('--reset');
-const schema = await readFile(new URL('../sql/schema.sql', import.meta.url), 'utf8');
+const schema = await readFile(new URL('../../docs/schema.sql', import.meta.url), 'utf8');
 
 try {
   if (reset) {

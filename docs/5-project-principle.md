@@ -17,6 +17,7 @@
 | v0.9 | 2026-11-05 | Claude | 초안 | 개발 환경 한정 Swagger UI(PD-30) |
 | v0.10 | 2026-11-05 | Claude | 초안 | Vite 프록시 대신 CORS(PR-S-04, PRD v0.15) |
 | v0.11 | 2026-11-05 | Claude | 초안 | 토큰 만료 시간 환경변수화(PR-S-01, PR-S-02) |
+| v0.12 | 2026-11-05 | Claude | 초안 | 스키마 원본을 docs/schema.sql로(PR-S-10) |
 
 ### 변경 이력
 
@@ -45,6 +46,7 @@
 | v0.9 | 2026-11-05 | PR-S-05, 7.2, PD-30 | `NODE_ENV=development`일 때만 `GET /api/docs`(Swagger UI)·`GET /api/docs/swagger.yaml` 제공, npm 의존성 없이 CDN `swagger-ui-dist` 사용 | 사용자 요청(개발 중 API 명세 열람·호출) | Claude |
 | v0.10 | 2026-11-05 | PR-S-01, PR-S-04, 7.1, 7.3, PD-30 | Vite 프록시를 없애고 CORS로 전환: `CORS_ORIGIN` 설정, `middleware/cors.js`, 프론트 `VITE_API_BASE_URL`·`credentials: 'include'` | 사용자 결정(PRD v0.15 P-04) | Claude |
 | v0.11 | 2026-11-05 | PR-S-01, PR-S-02 | access 토큰 만료·refresh 토큰 만료를 상수에서 환경변수 `JWT_ACCESS_EXPIRES_MINUTES`(기본 15)·`REFRESH_TOKEN_TTL_DAYS`(기본 7)로 이동 | 사용자 결정(PRD v0.16 P-04) | Claude |
+| v0.12 | 2026-11-05 | PR-S-10, PD-08, 7.1, 7.2 | 스키마 단일 출처를 `backend/sql/schema.sql`에서 `docs/schema.sql`로 옮기고 `backend/sql/` 삭제, `db-init.js`가 `docs/schema.sql`을 읽음 | 사용자 결정(설계 문서와 DDL을 한곳에) | Claude |
 
 > 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.14](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
@@ -160,7 +162,7 @@
 | PR-S-07 | 모든 입력은 서버에서 검증한다. 문자열은 trim한 뒤 검사하고(BR-22, 비밀번호는 trim하지 않음), 본문에서 필요한 필드만 꺼내 쓰며, `express.json`의 본문 한도는 16kb로 낮춘다. 한도 초과(`express.json`의 413 `entity.too.large`)와 JSON 파싱 실패는 `middleware/error.js`가 400 `VALIDATION_ERROR`로 바꾼다(새 오류 코드 없음). | 신뢰 경계 검증, 불필요 필드 무시. | NFR-09, BR-21, BR-22 |
 | PR-S-08 | 오류 로그는 stderr에 JSON 한 줄(시각, 메서드, 경로, 오류 메시지, stack)로 남기고 500 응답에는 상세를 넣지 않는다. 요청 본문·쿠키·비밀번호는 기록하지 않는다. 구조화 로깅 라이브러리·메트릭은 두지 않는다. 헬스 체크는 `GET /api/health`는 `SELECT 1`로 DB 연결까지 확인해 정상이면 200 `{ ok: true, db: 'up' }`, DB 실패면 503 `{ ok: false, db: 'down' }`이다. | 로컬 단일 프로세스라 기동과 DB 연결 확인이면 충분하다. | NFR-15, P-10, P-25, PD-14 |
 | PR-S-09 | DB 연결은 프로세스당 `pg.Pool` 하나(`db.js`)다. 크기는 `DB_POOL_MAX`. DATE 타입(OID 1082)은 문자열로 받도록 pg 타입 파서를 `db.js`에서 한 번 설정한다. `SIGINT`·`SIGTERM`에서 `pool.end()`를 호출한다. | 풀 설정·날짜 파싱 한 곳. | NFR-03, NFR-11 |
-| PR-S-10 | 스키마의 단일 출처는 `backend/sql/schema.sql` 하나다(테이블·제약·NFR-04 인덱스). 변경은 이 파일을 고치고 `npm run db:init -- --reset`로 다시 만든다. 마이그레이션 도구는 쓰지 않는다. 상태 컬럼은 만들지 않는다(NFR-12). | 운영 데이터가 없다(P-10). | NFR-04, NFR-12, PD-08 |
+| PR-S-10 | 스키마의 단일 출처는 `docs/schema.sql` 하나다(설계 문서와 함께 둔다)(테이블·제약·NFR-04 인덱스). 변경은 이 파일을 고치고 `npm run db:init -- --reset`로 다시 만든다. 마이그레이션 도구는 쓰지 않는다. 상태 컬럼은 만들지 않는다(NFR-12). | 운영 데이터가 없다(P-10). | NFR-04, NFR-12, PD-08 |
 | PR-S-11 | 운영 범위는 로컬 단일 머신이다. Docker·프로세스 관리자·CI·배포 스크립트는 만들지 않는다. PostgreSQL 17은 로컬 설치를 쓴다. | 배포는 범위 외. | P-10, PRD 3.2 |
 | PR-S-12 | 의존성은 `package-lock.json`을 커밋하고 `npm ci`로 설치한다. `engines.node`로 Node LTS(22 이상)를 명시한다. 의존성을 추가하면 8장 PD를 먼저 갱신한다. | 재현 가능한 설치, PR-C-02 준수. | PR-C-02 |
 
@@ -186,10 +188,8 @@ todolist-app/
 backend/
 ├─ package.json           # "type": "module", engines.node
 ├─ .env.example           # DATABASE_URL, JWT_SECRET, PORT, DB_POOL_MAX, NODE_ENV
-├─ sql/
-│  └─ schema.sql          # 테이블·제약·인덱스 (PR-S-10)
 ├─ scripts/
-│  ├─ db-init.js          # schema.sql 실행, --reset이면 삭제 후 생성
+│  ├─ db-init.js          # docs/schema.sql 실행(PR-S-10), --reset이면 삭제 후 생성
 │  └─ seed-load.js        # 실행 계획 확인용 사용자·할일 입력 (NFR-04)
 ├─ src/
 │  ├─ server.js           # config 로드 → app.listen, 종료 시 pool.end
@@ -239,7 +239,7 @@ backend/
 
 | 위치 | 역할 | 구현하는 ID |
 |---|---|---|
-| `sql/schema.sql` | `users`·`categories`·`todos`·`refresh_tokens`(DB-13), `DATE` 컬럼, 이메일 유일, `(user_id, name)` 유일, 사용자당 기본 카테고리 1개 부분 유일 인덱스, `todos(user_id, start_date, end_date)`·`(user_id, category_id)` 인덱스, `start_date <= end_date` CHECK(방어용), 상태 컬럼 없음 | NFR-04, NFR-11, NFR-12, BR-02, BR-07, BR-10, BR-12, BR-13 |
+| `docs/schema.sql` | `users`·`categories`·`todos`·`refresh_tokens`(DB-13), `DATE` 컬럼, 이메일 유일, `(user_id, name)` 유일, 사용자당 기본 카테고리 1개 부분 유일 인덱스, `todos(user_id, start_date, end_date)`·`(user_id, category_id)` 인덱스, `start_date <= end_date` CHECK(방어용), 상태 컬럼 없음 | NFR-04, NFR-11, NFR-12, BR-02, BR-07, BR-10, BR-12, BR-13 |
 | `scripts/db-init.js` | 스키마 적용(PD-08) | M-01 |
 | `scripts/seed-load.js` | 사용자 1000명·사용자당 할일 100건, 비밀번호 해시는 한 번 만들어 재사용 | NFR-04, NFR-05 |
 | `config.js`, `db.js` | 환경변수, 풀(기본 20), 트랜잭션 헬퍼, DATE 문자열 파서 | NFR-03, NFR-10, NFR-11, NFR-08 |
@@ -350,7 +350,7 @@ PRD·도메인의 기능·규칙 수준 결정은 하지 않았다. 아래는 �
 | PD-05 | 스타일은 CSS Modules(Vite 내장)이다. | 의존성 0, 반응형 규칙은 중단점 하나(P-08). | Tailwind·UI 라이브러리: 설정·학습 비용 |
 | PD-06 | 입력 검증은 직접 작성한다(`domain/validate.js`). 프론트도 폼 라이브러리 없이 제어 컴포넌트로 쓴다. | 검증 대상이 이메일 형식·문자열 길이·필수·날짜·열거 값 정도라 약 60줄이다. 서버가 `fields`를 내려준다(NFR-15). | zod·joi, react-hook-form: 의존성 추가 |
 | PD-07 | 환경변수는 Node `--env-file`로 불러오고 `config.js`에서만 읽는다. | dotenv 불필요(PD-02). | dotenv |
-| PD-08 | 스키마는 `sql/schema.sql` 하나와 `scripts/db-init.js`(pg로 실행, `--reset` 지원)로 적용한다. 마이그레이션 도구는 쓰지 않는다. | `psql` 설치 여부와 무관, 운영 데이터가 없고(P-10) 2일 일정이다. | node-pg-migrate: 이력 관리가 필요한 시점에 도입 |
+| PD-08 | 스키마는 `docs/schema.sql` 하나와 `scripts/db-init.js`(pg로 실행, `--reset` 지원)로 적용한다. 마이그레이션 도구는 쓰지 않는다. | `psql` 설치 여부와 무관, 운영 데이터가 없고(P-10) 2일 일정이다. | node-pg-migrate: 이력 관리가 필요한 시점에 도입 |
 | PD-09 | 백엔드 테스트는 `node:test` + 내장 `fetch`(supertest 없음), 프론트는 Vitest(순수 함수만)다. API 테스트는 `todolist_test` DB를 쓴다. | 의존성 최소. Vitest는 Vite 설정을 공유한다. | Jest, supertest, React Testing Library: 2일 안에 이득이 작음 |
 | PD-10 | 날짜 라이브러리를 쓰지 않는다. 백엔드는 pg DATE 파서로 문자열을 받아 문자열 비교(ISO 형식은 사전순 = 날짜순)하고, 프론트는 `lib/date.ts`에서 로컬 `new Date(y, m, d)`로 계산해 문자열로 돌려준다. | 필요한 연산이 오늘·±일·월·주 범위뿐이다. NFR-11. | dayjs·date-fns: 의존성 추가 |
 | PD-11 | 포맷·린트는 Biome 하나(루트 `biome.json`)다. | 의존성 1개로 JS·TS를 처리한다. | ESLint + Prettier: 패키지·설정이 늘어남 |
