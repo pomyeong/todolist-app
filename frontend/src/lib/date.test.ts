@@ -4,6 +4,7 @@ import {
   addMonths,
   dayOfWeek,
   endOfMonth,
+  isoWeek,
   isValidDate,
   startOfMonth,
   todayLocal,
@@ -104,5 +105,20 @@ describe('WEEKDAYS', () => {
   it('일요일부터 7개', () => {
     expect(WEEKDAYS).toHaveLength(7);
     expect(WEEKDAYS[0]).toBe('일');
+  });
+});
+
+describe('isoWeek (P-28)', () => {
+  it.each([
+    ['2026-11-04', 45],
+    ['2026-11-02', 45],
+    ['2026-11-01', 44], // 일요일은 ISO에서 앞 주
+    ['2026-01-01', 1],
+    ['2026-12-31', 53], // 2026년은 53주
+    ['2027-01-01', 53],
+    ['2027-01-04', 1],
+    ['2021-01-03', 53], // 2020년 53주차에 속함
+  ])('%s → %i주차', (date, week) => {
+    expect(isoWeek(date)).toBe(week);
   });
 });

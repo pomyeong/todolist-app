@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router';
 import type { ApiError, TodoWithStatus } from '../../api/types';
 import { STATUS_LABEL } from '../../api/types';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { TodoTitle } from '../../components/TodoTitle';
 import styles from './TodoRow.module.css';
 import { useDeleteTodo, useToggleTodo } from './useTodos';
 
@@ -51,7 +52,7 @@ export function TodoRow({ todo, onError }: Props) {
         to={`/todos/${todo.id}/edit`}
         state={{ from: pathname + search }}
       >
-        {todo.title}
+        <TodoTitle title={todo.title} startTime={todo.startTime} />
       </Link>
       <span className={styles.period}>
         {todo.startDate} ~ {todo.endDate}

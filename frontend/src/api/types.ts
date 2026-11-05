@@ -32,6 +32,8 @@ export interface Todo {
   description: string | null;
   startDate: string;
   endDate: string;
+  startTime: string | null; // 'HH:MM'(BR-24)
+  endTime: string | null;
   completed: boolean;
   completedAt: string | null;
   createdAt: string;
@@ -53,6 +55,8 @@ export interface TodoInput {
   description: string;
   startDate: string;
   endDate: string;
+  startTime: string | null;
+  endTime: string | null;
   categoryId?: number;
 }
 

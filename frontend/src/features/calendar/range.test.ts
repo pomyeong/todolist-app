@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CalendarView, DateRange } from './range';
-import { monthCells, pickSelected, rangeOf, shiftDate, weekDays } from './range';
+import { fourWeekCells, monthCells, pickSelected, rangeOf, shiftDate, weekDays } from './range';
 
 describe('rangeOf', () => {
   it.each<[CalendarView, string, DateRange]>([
@@ -13,6 +13,8 @@ describe('rangeOf', () => {
     ['week', '2026-12-01', { from: '2026-11-29', to: '2026-12-05' }],
     ['week', '2027-01-01', { from: '2026-12-27', to: '2027-01-02' }],
     ['day', '2026-11-04', { from: '2026-11-04', to: '2026-11-04' }],
+    ['4weeks', '2026-11-04', { from: '2026-11-01', to: '2026-11-28' }],
+    ['4weeks', '2026-12-10', { from: '2026-12-06', to: '2027-01-02' }],
   ])('rangeOf(%s, %s)', (view, date, expected) => {
     expect(rangeOf(view, date)).toEqual(expected);
   });
@@ -79,8 +81,18 @@ describe('shiftDate', () => {
     ['week', '2026-11-04', 1, '2026-11-11'],
     ['day', '2026-11-30', 1, '2026-12-01'],
     ['day', '2026-11-30', -1, '2026-11-29'],
+    ['4weeks', '2026-11-04', 1, '2026-12-02'],
+    ['4weeks', '2026-11-04', -1, '2026-10-07'],
   ])('shiftDate(%s, %s, %i) → %s', (view, date, step, expected) => {
     expect(shiftDate(view, date, step)).toBe(expected);
+  });
+});
+
+describe('fourWeekCells (P-30)', () => {
+  it('빈칸 없이 28칸, 기준 주 일요일부터, 달을 넘어 이어짐', () => {
+    const cells = fourWeekCells('2026-12-10');
+    expect(cells).toHaveLength(28);
+    expect([cells[0], cells[26], cells[27]]).toEqual(['2026-12-06', '2027-01-01', '2027-01-02']);
   });
 });
 

@@ -7,7 +7,13 @@ import { DayList } from '../features/calendar/DayList';
 import { MobileCounts } from '../features/calendar/MobileCounts';
 import { MonthGrid } from '../features/calendar/MonthGrid';
 import type { CalendarView } from '../features/calendar/range';
-import { monthCells, pickSelected, rangeOf, weekDays } from '../features/calendar/range';
+import {
+  fourWeekCells,
+  monthCells,
+  pickSelected,
+  rangeOf,
+  weekDays,
+} from '../features/calendar/range';
 import { useCalendar } from '../features/calendar/useCalendar';
 import { WeekGrid } from '../features/calendar/WeekGrid';
 import { isValidDate } from '../lib/date';
@@ -17,9 +23,12 @@ export function CalendarPage() {
   const today = useToday();
   const [params, setParams] = useSearchParams();
   const rawView = params.get('view');
-  const view: CalendarView = rawView === 'week' || rawView === 'day' ? rawView : 'month';
+  const view: CalendarView =
+    rawView === '4weeks' || rawView === 'week' || rawView === 'day' ? rawView : 'month';
   const rawDate = params.get('date');
   const date = rawDate !== null && isValidDate(rawDate) ? rawDate : today;
+  const cells =
+    view === 'month' ? monthCells(date) : view === '4weeks' ? fourWeekCells(date) : weekDays(date);
 
   const range = rangeOf(view, date);
   const { data, error } = useCalendar(range, today);
@@ -52,7 +61,8 @@ export function CalendarPage() {
             />
           ) : (
             <MonthGrid
-              date={date}
+              cells={cells}
+              showMonth={view === '4weeks'}
               todos={todos}
               today={today}
               selected={selected}
@@ -60,7 +70,7 @@ export function CalendarPage() {
             />
           )}
           <MobileCounts
-            cells={view === 'week' ? weekDays(date) : monthCells(date)}
+            cells={cells}
             todos={todos}
             today={today}
             selected={selected}

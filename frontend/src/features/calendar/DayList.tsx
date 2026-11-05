@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router';
 import type { TodoWithStatus } from '../../api/types';
 import { STATUS_LABEL } from '../../api/types';
 import { EmptyNotice } from '../../components/EmptyNotice';
+import { TodoTitle } from '../../components/TodoTitle';
 import { todosOn } from './cellTodos';
 import styles from './DayList.module.css';
 
@@ -22,7 +23,7 @@ export function DayList({ date, todos }: { date: string; todos: TodoWithStatus[]
                 state={{ from: pathname + search }}
                 className={styles.title}
               >
-                {t.title}
+                <TodoTitle title={t.title} startTime={t.startTime} />
               </Link>
               <span className={styles.period}>
                 {t.startDate} ~ {t.endDate}

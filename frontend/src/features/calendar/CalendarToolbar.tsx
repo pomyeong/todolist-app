@@ -11,6 +11,7 @@ interface Props {
 
 const VIEWS: { view: CalendarView; label: string }[] = [
   { view: 'month', label: '월' },
+  { view: '4weeks', label: '4주' },
   { view: 'week', label: '주' },
   { view: 'day', label: '일' },
 ];

@@ -47,3 +47,11 @@ export function dayOfWeek(date: string): number {
   const [y, m, d] = parse(date);
   return new Date(y, m - 1, d).getDay();
 }
+
+// P-28: ISO 8601 연중 주차(월요일 시작, 그 주 목요일이 속한 해 기준). UTC 일수 차로 서머타임 영향 없음
+export function isoWeek(date: string): number {
+  const thursday = addDays(date, 4 - (dayOfWeek(date) || 7));
+  const [y, m, d] = parse(thursday);
+  const ordinal = (Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86_400_000;
+  return Math.floor(ordinal / 7) + 1;
+}

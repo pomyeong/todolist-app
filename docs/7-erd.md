@@ -12,6 +12,7 @@
 | v0.4 | 2026-11-04 | Claude | 초안 | API 명세 작성 중 결정 반영(응답 필드, null, 시각 형식) |
 | v0.5 | 2026-11-05 | Claude | 초안 | DDL 단일 출처 경로 변경 |
 | v0.6 | 2026-11-05 | Claude | 초안 | refresh 만료 환경변수 반영 |
+| v0.7 | 2026-11-05 | Claude | 초안 | 할일 시작·종료 시간 컬럼(DB-14) |
 
 ### 변경 이력
 
@@ -27,6 +28,7 @@
 | v0.4 | 2026-11-04 | 참조 문서 | 도메인 v0.6 → v0.7, PRD v0.11 → v0.12, 구조 설계 원칙 v0.4 → v0.5 | 버전 동기화 | Claude |
 | v0.5 | 2026-11-05 | ID 운영 원칙 | DDL 단일 출처 `backend/sql/schema.sql` → `docs/schema.sql` | 구조 설계 원칙 v0.12 PR-S-10 | Claude |
 | v0.6 | 2026-11-05 | ERD-02 `refresh_tokens.expires_at` | 만료 기간을 `REFRESH_TOKEN_TTL_DAYS`(기본 7일)로 표기 | 구조 설계 원칙 v0.11 PR-S-01 | Claude |
+| v0.7 | 2026-11-05 | ERD-01, ERD-02, 4.3, 5장, 6장, DB-14 | `start_time`·`end_time` TIME NULL, `ck_todos_times`, 'HH:MM' 응답 대응 | 도메인 v0.9 BR-24 | Claude |
 
 > 단일 출처 원칙: 엔티티·속성·관계, 용어, 상태 규칙(ST), 비즈니스 규칙(BR)은 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·비기능(NFR)·결정(P)은 [PRD v0.12](./2-PRD.md)이, 이름 규칙·API 경로(PR·PD)는 [프로젝트 구조 설계 원칙 v0.5](./5-project-principle.md)이 정의한다. 이 문서는 도메인 3장의 엔티티와 관계를 PostgreSQL 17 물리 구조로 옮긴 것이며, 규칙·오류 코드·수치를 다시 정의하지 않고 ID로 참조한다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > [아키텍처 다이어그램](./6-arch-diagram.md) > 이 문서 순으로 따른다.
 >
@@ -77,6 +79,8 @@ erDiagram
         string title
         string description
         date startDate
+        string startTime
+        string endTime
         date endDate
         boolean completed
         datetime completedAt
@@ -130,6 +134,8 @@ erDiagram
         varchar description "1000자 NULL 허용"
         date start_date "ck_todos_dates"
         date end_date "start_date 이상"
+        time start_time "NULL 허용, ck_todos_times"
+        time end_time "NULL 허용"
         boolean completed "기본 false"
         timestamptz completed_at "NULL 허용 ck_todos_completed"
         timestamptz created_at "기본 now BR-20 정렬"
@@ -182,6 +188,8 @@ erDiagram
 | `title` | `VARCHAR(100)` | N | - | - | title | BR-06, BR-22 |
 | `description` | `VARCHAR(1000)` | Y | - | - | description | BR-22, DB-11 |
 | `start_date` | `DATE` | N | - | `ck_todos_dates` CHECK(`start_date <= end_date`) | startDate | BR-06, BR-07, NFR-11, DB-07 |
+| `start_time` | `TIME` | Y | - | `ck_todos_times` | startTime | BR-24, NFR-11, DB-14 |
+| `end_time` | `TIME` | Y | - | `ck_todos_times` | endTime | BR-24, NFR-11, DB-14 |
 | `end_date` | `DATE` | N | - | (위 CHECK) | endDate | BR-06, BR-07, NFR-11, DB-07 |
 | `completed` | `BOOLEAN` | N | `false` | `ck_todos_completed` CHECK(`completed = (completed_at IS NOT NULL)`) | completed | ST-01, PD-21, DB-08 |
 | `completed_at` | `TIMESTAMPTZ` | Y | - | (위 CHECK) | completedAt | PD-21, DB-08 |
@@ -215,6 +223,7 @@ erDiagram
 | `fk_todos_user` | `todos` | FK | (`user_id`) → `users(id)` RESTRICT | 소유 사용자 존재 보장 | BR-03 |
 | `fk_todos_category` | `todos` | FK | (`category_id`) → `categories(id)` RESTRICT | 카테고리 존재 보장. 이동 없이 삭제하면 막는다 | BR-04, BR-14 |
 | `ck_todos_dates` | `todos` | CHECK | `start_date <= end_date` | 방어용. 판정은 `domain/validate.js`가 먼저 한다 | BR-07, PD-20 |
+| `ck_todos_times` | `todos` | CHECK | `start_date < end_date OR start_time IS NULL OR end_time IS NULL OR start_time <= end_time` | 방어용. 판정은 `domain/validate.js`가 먼저 한다 | BR-24, DB-14 |
 | `ck_todos_completed` | `todos` | CHECK | `completed = (completed_at IS NOT NULL)` | 완료 여부와 완료 시각의 일관성 방어 | PD-21 |
 | `idx_todos_user_dates` | `todos` | 인덱스 | (`user_id`, `start_date`, `end_date`) | 캘린더 기간 겹침 조회, 사용자 단위 목록 조회 | NFR-04, BR-17, BR-18 |
 | `idx_todos_user_category` | `todos` | 인덱스 | (`user_id`, `category_id`) | 목록 카테고리 필터, 카테고리 삭제 시 할일 이동 | NFR-04, BR-14, BR-15 |
@@ -259,6 +268,7 @@ API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startD
 | Todo | title | `todos.title` | `title` | |
 | Todo | description | `todos.description` | `description` | 빈 값은 `null`(DB-11) |
 | Todo | startDate / endDate | `todos.start_date` / `end_date` | `startDate` / `endDate` | `'YYYY-MM-DD'` 문자열(NFR-11, PR-S-09) |
+| Todo | startTime / endTime | `todos.start_time` / `end_time` | `startTime` / `endTime` | `'HH:MM'` 문자열 또는 `null`(`to_char(…, 'HH24:MI')`, DB-14) |
 | Todo | completed | `todos.completed` | `completed` | 완료 토글 본문 `{ completed }`(PD-21) |
 | Todo | completedAt | `todos.completed_at` | `completedAt` | 기록용(PD-21) |
 | Todo | createdAt / updatedAt | `todos.created_at` / `updated_at` | `createdAt` / `updatedAt` | |
@@ -284,6 +294,7 @@ API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startD
 | DB-11 | `description`은 trim 후 빈 문자열이면 서비스가 `NULL`로 저장하고 API는 `null`로 돌려준다. | `''`와 `NULL` 두 표현이 같은 뜻이라 하나로 모은다. 도메인 3.3이 `description`을 선택 속성(N)으로 정의한다. | 빈 문자열 그대로 저장: 표시 쪽이 둘을 다 처리해야 한다. 요청의 `null`도 `NULL`로 저장한다(등록은 생략과 같음, 수정은 값 비움, PD-27). |
 | DB-12 | FK 이름은 `fk_<테이블>_<참조>` 형식으로 명시한다(`fk_categories_user`, `fk_todos_user`, `fk_todos_category`). PK는 기본 이름을 쓴다. | PR-N-04가 제약 이름을 명시하는 방침이다. 오류 분기에는 23505만 쓰지만 로그에서 위반 원인을 읽기 쉽다. | 기본 이름: 자동 생성 이름은 읽기 어렵다 |
 | DB-13 | `refresh_tokens`는 refresh 토큰 1개당 1행이다. 토큰 원문 대신 SHA-256 16진수 64자를 `CHAR(64)`로 저장하고 `uq_refresh_tokens_hash`로 찾는다. 갱신은 `DELETE … WHERE token_hash = $1 AND expires_at > now() RETURNING user_id` 한 문장으로 사용 처리해 같은 토큰을 동시에 써도 한 번만 성공한다. 행을 수정하지 않으므로 `updated_at`이 없다. 만료 행은 로그인할 때 그 사용자의 만료 행을 지워 정리하고 배치는 두지 않는다. 비밀번호 변경 시 전체 폐기와 만료 정리를 위해 `idx_refresh_tokens_user`를 둔다. | 해시는 bcrypt가 아닌 SHA-256이다: 원문이 32바이트 난수라 무차별 대입이 불가능하고, 갱신마다 bcrypt를 계산하면 CPU 부하(NFR-05)가 커진다. 한 문장 DELETE는 트랜잭션 없이 원자적이다. | 원문 저장: DB 유출 시 세션 탈취. 소프트 삭제(`revoked_at`): 재사용 탐지가 필요해지면 도입(PD-26). 만료 정리 배치: 로컬 단일 머신(P-10)에서 과설계 |
+| DB-14 | 시작·종료 시간은 NULL 허용 `TIME`(초 없이 저장)으로 두고, 응답은 SELECT에서 `to_char(t.start_time, 'HH24:MI')`로 'HH:MM' 문자열을 만든다. 같은 날 시작 ≤ 종료는 `ck_todos_times`로 방어한다. 상태 파생·캘린더 조회는 시간 컬럼을 쓰지 않는다. | 날짜와 따로 둬야 시간 없는 할일과 기간 판정(DB-07)을 그대로 쓴다. `timestamp`로 합치면 시간대 변환 위험(NFR-11). | `timestamptz` 시작·종료 시각: 날짜 컬럼과 중복, 시간대 처리 필요 |
 
 ## 9. 커버리지
 
@@ -293,7 +304,7 @@ API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startD
 |---|---|
 | 3.1 User: id, email, password, name, createdAt, updatedAt | 4.1 (password는 `password_hash`, 7장) |
 | 3.2 Category: id, userId, name, isDefault, createdAt, updatedAt | 4.2 |
-| 3.3 Todo: id, userId, categoryId, title, description, startDate, endDate, completed, completedAt, createdAt, updatedAt | 4.3 |
+| 3.3 Todo: id, userId, categoryId, title, description, startDate, endDate, startTime, endTime, completed, completedAt, createdAt, updatedAt | 4.3 |
 | 3.3 '상태는 저장하지 않는다' | 6장, ERD-02에 컬럼 없음 |
 | 3.4 관계 3개 | ERD-01, ERD-02, 5장 FK |
 

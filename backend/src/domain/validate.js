@@ -11,6 +11,7 @@ const MSG = {
   type: '형식이 올바르지 않습니다.',
   email: '이메일 형식이 올바르지 않습니다.',
   date: '날짜 형식(YYYY-MM-DD)이 올바르지 않습니다.',
+  time: '시간 형식(HH:MM)이 올바르지 않습니다.',
   len: (min, max) =>
     min > 0 ? `${min}자 이상 ${max}자 이하여야 합니다.` : `${max}자 이하여야 합니다.`,
 };
@@ -49,6 +50,14 @@ export function isDate(v) {
 function date(fields, name, raw) {
   if (raw === undefined || raw === null || raw === '') fields[name] = MSG.required;
   else if (!isDate(raw)) fields[name] = MSG.date;
+  return raw;
+}
+
+// BR-24: 선택 시간 'HH:MM'(00:00~23:59). 생략·null·빈 문자열은 시간 없음(PD-27).
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+function time(fields, name, raw) {
+  if (raw === undefined || raw === null || raw === '') return null;
+  if (typeof raw !== 'string' || !TIME_RE.test(raw)) fields[name] = MSG.time;
   return raw;
 }
 
@@ -120,6 +129,18 @@ export function validateTodo(body = {}) {
   if (!fields.startDate && !fields.endDate && startDate > endDate) {
     fields.endDate = '종료일은 시작일과 같거나 이후여야 합니다.'; // BR-07
   }
+  const startTime = time(fields, 'startTime', body.startTime);
+  const endTime = time(fields, 'endTime', body.endTime);
+  if (
+    !fields.startTime &&
+    !fields.endTime &&
+    startTime &&
+    endTime &&
+    startDate === endDate &&
+    startTime > endTime
+  ) {
+    fields.endTime = '종료 시간은 시작 시간과 같거나 이후여야 합니다.'; // BR-24
+  }
 
   const categoryId = body.categoryId;
   if (
@@ -129,7 +150,10 @@ export function validateTodo(body = {}) {
     fields.categoryId = MSG.type; // null도 실패(PD-27)
   }
 
-  return { value: { title, description, startDate, endDate, categoryId }, fields };
+  return {
+    value: { title, description, startDate, endDate, startTime, endTime, categoryId },
+    fields,
+  };
 }
 
 export function validateCompleted(body = {}) {

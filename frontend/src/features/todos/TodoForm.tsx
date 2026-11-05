@@ -19,13 +19,22 @@ export function TodoForm({ initial, error, pending, onSubmit, onCancel }: Props)
   const [description, setDescription] = useState(initial.description);
   const [startDate, setStartDate] = useState(initial.startDate);
   const [endDate, setEndDate] = useState(initial.endDate);
+  const [startTime, setStartTime] = useState(initial.startTime ?? '');
+  const [endTime, setEndTime] = useState(initial.endTime ?? '');
   const [categoryId, setCategoryId] = useState(initial.categoryId?.toString() ?? '');
   const { data: categories } = useCategoryOptions();
   const fields = error?.fields;
 
   const submit = (e: SyntheticEvent) => {
     e.preventDefault();
-    const input: TodoInput = { title, description, startDate, endDate };
+    const input: TodoInput = {
+      title,
+      description,
+      startDate,
+      endDate,
+      startTime: startTime || null,
+      endTime: endTime || null,
+    };
     if (categoryId !== '') input.categoryId = Number(categoryId);
     onSubmit(input);
   };
@@ -67,6 +76,26 @@ export function TodoForm({ initial, error, pending, onSubmit, onCancel }: Props)
             onChange={(e) => setEndDate(e.target.value)}
           />
           <FieldError message={fields?.endDate} />
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="startTime">시작 시간</label>
+          <input
+            id="startTime"
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+          />
+          <FieldError message={fields?.startTime} />
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="endTime">종료 시간</label>
+          <input
+            id="endTime"
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+          />
+          <FieldError message={fields?.endTime} />
         </div>
       </div>
       <div className={styles.field}>

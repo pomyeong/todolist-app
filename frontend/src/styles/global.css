@@ -27,6 +27,7 @@
   --danger: #c5221f;
   --danger-soft: #fce8e6;
   --overlay: rgba(31, 35, 40, 0.4);
+  --week-alt-bg: #f8f9fb;
   --on-primary: #ffffff;
   --shadow-dialog: 0 8px 24px rgba(31, 35, 40, 0.16);
 
@@ -63,6 +64,34 @@
 
   --page-gutter: 16px;
   --control-h: 40px;
+  color-scheme: light dark;
+}
+
+/* P-29: OS 어두운 모드. 값은 style-guide 2.1.1 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181d;
+    --surface-muted: #1e2128;
+    --border: #3a3f4a;
+    --divider: #2a2e36;
+    --text-strong: #eceef1;
+    --text: #c9ccd2;
+    --text-muted: #9aa0aa;
+    --text-hint: #6b717c;
+    --primary-strong: #7d6ff0;
+    --primary-soft: #2a2550;
+    --primary-text: #b8afff;
+    --today-bg: #1f2836;
+    --week-alt-bg: #1b1e24;
+    --sunday: #ff7b72;
+    --danger: #ff7b72;
+    --danger-soft: #3b1d1d;
+    --overlay: rgba(0, 0, 0, 0.6);
+    --st-todo-bg: #2a2550;
+    --st-todo-fg: #c4bdff;
+    --st-done-bg: #2c3038;
+    --st-done-fg: #a5abb5;
+  }
 }
 
 @media (min-width: 768px) {
@@ -190,6 +219,16 @@ textarea {
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* P-26·P-27: 제목 앞 이모지·시작 시간(TodoTitle) */
+.todo-emoji,
+.todo-time {
+  margin-right: var(--space-1);
+}
+
+.todo-time {
+  font-variant-numeric: tabular-nums;
 }
 
 .chip {

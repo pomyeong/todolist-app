@@ -2,7 +2,7 @@
 # TodoList 백엔드 REST API 명세 (OpenAPI 3.0.3)
 # =============================================================================
 #
-# 문서 버전: v0.5
+# 문서 버전: v0.6
 #
 # 버전 이력
 #
@@ -13,6 +13,7 @@
 # | v0.3 | 2026-11-04 | Claude | 초안 | 스키마 파일 경로 갱신 |
 # | v0.4 | 2026-11-05 | Claude | 초안 | 현재 백엔드 구현 반영, 개발 환경 Swagger UI |
 # | v0.5 | 2026-11-05 | Claude | 초안 | CORS·토큰 만료 환경변수·쿠키 헤더 실제값 반영 |
+# | v0.6 | 2026-11-05 | Claude | 초안 | 할일 시작·종료 시간 |
 #
 # 변경 이력
 #
@@ -23,20 +24,21 @@
 # | v0.3 | 2026-11-04 | Claude | 근거 문서의 스키마 경로를 `docs/schema.sql` → `backend/sql/schema.sql`로 변경(T-DB-02) |
 # | v0.4 | 2026-11-05 | Claude | `/api/health`에 DB 연결 상태(200 `db: up` / 503 `db: down`) 추가, `servers`를 상대 경로로 변경(개발 환경 Swagger UI, PD-30). `/api/docs` 경로 추가, 예시 오류 문구를 실제 응답과 일치시킴, 완료 토글 예시의 `updatedAt` 갱신, 근거 문서 버전 갱신 |
 # | v0.5 | 2026-11-05 | Claude | CORS 응답 헤더·preflight(PR-S-04), 토큰 만료 환경변수(`JWT_ACCESS_EXPIRES_MINUTES`·`REFRESH_TOKEN_TTL_DAYS`), 실제 `Set-Cookie`(발급 `Expires` 포함, 삭제는 `Expires=1970`) 반영, 근거 문서 버전 갱신 |
+# | v0.6 | 2026-11-05 | Claude | Todo·TodoInput에 `startTime`·`endTime`('HH:MM' 또는 null, BR-24, DB-14), 같은 날 시작 > 종료 400, 수정에서 생략하면 null(PD-20), 예시 갱신, 근거 문서 버전 갱신 |
 #
 # 근거 문서 (충돌 시 위 문서가 우선)
 #
 # | 문서                              | 버전 |
 # |-----------------------------------|------|
-# | docs/1-domain-definition.md       | v0.7 |
-# | docs/2-PRD.md                     | v0.16 |
-# | docs/3-user-scenario.md           | v0.10 |
-# | docs/4-wireframe.md               | v0.5 |
-# | docs/5-project-principle.md       | v0.13 |
+# | docs/1-domain-definition.md       | v0.9 |
+# | docs/2-PRD.md                     | v0.18 |
+# | docs/3-user-scenario.md           | v0.11 |
+# | docs/4-wireframe.md               | v0.7 |
+# | docs/5-project-principle.md       | v0.14 |
 # | docs/6-arch-diagram.md            | v0.9 |
-# | docs/7-erd.md                     | v0.6 |
-# | docs/schema.sql                   | (버전 없음, 머리말 기준 ERD v0.6) |
-# | docs/8-plan.md                    | v0.8 |
+# | docs/7-erd.md                     | v0.7 |
+# | docs/schema.sql                   | (버전 없음, 머리말 기준 ERD v0.7) |
+# | docs/8-plan.md                    | v0.11 |
 #
 # 운영 원칙
 # - 경로·메서드는 구조 설계 원칙 7.2 표(PRD P-25 위임)가 단일 출처다. 이 파일은 그 표를 옮긴 것이며,
@@ -585,6 +587,8 @@ paths:
                   description: null
                   startDate: '2026-10-28'
                   endDate: '2026-11-03'
+                  startTime: '09:00'
+                  endTime: '18:00'
                   completed: false
                   completedAt: null
                   status: overdue
@@ -597,6 +601,8 @@ paths:
                   description: 우유, 계란
                   startDate: '2026-11-04'
                   endDate: '2026-11-04'
+                  startTime: null
+                  endTime: null
                   completed: true
                   completedAt: '2026-11-04T03:00:00.000Z'
                   status: completed
@@ -630,6 +636,8 @@ paths:
               description: 3분기 실적 정리
               startDate: '2026-11-04'
               endDate: '2026-11-10'
+              startTime: '08:00'
+              endTime: '23:30'
               categoryId: 2
       responses:
         '201':
@@ -646,6 +654,8 @@ paths:
                 description: 3분기 실적 정리
                 startDate: '2026-11-04'
                 endDate: '2026-11-10'
+                startTime: '08:00'
+                endTime: '23:30'
                 completed: false
                 completedAt: null
                 createdAt: '2026-11-04T02:00:00.000Z'
@@ -704,6 +714,7 @@ paths:
               description: ''
               startDate: '2026-11-04'
               endDate: '2026-11-12'
+              startTime: '08:00'
       responses:
         '200':
           description: 수정된 할일(`categoryName` 포함, 상태 미포함, SD-07, PD-29).
@@ -772,6 +783,8 @@ paths:
                 description: null
                 startDate: '2026-11-01'
                 endDate: '2026-11-07'
+                startTime: null
+                endTime: null
                 completed: true
                 completedAt: '2026-11-04T05:00:00.000Z'
                 createdAt: '2026-10-31T01:00:00.000Z'
@@ -983,6 +996,12 @@ components:
       example: access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax
 
   schemas:
+    TimeOrNull:
+      type: string
+      nullable: true
+      pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+      description: 시:분 24시간제(00:00~23:59), 없으면 `null`(BR-24, DB-14, NFR-11).
+      example: '08:00'
     Date:
       type: string
       format: date
@@ -1123,6 +1142,8 @@ components:
           description,
           startDate,
           endDate,
+          startTime,
+          endTime,
           completed,
           completedAt,
           createdAt,
@@ -1153,6 +1174,10 @@ components:
           $ref: '#/components/schemas/Date'
         endDate:
           $ref: '#/components/schemas/Date'
+        startTime:
+          $ref: '#/components/schemas/TimeOrNull'
+        endTime:
+          $ref: '#/components/schemas/TimeOrNull'
         completed:
           type: boolean
         completedAt:
@@ -1188,6 +1213,14 @@ components:
           allOf:
             - $ref: '#/components/schemas/Date'
           description: '`startDate` 이상(같은 날 허용)(BR-07).'
+        startTime:
+          allOf:
+            - $ref: '#/components/schemas/TimeOrNull'
+          description: 선택(BR-24). 생략·`null`·빈 문자열은 시간 없음. 수정에서 생략하면 `null`로 저장(PD-20).
+        endTime:
+          allOf:
+            - $ref: '#/components/schemas/TimeOrNull'
+          description: 선택(BR-24). `startDate` = `endDate`이고 두 시간이 모두 있으면 `startTime` 이상. 아니면 400 `fields.endTime`.
         categoryId:
           type: integer
           description: 선택. 본인 카테고리만(BR-04, 아니면 404). 생략 시 등록은 기본 카테고리, 수정은 기존 유지(BR-11). `null`은 400(NOT NULL 컬럼, PD-27).

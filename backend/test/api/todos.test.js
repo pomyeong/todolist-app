@@ -122,6 +122,66 @@ describe('할일 CRUD (T-BE-11)', () => {
     const { id } = (await u1.post('/api/todos', todo())).body;
     assert.equal((await u1.patch(`/api/todos/${id}`, todo({ categoryId: c9.id }))).status, 404);
   });
+
+  test('BR-24 시작·종료 시간: 저장·응답은 HH:MM, 시간 없으면 null, 수정에서 생략하면 비움(PD-20)', async () => {
+    const c = await signupUser(ctx, 30);
+    const none = (await c.post('/api/todos', todo())).body;
+    assert.deepEqual([none.startTime, none.endTime], [null, null]);
+
+    const res = await c.post('/api/todos', todo({ startTime: '08:00', endTime: '23:30' }));
+    assert.equal(res.status, 201);
+    assert.deepEqual([res.body.startTime, res.body.endTime], ['08:00', '23:30']);
+    const url = `/api/todos/${res.body.id}`;
+    assert.equal((await c.get(url)).body.startTime, '08:00');
+    const listed = (await c.get('/api/todos?today=2026-11-04')).body.find(
+      (t) => t.id === res.body.id,
+    );
+    assert.equal(listed.endTime, '23:30');
+    const cal = (await c.get('/api/calendar?from=2026-11-01&to=2026-11-30&today=2026-11-04')).body;
+    assert.equal(cal.find((t) => t.id === res.body.id).startTime, '08:00');
+
+    const upd = await c.patch(url, todo({ startTime: '09:15' }));
+    assert.deepEqual([upd.body.startTime, upd.body.endTime], ['09:15', null]);
+  });
+
+  test('BR-24 같은 날 시작 > 종료·형식 오류는 400이고 저장·변경 안 됨', async () => {
+    const c = await signupUser(ctx, 31);
+    const before = await countRows(c.user.id);
+    for (const bad of [
+      { startDate: '2026-11-04', endDate: '2026-11-04', startTime: '18:00', endTime: '09:00' },
+      { startTime: '24:00' },
+      { endTime: '9:5' },
+    ]) {
+      const res = await c.post('/api/todos', todo(bad));
+      assert.equal(res.status, 400, JSON.stringify(bad));
+      assert.equal(res.body.error.code, 'VALIDATION_ERROR');
+    }
+    assert.equal(await countRows(c.user.id), before);
+    const { id } = (await c.post('/api/todos', todo({ startTime: '10:00' }))).body;
+    const res = await c.patch(
+      `/api/todos/${id}`,
+      todo({
+        startDate: '2026-11-04',
+        endDate: '2026-11-04',
+        startTime: '12:00',
+        endTime: '11:00',
+      }),
+    );
+    assert.equal(res.status, 400);
+    assert.equal((await c.get(`/api/todos/${id}`)).body.startTime, '10:00');
+  });
+
+  test('DB-14 ck_todos_times: 검증을 거치지 않은 같은 날 시작 > 종료는 DB가 거부', async () => {
+    const c = await signupUser(ctx, 32);
+    const { id } = (await c.post('/api/todos', todo())).body;
+    await assert.rejects(
+      query(
+        "UPDATE todos SET start_date = end_date, start_time = '18:00', end_time = '09:00' WHERE id = $1",
+        [id],
+      ),
+      (e) => e.code === '23514' && e.constraint === 'ck_todos_times',
+    );
+  });
 });
 
 describe('할일 목록 + 필터 (T-BE-12)', () => {

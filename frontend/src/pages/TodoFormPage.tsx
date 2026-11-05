@@ -5,7 +5,14 @@ import { LoadingNotice } from '../components/LoadingNotice';
 import { TodoForm } from '../features/todos/TodoForm';
 import { useSaveTodo, useTodo } from '../features/todos/useTodos';
 
-const EMPTY: TodoInput = { title: '', description: '', startDate: '', endDate: '' };
+const EMPTY: TodoInput = {
+  title: '',
+  description: '',
+  startDate: '',
+  endDate: '',
+  startTime: null,
+  endTime: null,
+};
 
 export function TodoFormPage() {
   const { id } = useParams();
@@ -31,6 +38,8 @@ function EditLoader({ id }: { id: number }) {
         description: data.description ?? '',
         startDate: data.startDate,
         endDate: data.endDate,
+        startTime: data.startTime,
+        endTime: data.endTime,
         categoryId: data.categoryId,
       }}
     />

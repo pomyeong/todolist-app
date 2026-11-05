@@ -40,6 +40,8 @@ CREATE TABLE todos (
     description   VARCHAR(1000),                                            -- 빈 값은 NULL(DB-11)
     start_date    DATE           NOT NULL,                                  -- NFR-11
     end_date      DATE           NOT NULL,
+    start_time    TIME(0),                                                  -- BR-24, 선택(DB-14)
+    end_time      TIME(0),
     completed     BOOLEAN        NOT NULL DEFAULT false,
     completed_at  TIMESTAMPTZ,                                              -- PD-21
     created_at    TIMESTAMPTZ    NOT NULL DEFAULT now(),                    -- BR-20 정렬
@@ -47,6 +49,8 @@ CREATE TABLE todos (
     CONSTRAINT fk_todos_user      FOREIGN KEY (user_id)     REFERENCES users (id)      ON DELETE RESTRICT,  -- DB-05
     CONSTRAINT fk_todos_category  FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE RESTRICT,  -- DB-05, BR-14
     CONSTRAINT ck_todos_dates     CHECK (start_date <= end_date),                                         -- BR-07, DB-07
+    CONSTRAINT ck_todos_times     CHECK (start_date < end_date OR start_time IS NULL OR end_time IS NULL
+                                         OR start_time <= end_time),                                     -- BR-24, DB-14
     CONSTRAINT ck_todos_completed CHECK (completed = (completed_at IS NOT NULL))                         -- DB-08
 );
 

@@ -1,71 +1,44 @@
-import { Link, useLocation } from 'react-router';
 import type { TodoWithStatus } from '../../api/types';
-import { STATUS_LABEL } from '../../api/types';
 import { WEEKDAYS } from '../../lib/date';
-import { cellSummary } from './cellTodos';
 import styles from './MonthGrid.module.css';
-import { monthCells } from './range';
+import { WeekRow } from './WeekRow';
 
 interface Props {
-  date: string;
+  cells: (string | null)[]; // 월 뷰(빈칸 null) 또는 4주 뷰 28칸
+  showMonth?: boolean; // P-30: 첫 칸·매달 1일은 'M/D'
   todos: TodoWithStatus[];
   today: string;
   selected: string | null;
   onSelect(d: string): void;
 }
 
-export function MonthGrid({ date, todos, today, selected, onSelect }: Props) {
-  const { pathname, search } = useLocation();
+export function MonthGrid({ cells, showMonth = false, todos, today, selected, onSelect }: Props) {
+  const label = (d: string) =>
+    showMonth && (d === cells[0] || d.endsWith('-01'))
+      ? `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`
+      : String(Number(d.slice(8)));
+  const weeks = Array.from({ length: cells.length / 7 }, (_, w) => cells.slice(w * 7, w * 7 + 7));
   return (
     <div className={styles.grid}>
-      {WEEKDAYS.map((w) => (
-        <div key={w} className={styles.weekday}>
-          {w}
-        </div>
-      ))}
-      {monthCells(date).map((d, i) => {
-        // biome-ignore lint/suspicious/noArrayIndexKey: 채움 칸은 날짜가 없고 위치가 고정이라 인덱스가 안정적인 키다
-        if (d === null) return <div key={`blank-${i}`} className={styles.blank} />;
-        const { shown, more } = cellSummary(todos, d);
-        return (
-          <div
-            key={d}
-            className={styles.cell}
-            data-selected={d === selected}
-            data-today={d === today}
-          >
-            <button
-              type="button"
-              className={styles.day}
-              data-today={d === today}
-              data-dow={i % 7}
-              aria-label={d}
-              onClick={() => onSelect(d)}
-            >
-              {Number(d.slice(8))}
-            </button>
-            <ul className={styles.items}>
-              {shown.map((t) => (
-                <li key={t.id} className={styles.item} data-status={t.status}>
-                  <Link
-                    to={`/todos/${t.id}/edit`}
-                    state={{ from: pathname + search }}
-                    className={styles.title}
-                  >
-                    {t.title}
-                  </Link>
-                  <span className={styles.status}>({STATUS_LABEL[t.status]})</span>
-                </li>
-              ))}
-            </ul>
-            {more > 0 && (
-              <button type="button" className={styles.more} onClick={() => onSelect(d)}>
-                +{more}
-              </button>
-            )}
+      <div className={styles.weekdays}>
+        {WEEKDAYS.map((w) => (
+          <div key={w} className={styles.weekday}>
+            {w}
           </div>
-        );
-      })}
+        ))}
+      </div>
+      {weeks.map((days, w) => (
+        <WeekRow
+          key={days.find((d) => d !== null)}
+          days={days}
+          alt={w % 2 === 1}
+          label={label}
+          todos={todos}
+          today={today}
+          selected={selected}
+          onSelect={onSelect}
+        />
+      ))}
     </div>
   );
 }

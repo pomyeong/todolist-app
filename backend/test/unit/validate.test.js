@@ -103,6 +103,29 @@ describe('할일 검증', () => {
     const r = validateTodo({});
     assert.deepEqual(Object.keys(r.fields).sort(), ['endDate', 'startDate', 'title']);
   });
+  test('BR-24 시간은 선택: 생략·null·빈 문자열은 null, 00:00·23:59 통과', () => {
+    for (const v of [undefined, null, '']) {
+      const r = validateTodo(todo({ startTime: v, endTime: v }));
+      ok(r);
+      assert.equal(r.value.startTime, null);
+      assert.equal(r.value.endTime, null);
+    }
+    const r = validateTodo(todo({ startTime: '00:00', endTime: '23:59' }));
+    ok(r);
+    assert.deepEqual([r.value.startTime, r.value.endTime], ['00:00', '23:59']);
+  });
+  test('BR-24 형식 위반(24:00, 9:00, 08:60, 08:00:00, 숫자) 실패', () => {
+    for (const v of ['24:00', '9:00', '08:60', '08:00:00', 800]) {
+      bad(validateTodo(todo({ startTime: v })), 'startTime');
+      bad(validateTodo(todo({ endTime: v })), 'endTime');
+    }
+  });
+  test('BR-24 같은 날이면 시작 > 종료 실패, 같은 시각 통과, 다른 날이면 통과', () => {
+    bad(validateTodo(todo({ startTime: '18:00', endTime: '09:00' })), 'endTime');
+    ok(validateTodo(todo({ startTime: '09:00', endTime: '09:00' })));
+    ok(validateTodo(todo({ endDate: '2026-11-05', startTime: '18:00', endTime: '09:00' })));
+    ok(validateTodo(todo({ startTime: '18:00' }))); // 한쪽만 있으면 비교하지 않는다
+  });
 });
 
 describe('조회 조건 검증', () => {
