@@ -11,6 +11,7 @@ const re = /#### `([^`]+)`\n(?:\n(?!````)[^\n]+\n)?\n````[a-z]*\n([\s\S]*?)\n```
 const templated = {
   'CLAUDE.md': 'guide/playbook-src/claude-template.md',
   'prompts/PRD.txt': 'guide/playbook-src/PRD.txt',
+  'guide/extract.mjs': 'guide/playbook-src/extract.mjs',
 };
 let total = 0;
 const diff = [];

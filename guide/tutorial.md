@@ -182,14 +182,16 @@ AI가 매 대화마다 읽는 파일. 짧게 유지한다.
 | 파일 | 용도 |
 |---|---|
 | `guide/tutorial.md` | 이 문서. 사람이 읽는 진행 기록 |
-| `guide/ai-playbook.md` | AI에 한 번에 읽히는 단일 파일. 규칙·절차·템플릿 + **부록 A(부트스트랩 파일 원본 22개)** + **부록 B(재사용 기반 코드 26개)** |
-| `guide/playbook-src/` | 플레이북 생성 재료: `head.md`·`body.md`(본문), `claude-template.md`, `PRD.txt`(템플릿), `build.mjs`(생성), `verify.mjs`(부록이 원본과 같은지 검사) |
+| `guide/ai-playbook.md` | 새 폴더에 이 파일 하나만 복사하면 되는 단일 파일(약 98KB). 본문(규칙·절차·템플릿, 약 27KB) + 추출 스크립트 + **부록 A(부트스트랩 파일 원본 22개)** + **부록 B(재사용 기반 코드 26개)** |
+| `guide/playbook-src/` | 플레이북 생성 재료: `head.md`·`body.md`(본문), `claude-template.md`, `PRD.txt`(템플릿), `extract.mjs`(부록 → 파일 추출, 본문에 그대로 들어감), `build.mjs`(생성), `verify.mjs`(부록·추출 스크립트가 원본과 같은지 검사) |
+
+**컨텍스트 크기 대책**: 파일 하나로 두되 AI는 본문만 읽는다. 부록은 AI가 읽고 옮겨 적는 대신 본문 2.2-3의 `guide/extract.mjs`가 기계적으로 파일로 만든다(`node guide/extract.mjs A <APP> <SLUG>`, 부록 B는 `B`). 그래서 첫 프롬프트에 `@guide/ai-playbook.md`처럼 @를 붙이지 않는다 — @는 파일 전체를 컨텍스트에 넣는다.
 
 부록은 실제 파일에서 자동으로 만들어지므로 손으로 고치지 않는다. 원본(스킬·에이전트·설정·기반 코드)을 바꿨다면:
 
 ```bash
 node guide/playbook-src/build.mjs     # ai-playbook.md 다시 생성
-node guide/playbook-src/verify.mjs    # "블록 48개, 원본과 다름 0개"가 나와야 함
+node guide/playbook-src/verify.mjs    # "블록 49개, 원본과 다름 0개"가 나와야 함
 ```
 
 본문(규칙·절차)을 바꾸려면 `head.md`·`body.md`를 고친 뒤 같은 두 명령을 실행한다.
@@ -210,18 +212,34 @@ claude
 
 ### ③ 부트스트랩 (첫 프롬프트)
 ```text
-@guide/ai-playbook.md 를 읽고 2장 부트스트랩을 실행해줘.
+guide/ai-playbook.md 를 부록 앞까지만 읽고 2장 부트스트랩을 실행해줘.
 앱 이름: 가계부, 슬러그: budget, PostgreSQL 사용자/비밀번호: postgres / ****
 ```
-AI가 하는 일(플레이북 2.2): 준비물 버전 확인 → 폴더 생성 → 부록 A 파일 22개 생성(이름만 치환) → DB `budget`·`budget_test` 생성 → `.env`·`.env.test`(JWT 비밀키 자동 생성) → `npm install` 두 번 → 확인 → 첫 커밋 → 다음 할 일 안내.
-- 이 프로젝트에서 같은 파일들로 시험했을 때 22개 모두 제자리에 생기고 JSON 6개가 정상 파싱됐다.
+AI가 하는 일(플레이북 2.2): 준비물 버전 확인 → `git init` → 추출 스크립트로 부록 A 파일 22개 생성(이름만 치환) → `npm install` 두 번 → `pg`로 DB `budget`·`budget_test` 생성(`psql` 불필요) → `.env`·`.env.test`(JWT 비밀키 자동 생성) → 확인 → 첫 커밋 → 다음 할 일 안내.
+
+**실측한 것(2026-11-05, Windows 11 · Node 24 · npm 11 · PostgreSQL 17)**: 빈 폴더에 플레이북만 두고 위 절차를 명령 그대로 실행했다.
+
+| 단계 | 결과 |
+|---|---|
+| 본문에서 추출 스크립트 꺼내 실행 | 부록 A 22개 생성, 다시 실행하면 0개(덮어쓰지 않음), `todolist` 잔여 0. 부록 B 26개도 같은 방식으로 생성됨 |
+| `npm install` | backend·frontend 모두 성공(캐시가 있으면 10초 안팎). npm 11이 `bcrypt` 설치 스크립트 경고를 내지만 동봉된 미리 빌드된 바이너리로 정상 동작 — 무시해도 됨 |
+| DB 생성 | 새 DB 2개 생성, 다시 실행하면 `있음`. 비밀번호가 틀리면 `28P01`, 서버가 꺼져 있으면 `ECONNREFUSED`로 끝남 |
+| `.env`·`.env.test` | `git status`에 나오지 않음(무시됨) |
+| biome | `cd backend && npx biome --version` → 2.6.4 |
+
+이 과정에서 고친 문제: ① 이 PC는 PostgreSQL이 설치돼 있어도 `psql`이 PATH에 없었다 → DB 생성을 `pg` 한 줄 명령으로 바꿈. ② 한국어 Windows의 PostgreSQL 오류 메시지가 깨져 보였다 → 오류 코드를 같이 출력해 코드로 판단. ③ 루트에서 `npx biome`을 치면 엉뚱한 `biome` 패키지가 설치된다 → 반드시 `backend`에서 실행.
+
+**여전히 각자 환경에서 처음 확인할 것**(AI 대화 자체는 여기서 돌려 보지 않았다):
+- **DB 접속 정보**: 슈퍼유저 이름·비밀번호, 포트(5432가 아니면 URL을 고친다). 틀리면 AI가 묻고 멈추게 돼 있다.
+- **npm install**: 사내 프록시·레지스트리 차단이 있으면 실패한다. 오류 원문을 보고 네트워크 설정부터 확인.
+- **MCP 승인**: 아래 ④. 연결이 안 돼도 진행은 된다(대체 방법이 플레이북 2.4에 있다).
 
 ### ④ Claude Code 재시작 → MCP 승인
-종료 후 다시 열면 `.mcp.json` 서버 사용 승인을 묻는다 → 승인. `/mcp`로 context7·playwright·chrome-devtools·postgresql이 connected인지 본다.
+종료 후 같은 폴더에서 다시 연다(`.mcp.json`은 세션 시작 때만 읽힌다). 승인 창이 뜨면 승인. `/mcp`로 context7·playwright·chrome-devtools·postgresql이 connected인지 본다. 첫 연결은 `npx` 내려받기로 수십 초 걸릴 수 있다. failed면 `/mcp`에서 다시 연결하고, 그래도 안 되면 `npx -y @playwright/mcp@latest --help`처럼 직접 실행해 오류를 본다.
 
 ### ⑤ 설계 시작
 ```text
-@guide/ai-playbook.md 4장 단계 1부터 진행해줘. 입력 시트는 아래와 같아.
+guide/ai-playbook.md 를 부록 앞까지만 읽고 4장 단계 1부터 진행해줘. 입력 시트는 아래와 같아.
 # 제품
 - 한 줄 설명: 월별 수입·지출을 기록하고 카테고리별로 보는 가계부
 - 핵심 엔티티: 사용자, 거래, 카테고리, 예산

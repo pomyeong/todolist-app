@@ -8,7 +8,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..');
 const read = (p) => readFileSync(join(repo, p), 'utf8').replace(/\r\n/g, '\n').trimEnd();
 const lang = (p) =>
-  ({ md: 'markdown', json: 'json', js: 'js', ts: 'ts', tsx: 'tsx', css: 'css', html: 'html', txt: 'text', sql: 'sql' })[
+  ({ md: 'markdown', json: 'json', js: 'js', mjs: 'js', ts: 'ts', tsx: 'tsx', css: 'css', html: 'html', txt: 'text', sql: 'sql' })[
     p.split('.').pop()
   ] ?? 'text';
 // 원본 안에 ``` 가 있어도 깨지지 않게 네 개짜리 울타리를 쓴다
@@ -70,7 +70,10 @@ const B = [
   ['frontend/src/styles/global.css', '디자인 토큰(밝은·어두운)·기본 요소·상태 칩. **바꿀 곳**: 색 값은 새 스타일 가이드 2장, 상태색(`--st-*`)은 새 앱의 상태에 맞춘다.'],
 ];
 
-const head = read('guide/playbook-src/head.md');
+// 본문 2.2-3에 추출 스크립트를 넣는다(새 폴더에서 AI가 이것만 옮겨 적으면 부록은 읽지 않아도 된다)
+const head = read('guide/playbook-src/head.md').replace('{{EXTRACT}}', () =>
+  file('guide/extract.mjs', '', 'guide/playbook-src/extract.mjs'),
+);
 const body = read('guide/playbook-src/body.md');
 const out = [
   head,

@@ -2,6 +2,8 @@
 
 > 새 프로젝트 폴더에서 이 파일 하나를 AI(Claude Code)에 읽히면, 개발 환경(에이전트·스킬·MCP·설정·DB·패키지)을 만들고 설계 문서 9종 → 구현 → 검증까지 단계별로 진행한다.
 > 출처: TodoList 앱(2026-11) 실제 진행에서 검증한 방식. 진행 기록은 `tutorial.md`. 부록 A·B는 그 프로젝트의 실제 파일 원본이다(`guide/playbook-src/build.mjs`로 생성).
+>
+> **AI가 읽는 법(컨텍스트 절약)**: 이 파일은 약 98KB다. 본문(0~10장, `## 부록 A` 앞까지, 약 27KB)만 읽는다. 부록은 읽지 않고 2.2-3의 추출 스크립트로 파일을 만든다. 부록 B의 특정 파일이 필요하면 그 경로 제목(예: `#### ` + 백틱 경로)을 grep해 그 블록만 읽는다. `@guide/ai-playbook.md`처럼 @로 붙이면 전체가 들어가므로 쓰지 않는다.
 
 ---
 
@@ -11,13 +13,13 @@
 2. **새 폴더 + 이 파일**: 빈 폴더를 만들고 이 파일을 `guide/ai-playbook.md`로 복사한 뒤 그 폴더에서 Claude Code를 연다.
 3. **첫 프롬프트**(부트스트랩, 2장):
    ```text
-   @guide/ai-playbook.md 를 읽고 2장 부트스트랩을 실행해줘.
+   guide/ai-playbook.md 를 부록 앞까지만 읽고 2장 부트스트랩을 실행해줘.
    앱 이름: <예: 가계부>, 슬러그: <예: budget>, PostgreSQL 사용자/비밀번호: <예: postgres / ****>
    ```
 4. **Claude Code 재시작** → MCP 서버 사용 승인(2.4).
 5. **설계 시작 프롬프트**(4장):
    ```text
-   @guide/ai-playbook.md 4장 단계 1부터 진행해줘. 입력 시트는 아래와 같아.
+   guide/ai-playbook.md 를 부록 앞까지만 읽고 4장 단계 1부터 진행해줘. 입력 시트는 아래와 같아.
    <5장 입력 시트를 채워 붙여넣기>
    ```
 6. 이후 AI가 단계마다 산출물 요약과 결정이 필요한 질문을 보여주고 멈춘다(게이트). 확인하면 `다음`이라고만 답한다. 게이트 없이 끝까지 가려면 `자동 진행`이라고 말한다.
@@ -28,7 +30,7 @@
 | 항목 | 버전 | 확인 명령 | 비고 |
 |---|---|---|---|
 | Node.js | 22 이상 | `node -v` | npm 포함 |
-| PostgreSQL | 17 | `psql --version` | 서비스 실행 중, 슈퍼유저 비밀번호를 알 것 |
+| PostgreSQL | 17 | 2.2-5에서 Node로 접속해 확인 | 서비스 실행 중, 슈퍼유저 비밀번호를 알 것. Windows는 설치해도 `psql`이 PATH에 없는 경우가 많아 `psql`에 의존하지 않는다 |
 | Git | 최신 | `git --version` | Windows는 Git Bash 포함 |
 | Chrome | 최신 | `"C:/Program Files/Google/Chrome/Application/chrome.exe" --version` (Windows) | 브라우저 점검(Playwright가 이 실행 파일을 씀) |
 | Claude Code | 최신 | `claude --version` | 프로젝트 폴더에서 실행 |
@@ -42,34 +44,41 @@
 
 ### 2.2 실행 순서 (각 단계 결과를 짧게 보고)
 1. **준비물 확인**: 1장 확인 명령을 실행해 버전을 표로 보고한다. 빠진 것이 있으면 멈추고 설치를 요청한다.
-2. **저장소**: `git init`(이미 있으면 생략). 폴더 생성: `.claude/agents`, `.claude/skills/develop-backend`, `.claude/skills/develop-frontend`, `docs/wireframe`, `backend/src`, `backend/scripts`, `backend/test`, `frontend`, `prompts`, `guide`.
-3. **파일 생성**: 부록 A의 파일을 표시된 경로에 **내용 그대로** 만든다. 바꾸는 것은 다음 치환뿐이다.
-   - `todolist` → `SLUG`, `TodoList` → `APP`(패키지 이름, DB 이름, 제목). 그 밖의 글자는 바꾸지 않는다.
-   - `CLAUDE.md`는 부록 A의 템플릿으로 만든다(문서 링크는 아직 없는 파일이어도 둔다).
-   - `prompts/PRD.txt`는 템플릿 그대로 두고, 4장 단계 2에서 입력 시트로 채운다.
-4. **DB 생성**: 두 개를 만든다(이미 있으면 그대로 둔다. 지우지 않는다).
+2. **저장소**: `git init`(이미 있으면 생략). 폴더는 3단계 스크립트가 만든다(`docs/wireframe`만 직접 만든다).
+3. **파일 생성**: 아래 추출 스크립트를 `guide/extract.mjs`로 **그대로** 만들고 실행한다. 부록 A 파일 22개가 표시된 경로에 생긴다(이미 있는 파일은 건너뜀).
    ```bash
-   psql -U <DB_USER> -c "CREATE DATABASE <SLUG>"
-   psql -U <DB_USER> -c "CREATE DATABASE <SLUG>_test"
+   node guide/extract.mjs A "<APP>" <SLUG>
    ```
-5. **환경 파일**(커밋하지 않음):
+   - 치환은 `todolist` → `SLUG`, `TodoList`·`<앱 이름>` → `APP`뿐이다. 부록을 손으로 옮겨 적지 않는다(옮기다 틀리는 것을 막는다).
+   - `prompts/PRD.txt`는 4장 단계 2에서 입력 시트로 채운다.
+   - 출력 끝이 `블록 22개 중 22개 생성`이 아니면 멈추고 보고한다.
+
+{{EXTRACT}}
+4. **패키지 설치**: `cd backend && npm install`, `cd frontend && npm install`(각 1~3분). 실패하면 오류 원문을 보고한다. 네트워크·프록시 문제면 사용자에게 알리고 멈춘다. `bcrypt` 설치 스크립트 경고는 무시한다(10장).
+5. **DB 생성**: `backend`에서 실행한다(설치된 `pg` 사용, `psql` 불필요). 이미 있으면 그대로 두고 지우지 않는다. 비밀번호에 `@ : / #` 등이 있으면 URL 인코딩한다.
+   ```bash
+   cd backend && node -e 'const{Client}=require("pg");const[u,...d]=process.argv.slice(1);(async()=>{const c=new Client({connectionString:u});await c.connect();for(const n of d){const r=await c.query("SELECT 1 FROM pg_database WHERE datname=$1",[n]);if(!r.rowCount)await c.query(`CREATE DATABASE "${n}"`);console.log(r.rowCount?"있음":"생성",n)}await c.end()})().catch(e=>{console.error(e.code,e.message);process.exit(1)})' "postgresql://<DB_USER>:<DB_PASSWORD>@localhost:5432/postgres" <SLUG> <SLUG>_test
+   ```
+   - 오류는 맨 앞 코드로 판단한다(한국어 Windows의 PostgreSQL은 메시지가 깨져 보일 수 있다). `28P01` → 비밀번호가 틀림, 사용자에게 다시 묻는다. `ECONNREFUSED` → PostgreSQL 서비스가 꺼져 있다(Windows 서비스 `postgresql-x64-17`). `3D000`·`28000` → 사용자 이름 확인. 추측으로 재시도하지 않는다.
+6. **환경 파일**(커밋하지 않음):
    - `backend/.env`: `.env.example`을 복사하고 `DATABASE_URL=postgresql://<DB_USER>:<DB_PASSWORD>@localhost:5432/<SLUG>`, `JWT_SECRET=` 에 `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"` 결과.
    - `backend/.env.test`: 같은 내용에서 DB만 `<SLUG>_test`.
-6. **패키지 설치**: `cd backend && npm install`, `cd frontend && npm install`. 실패하면 오류 원문을 보고.
-7. **확인**: `backend/node_modules/.bin/biome --version`, `git status`(`.env`·`.env.test`가 목록에 없어야 함), DB 2개 존재(`psql -U <DB_USER> -lqt`).
+7. **확인**: `cd backend && npx biome --version`, `git status`(`.env`·`.env.test`가 목록에 없어야 함), 5단계 명령을 다시 실행해 두 DB가 `있음`으로 나오는지.
 8. **첫 커밋**: `chore: 부트스트랩 — 에이전트·스킬·MCP·설정·패키지 (ai-playbook 2장)`.
 9. **안내**: 사용자에게 2.4(재시작·MCP 승인)와 0장 5번 프롬프트를 알려주고 멈춘다.
 
 ### 2.3 부트스트랩 완료 기준
-- [ ] 부록 A 파일이 모두 있고 내용이 원본과 같다(치환 제외)
+- [ ] 추출 스크립트 출력이 `블록 22개 중 22개 생성`(손으로 고친 파일 없음)
 - [ ] DB `<SLUG>`, `<SLUG>_test` 존재, `.env`·`.env.test` 생성·미추적
 - [ ] backend·frontend `npm install` 성공, biome 실행됨
 - [ ] 첫 커밋 완료
 
 ### 2.4 Claude Code 재시작과 MCP 승인 (사람)
-- `.mcp.json`은 세션 시작 때 읽힌다. Claude Code를 종료 후 다시 열면 MCP 서버 사용 승인을 묻는다 → 승인.
-- `.claude/settings.local.json`의 `enabledMcpjsonServers`에 있는 서버만 켜진다. 필요 없는 서버(supabase, webpixels)는 목록에서 빼도 된다.
-- 확인: Claude Code에서 `/mcp` → context7·playwright·chrome-devtools·postgresql이 connected.
+- `.mcp.json`은 세션 시작 때만 읽힌다. Claude Code를 종료하고 같은 폴더에서 다시 연다.
+- `.claude/settings.local.json`의 `enabledMcpjsonServers`에 적힌 서버만 켜진다(승인 창이 뜨면 승인). 필요 없는 서버(supabase, webpixels)는 목록에서 빼도 된다.
+- 확인: `/mcp` → context7·playwright·chrome-devtools·postgresql이 connected. 서버는 처음 쓸 때 `npx`로 내려받으므로 첫 연결에 수십 초 걸릴 수 있다.
+- **failed일 때**: `/mcp`에서 그 서버를 다시 연결 → 그래도 안 되면 터미널에서 명령을 직접 실행해 오류를 본다(예: `npx -y @playwright/mcp@latest --help`). 흔한 원인은 사내 프록시·npm 레지스트리 차단, 오래된 Node.
+- **MCP 없이도 진행된다**: 필수 단계는 MCP에 의존하지 않는다. context7 대신 설치된 패키지의 타입·README, playwright·chrome-devtools 대신 `playwright-core` + 로컬 Chrome 스크립트(9.2), postgresql 대신 `node -e` + `pg`로 한다. 대체했으면 보고에 적는다.
 
 ## 3. AI 작업 규칙 (항상 지킨다)
 

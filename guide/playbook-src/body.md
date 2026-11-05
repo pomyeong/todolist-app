@@ -125,3 +125,9 @@ ID는 재사용·재번호하지 않는다. 없애면 행을 지우지 말고 '�
 | 캘린더 날짜 계산에 `Date`·`toISOString` 사용 | 날짜는 문자열, 로컬 컴포넌트로만 계산 |
 | 화면 모드 전환 시 첫 화면 깜빡임 | index.html 인라인 스크립트로 `data-theme` 선적용 |
 | 다크 모드에서 밝은 빨강 버튼 위 흰 글자 | 글자용 색과 채움용 색 토큰 분리(`--danger` / `--danger-fill`) |
+| Windows에 PostgreSQL을 깔아도 `psql`이 PATH에 없음 | DB 생성·조회는 `backend`의 `pg`로 `node -e`(2.2-5) |
+| `@guide/ai-playbook.md`로 붙이면 약 98KB 전체가 컨텍스트에 들어감 | 경로만 말하고 부록 앞까지 읽게 한다. 부록은 추출 스크립트로 |
+| 부록 코드를 AI가 손으로 옮겨 적다 한 글자씩 틀림 | `guide/extract.mjs`로 기계적으로 만든다 |
+| 루트에서 `npx biome`을 치면 무관한 `biome` 패키지를 내려받아 실행 | biome은 `backend`(또는 `frontend`)에서 실행한다 |
+| npm 11이 `bcrypt` 설치 스크립트 경고(`install-scripts`) | 미리 빌드된 바이너리로 동작한다. 무시(승인 불필요) |
+| 한국어 Windows PostgreSQL 오류 메시지가 깨져 보임 | 메시지 대신 오류 코드(`28P01` 등)로 판단 |
