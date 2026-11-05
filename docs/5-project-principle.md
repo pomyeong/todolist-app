@@ -18,6 +18,7 @@
 | v0.10 | 2026-11-05 | Claude | 초안 | Vite 프록시 대신 CORS(PR-S-04, PRD v0.15) |
 | v0.11 | 2026-11-05 | Claude | 초안 | 토큰 만료 시간 환경변수화(PR-S-01, PR-S-02) |
 | v0.12 | 2026-11-05 | Claude | 초안 | 스키마 원본을 docs/schema.sql로(PR-S-10) |
+| v0.13 | 2026-11-05 | Claude | 초안 | 현재 백엔드 코드 기준 동기화 |
 
 ### 변경 이력
 
@@ -47,6 +48,7 @@
 | v0.10 | 2026-11-05 | PR-S-01, PR-S-04, 7.1, 7.3, PD-30 | Vite 프록시를 없애고 CORS로 전환: `CORS_ORIGIN` 설정, `middleware/cors.js`, 프론트 `VITE_API_BASE_URL`·`credentials: 'include'` | 사용자 결정(PRD v0.15 P-04) | Claude |
 | v0.11 | 2026-11-05 | PR-S-01, PR-S-02 | access 토큰 만료·refresh 토큰 만료를 상수에서 환경변수 `JWT_ACCESS_EXPIRES_MINUTES`(기본 15)·`REFRESH_TOKEN_TTL_DAYS`(기본 7)로 이동 | 사용자 결정(PRD v0.16 P-04) | Claude |
 | v0.12 | 2026-11-05 | PR-S-10, PD-08, 7.1, 7.2 | 스키마 단일 출처를 `backend/sql/schema.sql`에서 `docs/schema.sql`로 옮기고 `backend/sql/` 삭제, `db-init.js`가 `docs/schema.sql`을 읽음 | 사용자 결정(설계 문서와 DDL을 한곳에) | Claude |
+| v0.13 | 2026-11-05 | PR-S-03, 7.1 | 토큰 만료·쿠키 `maxAge`를 환경변수 기본값으로 표기, `.env.example` 키 목록과 테스트 파일 목록(config·me·health·cors·scenarios)을 코드와 맞춤 | 백엔드 코드 기준 문서 동기화 | Claude |
 
 > 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.14](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
@@ -155,7 +157,7 @@
 |---|---|---|---|
 | PR-S-01 | 설정은 환경변수로만 받고 `src/config.js` 한 곳에서 읽는다(Node `--env-file`, dotenv 미사용). 필수 값이 없으면 기동 시 즉시 종료한다. 키: `DATABASE_URL`, `JWT_SECRET`(HS384 키가 384비트 이상이 되도록 48자 이상), `PORT`(기본 3000), `DB_POOL_MAX`(기본 20), `NODE_ENV`, `CORS_ORIGIN`(허용할 프론트 출처, 기본 `http://localhost:5173`, production에서는 필수), `JWT_ACCESS_EXPIRES_MINUTES`(access 토큰 만료 분, 기본 15), `REFRESH_TOKEN_TTL_DAYS`(refresh 토큰 만료 일, 기본 7). 두 만료 값은 양의 정수가 아니면 기동하지 않는다. `.env`·`.env.test`는 커밋하지 않고 `.env.example`만 커밋한다.<br>하지 말 것: 다른 파일에서 `process.env` 직접 접근 | 설정 오류를 기동 시점에 발견. | NFR-03, PD-07 |
 | PR-S-02 | PRD가 확정한 값은 설정이 아닌 상수로 코드에 둔다: bcrypt cost 10, 서명 알고리즘 HS384, 쿠키 이름(`access_token`, `refresh_token`). 토큰 만료 시간은 예외로 환경변수(PR-S-01)로 받는다(PRD v0.16 P-04). | 환경마다 달라지면 안 되는 값. | NFR-06, P-04 |
-| PR-S-03 | 인증은 access 토큰과 refresh 토큰 두 개를 쓴다(P-04). access 토큰은 JWT(HS384, 페이로드는 `sub`=사용자 ID만, 만료 15분)이고 `access_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/`, `maxAge` 15분)로 보낸다. 검증할 때 `algorithms: ['HS384']`를 명시해 다른 알고리즘(`none`, HS256 등)으로 서명된 토큰을 거부한다. refresh 토큰은 JWT가 아닌 `crypto.randomBytes(32)`의 base64url 문자열이고 `refresh_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/api/auth`, `maxAge` 7일)로 보낸다. DB `refresh_tokens`에는 SHA-256 해시만 저장한다(DB-13). `POST /api/auth/refresh`는 해시가 맞고 만료되지 않은 행을 한 문장으로 삭제(`DELETE … RETURNING user_id`)한 뒤 새 쌍을 발급한다(회전, 재사용 불가). 로그아웃은 그 refresh 토큰 행을 지우고 같은 옵션으로 두 쿠키를 지운다. `secure`는 `NODE_ENV=production`일 때만 켠다(HTTPS는 범위 외). access 토큰 블랙리스트는 만들지 않는다. 상태 변경 API는 GET을 쓰지 않고 JSON 본문(`express.json`)만 받아, `SameSite=Lax`와 함께 CSRF를 막는다. | access 검증은 stateless(NFR-02), 세션 종료는 refresh 토큰 삭제로 한다. 토큰 JS 접근 차단. refresh 쿠키 경로를 좁혀 일반 API 요청에 실리지 않게 한다. | P-04, NFR-02, FR-03, DB-13, PD-26 |
+| PR-S-03 | 인증은 access 토큰과 refresh 토큰 두 개를 쓴다(P-04). access 토큰은 JWT(HS384, 페이로드는 `sub`=사용자 ID만, 만료 기본 15분 `JWT_ACCESS_EXPIRES_MINUTES`)이고 `access_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/`, `maxAge` = access 만료)로 보낸다. 검증할 때 `algorithms: ['HS384']`를 명시해 다른 알고리즘(`none`, HS256 등)으로 서명된 토큰을 거부한다. refresh 토큰은 JWT가 아닌 `crypto.randomBytes(32)`의 base64url 문자열이고 `refresh_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/api/auth`, `maxAge` = refresh 만료(기본 7일 `REFRESH_TOKEN_TTL_DAYS`))로 보낸다. DB `refresh_tokens`에는 SHA-256 해시만 저장한다(DB-13). `POST /api/auth/refresh`는 해시가 맞고 만료되지 않은 행을 한 문장으로 삭제(`DELETE … RETURNING user_id`)한 뒤 새 쌍을 발급한다(회전, 재사용 불가). 로그아웃은 그 refresh 토큰 행을 지우고 같은 옵션으로 두 쿠키를 지운다. `secure`는 `NODE_ENV=production`일 때만 켠다(HTTPS는 범위 외). access 토큰 블랙리스트는 만들지 않는다. 상태 변경 API는 GET을 쓰지 않고 JSON 본문(`express.json`)만 받아, `SameSite=Lax`와 함께 CSRF를 막는다. | access 검증은 stateless(NFR-02), 세션 종료는 refresh 토큰 삭제로 한다. 토큰 JS 접근 차단. refresh 쿠키 경로를 좁혀 일반 API 요청에 실리지 않게 한다. | P-04, NFR-02, FR-03, DB-13, PD-26 |
 | PR-S-04 | 개발·운영 모두 프론트가 API 서버를 직접 호출하고 CORS로 허용한다(P-04). 백엔드 `middleware/cors.js`는 `Origin`이 `CORS_ORIGIN`과 같을 때만 `Access-Control-Allow-Origin`(그 출처)·`Access-Control-Allow-Credentials: true`를 주고, preflight(`OPTIONS`)에는 허용 메서드(`GET, POST, PATCH, PUT, DELETE`)·헤더(`Content-Type`)를 담아 204로 답한다. 와일드카드(`*`)는 쓰지 않는다. 프론트는 API 주소를 빌드 환경변수 `VITE_API_BASE_URL` 한 곳에서만 읽고(`api/client.ts`) 모든 요청에 `credentials: 'include'`를 붙인다. 쿠키는 `SameSite=Lax` 그대로이므로 프론트와 API는 같은 사이트(등록 도메인, 포트 무관)에 둔다.<br>하지 말 것: `cors` 패키지 추가(몇 줄 미들웨어로 충분, PR-C-02), 출처 여러 개·정규식 허용 | P-04. 사용자 결정(PRD v0.15). 허용 출처를 하나로 고정해 다른 사이트가 쿠키를 실은 요청의 응답을 읽지 못하게 한다. | P-04, PD-04, PR-S-03 |
 | PR-S-05 | 인증은 기본 적용이다. `routes/index.js`에서 `/api/auth/signup`·`/api/auth/login`·`/api/auth/refresh`·`/api/auth/logout`·`/api/health`와 개발 환경 한정 `/api/docs`(PD-30)를 제외한 모든 라우트에 `auth` 미들웨어를 먼저 건다. access 토큰 쿠키가 없거나 만료·위조면 401 `UNAUTHORIZED`다. | 새 라우트가 실수로 공개되는 것을 막는다. | BR-01, FR-04 |
 | PR-S-06 | 비밀번호는 bcrypt(cost 10)로만 저장한다. 평문·해시·토큰을 로그·응답에 내보내지 않으며, 사용자 조회 SQL은 컬럼을 명시한다. | 민감 정보 노출 방지. | NFR-06, PR-L-04 |
@@ -187,7 +189,7 @@ todolist-app/
 ```
 backend/
 ├─ package.json           # "type": "module", engines.node
-├─ .env.example           # DATABASE_URL, JWT_SECRET, PORT, DB_POOL_MAX, NODE_ENV
+├─ .env.example           # PR-S-01 키 전부(DATABASE_URL, JWT_SECRET, PORT, DB_POOL_MAX, NODE_ENV, CORS_ORIGIN, JWT_ACCESS_EXPIRES_MINUTES, REFRESH_TOKEN_TTL_DAYS)
 ├─ scripts/
 │  ├─ db-init.js          # docs/schema.sql 실행(PR-S-10), --reset이면 삭제 후 생성
 │  └─ seed-load.js        # 실행 계획 확인용 사용자·할일 입력 (NFR-04)
@@ -218,8 +220,8 @@ backend/
 │     └─ validate.js      # 이메일·비밀번호·이름·카테고리·할일·날짜 검증
 └─ test/
    ├─ helpers/            # 앱 기동(포트 0), DB 비우기, 가입·로그인 쿠키 헬퍼
-   ├─ unit/               # status.test.js, validate.test.js
-   └─ api/                # auth, categories, todos, calendar, ownership 테스트
+   ├─ unit/               # status.test.js, validate.test.js, config.test.js(환경변수 검증)
+   └─ api/                # auth, me, categories, todos, calendar, ownership, health(·db-down), cors, scenarios(SC-01~13) 테스트
 ```
 
 **API 경로**(PRD P-25가 이 표에 위임한다. 요청·응답 필드는 도메인 속성명(camelCase)을 따른다.)

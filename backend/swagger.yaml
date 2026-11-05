@@ -2,7 +2,7 @@
 # TodoList 백엔드 REST API 명세 (OpenAPI 3.0.3)
 # =============================================================================
 #
-# 문서 버전: v0.4
+# 문서 버전: v0.5
 #
 # 버전 이력
 #
@@ -12,6 +12,7 @@
 # | v0.2 | 2026-11-04 | Claude | 초안 | 미정의 사항 결정 반영 |
 # | v0.3 | 2026-11-04 | Claude | 초안 | 스키마 파일 경로 갱신 |
 # | v0.4 | 2026-11-05 | Claude | 초안 | 현재 백엔드 구현 반영, 개발 환경 Swagger UI |
+# | v0.5 | 2026-11-05 | Claude | 초안 | CORS·토큰 만료 환경변수·쿠키 헤더 실제값 반영 |
 #
 # 변경 이력
 #
@@ -21,20 +22,21 @@
 # | v0.2 | 2026-11-04 | Claude | 미정의 11건 결정 반영: 로그인·이름 수정·카테고리 수정 응답 본문, 비밀번호 변경 204, `currentPassword`/`newPassword` 확정, 본문 한도 초과 400, 쿼리 형식 오류 400, 비밀번호 trim 예외, `null` 규칙(PD-27), 시각 형식(PD-28), Todo 스키마 통일·`categoryName`(PD-29), 근거 문서 버전 갱신 |
 # | v0.3 | 2026-11-04 | Claude | 근거 문서의 스키마 경로를 `docs/schema.sql` → `backend/sql/schema.sql`로 변경(T-DB-02) |
 # | v0.4 | 2026-11-05 | Claude | `/api/health`에 DB 연결 상태(200 `db: up` / 503 `db: down`) 추가, `servers`를 상대 경로로 변경(개발 환경 Swagger UI, PD-30). `/api/docs` 경로 추가, 예시 오류 문구를 실제 응답과 일치시킴, 완료 토글 예시의 `updatedAt` 갱신, 근거 문서 버전 갱신 |
+# | v0.5 | 2026-11-05 | Claude | CORS 응답 헤더·preflight(PR-S-04), 토큰 만료 환경변수(`JWT_ACCESS_EXPIRES_MINUTES`·`REFRESH_TOKEN_TTL_DAYS`), 실제 `Set-Cookie`(발급 `Expires` 포함, 삭제는 `Expires=1970`) 반영, 근거 문서 버전 갱신 |
 #
 # 근거 문서 (충돌 시 위 문서가 우선)
 #
 # | 문서                              | 버전 |
 # |-----------------------------------|------|
 # | docs/1-domain-definition.md       | v0.7 |
-# | docs/2-PRD.md                     | v0.14 |
+# | docs/2-PRD.md                     | v0.16 |
 # | docs/3-user-scenario.md           | v0.10 |
 # | docs/4-wireframe.md               | v0.5 |
-# | docs/5-project-principle.md       | v0.9 |
-# | docs/6-arch-diagram.md            | v0.7 |
-# | docs/7-erd.md                     | v0.4 |
-# | docs/schema.sql                   | (버전 없음, 머리말 기준 ERD v0.4) |
-# | docs/8-plan.md                    | v0.6 |
+# | docs/5-project-principle.md       | v0.13 |
+# | docs/6-arch-diagram.md            | v0.9 |
+# | docs/7-erd.md                     | v0.6 |
+# | docs/schema.sql                   | (버전 없음, 머리말 기준 ERD v0.6) |
+# | docs/8-plan.md                    | v0.8 |
 #
 # 운영 원칙
 # - 경로·메서드는 구조 설계 원칙 7.2 표(PRD P-25 위임)가 단일 출처다. 이 파일은 그 표를 옮긴 것이며,
@@ -67,11 +69,11 @@ info:
     - 할일 상태(`status`)는 저장하지 않고 요청의 `today`로 서버가 파생한다(NFR-12, P-12).
 
     **인증(P-04, PR-S-03)**
-    - access 토큰: JWT(HS384, 페이로드 `sub`=사용자 ID만, 만료 15분). 쿠키 `access_token`(httpOnly, `SameSite=Lax`, `Path=/`, `Max-Age=900`).
-    - refresh 토큰: 불투명 난수(base64url, JWT 아님, 만료 7일). 쿠키 `refresh_token`(httpOnly, `SameSite=Lax`, `Path=/api/auth`, `Max-Age=604800`). DB에는 SHA-256 해시만 저장한다(DB-13).
+    - access 토큰: JWT(HS384, 페이로드 `sub`=사용자 ID만). 만료는 환경변수 `JWT_ACCESS_EXPIRES_MINUTES`(기본 15분). 쿠키 `access_token`(httpOnly, `SameSite=Lax`, `Path=/`, `Max-Age`=만료 초, 기본 900).
+    - refresh 토큰: 불투명 난수(base64url, JWT 아님). 만료는 환경변수 `REFRESH_TOKEN_TTL_DAYS`(기본 7일). 쿠키 `refresh_token`(httpOnly, `SameSite=Lax`, `Path=/api/auth`, `Max-Age`=만료 초, 기본 604800). DB에는 SHA-256 해시만 저장한다(DB-13).
     - `Secure` 속성은 `NODE_ENV=production`일 때만 붙는다.
     - 공개 API: `POST /api/auth/signup`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`, `GET /api/health`, 개발 환경 한정 `GET /api/docs`·`GET /api/docs/swagger.yaml`(PD-30). 그 밖의 모든 API는 `access_token` 쿠키가 필요하며, 없거나 만료·위조면 401 `UNAUTHORIZED`다(PR-S-05, FR-04).
-    - CORS: `CORS_ORIGIN`(개발 기본 http://localhost:5173) 출처 하나만 자격 증명(쿠키) 포함 요청을 허용한다(PR-S-04). 프론트는 `credentials: 'include'`로 호출한다.
+    - CORS: `CORS_ORIGIN`(개발 기본 http://localhost:5173, production 필수) 출처 하나만 자격 증명(쿠키) 포함 요청을 허용한다(PR-S-04). 허용 출처의 모든 응답(오류 포함)에 `Access-Control-Allow-Origin: <그 출처>`·`Access-Control-Allow-Credentials: true`·`Vary: Origin`이 붙는다. preflight(`OPTIONS`)는 204와 `Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE`·`Access-Control-Allow-Headers: Content-Type`·`Access-Control-Max-Age: 600`. 다른 출처에는 CORS 헤더를 주지 않는다. 프론트는 `credentials: 'include'`로 호출한다.
 
     **오류 코드 카탈로그(NFR-15)**
 
@@ -918,7 +920,7 @@ components:
       in: cookie
       name: access_token
       description: |
-        access 토큰 JWT(HS384, 페이로드 `sub`만, 만료 15분). httpOnly 쿠키라 브라우저가 자동으로 보낸다. 서버는 `algorithms: ['HS384']`로만 검증한다(PR-S-03).
+        access 토큰 JWT(HS384, 페이로드 `sub`만, 만료 기본 15분 `JWT_ACCESS_EXPIRES_MINUTES`). httpOnly 쿠키라 브라우저가 자동으로 보낸다. 서버는 `algorithms: ['HS384']`로만 검증한다(PR-S-03).
 
   parameters:
     TodoId:
@@ -964,20 +966,21 @@ components:
     SetAuthCookies:
       description: |
         토큰 쌍 쿠키 발급. 실제 응답에는 `Set-Cookie` 헤더가 두 개 온다(P-04, PR-S-03).
-        - `access_token=<JWT>; Path=/; Max-Age=900; HttpOnly; SameSite=Lax`
-        - `refresh_token=<opaque>; Path=/api/auth; Max-Age=604800; HttpOnly; SameSite=Lax`
+        - `access_token=<JWT>; Max-Age=900; Path=/; Expires=<발급+15분>; HttpOnly; SameSite=Lax`
+        - `refresh_token=<opaque>; Max-Age=604800; Path=/api/auth; Expires=<발급+7일>; HttpOnly; SameSite=Lax`
+        `Max-Age`·`Expires`는 기본값 기준이며 `JWT_ACCESS_EXPIRES_MINUTES`·`REFRESH_TOKEN_TTL_DAYS`를 따른다.
         `NODE_ENV=production`이면 둘 다 `Secure`가 붙는다.
       schema:
         type: string
-      example: access_token=eyJhbGciOiJIUzM4NCJ9...; Path=/; Max-Age=900; HttpOnly; SameSite=Lax
+      example: access_token=eyJhbGciOiJIUzM4NCJ9...; Max-Age=900; Path=/; Expires=Thu, 05 Nov 2026 09:15:00 GMT; HttpOnly; SameSite=Lax
     ClearAuthCookies:
       description: |
         두 쿠키를 발급 때와 같은 `Path`·옵션으로 삭제한다. 실제 응답에는 `Set-Cookie` 헤더가 두 개 온다(PR-S-03).
-        - `access_token=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`
-        - `refresh_token=; Path=/api/auth; Max-Age=0; HttpOnly; SameSite=Lax`
+        - `access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax`
+        - `refresh_token=; Path=/api/auth; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax`
       schema:
         type: string
-      example: access_token=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax
+      example: access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax
 
   schemas:
     Date:

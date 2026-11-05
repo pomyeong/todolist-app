@@ -14,6 +14,7 @@
 | v0.6 | 2026-11-04 | Claude | 초안 | 참조 버전 동기화 |
 | v0.7 | 2026-11-05 | Claude | 초안 | 부하 테스트 제외 |
 | v0.8 | 2026-11-05 | Claude | 초안 | 프록시 대신 CORS |
+| v0.9 | 2026-11-05 | Claude | 초안 | 백엔드 코드 기준 동기화 |
 
 ### 변경 이력
 
@@ -28,6 +29,7 @@
 | v0.6 | 2026-11-04 | 참조 문서 | 도메인 v0.6 → v0.7, PRD v0.11 → v0.12, 시나리오 v0.9 → v0.10, 와이어프레임 v0.4 → v0.5, 구조 설계 원칙 v0.4 → v0.5, ERD v0.3 → v0.4 | 버전 동기화 | Claude |
 | v0.7 | 2026-11-05 | AD-01, 4.3, 참조 문서 | k6 노드와 설명 삭제. PRD v0.12 → v0.13, 구조 설계 원칙 v0.5 → v0.6 | PRD v0.13 부하 테스트 제외 | Claude |
 | v0.8 | 2026-11-05 | AD-01, 프론트 구조 | Vite 프록시 노드를 없애고 브라우저가 API(:3000)를 CORS로 직접 호출 | PRD v0.15 P-04, 구조 설계 원칙 v0.10 PR-S-04 | Claude |
+| v0.9 | 2026-11-05 | AD-02, SD-01 | `middleware/cors.js` 노드 추가, 토큰 만료를 환경변수 기본값으로 표기 | 구조 설계 원칙 v0.11~v0.13 코드 반영 | Claude |
 
 > 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.13](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이, 구조(PR·PD)는 [프로젝트 구조 설계 원칙 v0.6](./5-project-principle.md)이, 데이터 구조(ERD-xx·DB-xx)는 [ERD v0.4](./7-erd.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > 이 문서 순으로 따른다.
 >
@@ -83,6 +85,7 @@ flowchart LR
 flowchart TB
     SRV["server.js<br/>listen, 종료 시 pool.end"] --> APP["app.js<br/>미들웨어·라우터 조립"]
     SRV --> CFG["config.js<br/>환경변수 단일 입구"]
+    APP --> CORSMW["middleware/cors.js<br/>CORS_ORIGIN 하나만 허용, preflight 204"]
     APP --> AUTHMW["middleware/auth.js<br/>access 토큰(HS384) 검증, req.userId"]
     APP --> ERRMW["middleware/error.js<br/>NFR-15 형식 응답"]
     APP --> RT
@@ -219,9 +222,9 @@ sequenceDiagram
         SV->>DB: INSERT categories (이름 기본, is_default true)
         SV->>DB: INSERT refresh_tokens (token_hash, expires_at)
         SV->>DB: COMMIT
-        SV->>SV: access 토큰 JWT 서명 (HS384, sub = 사용자 id, 15분)
+        SV->>SV: access 토큰 JWT 서명 (HS384, sub = 사용자 id, 기본 15분)
         SV-->>RT: 사용자, access 토큰, refresh 토큰
-        RT-->>FE: 201 + Set-Cookie access_token(15분), refresh_token(7일, path=/api/auth)
+        RT-->>FE: 201 + Set-Cookie access_token(기본 15분), refresh_token(기본 7일, path=/api/auth)
         FE->>FE: Zustand에 사용자 보관, /todos 이동
     end
 ```

@@ -11,6 +11,7 @@
 | v0.3 | 2026-11-04 | pmsong | 초안 | 문서 간 정합성 검토 반영 |
 | v0.4 | 2026-11-04 | Claude | 초안 | API 명세 작성 중 결정 반영(응답 필드, null, 시각 형식) |
 | v0.5 | 2026-11-05 | Claude | 초안 | DDL 단일 출처 경로 변경 |
+| v0.6 | 2026-11-05 | Claude | 초안 | refresh 만료 환경변수 반영 |
 
 ### 변경 이력
 
@@ -25,6 +26,7 @@
 | v0.4 | 2026-11-04 | DB-11 | 요청 `null` 처리(PD-27) 반영 | API 명세(backend/swagger.yaml) 작성 중 발견한 미정의 사항 결정 | Claude |
 | v0.4 | 2026-11-04 | 참조 문서 | 도메인 v0.6 → v0.7, PRD v0.11 → v0.12, 구조 설계 원칙 v0.4 → v0.5 | 버전 동기화 | Claude |
 | v0.5 | 2026-11-05 | ID 운영 원칙 | DDL 단일 출처 `backend/sql/schema.sql` → `docs/schema.sql` | 구조 설계 원칙 v0.12 PR-S-10 | Claude |
+| v0.6 | 2026-11-05 | ERD-02 `refresh_tokens.expires_at` | 만료 기간을 `REFRESH_TOKEN_TTL_DAYS`(기본 7일)로 표기 | 구조 설계 원칙 v0.11 PR-S-01 | Claude |
 
 > 단일 출처 원칙: 엔티티·속성·관계, 용어, 상태 규칙(ST), 비즈니스 규칙(BR)은 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·비기능(NFR)·결정(P)은 [PRD v0.12](./2-PRD.md)이, 이름 규칙·API 경로(PR·PD)는 [프로젝트 구조 설계 원칙 v0.5](./5-project-principle.md)이 정의한다. 이 문서는 도메인 3장의 엔티티와 관계를 PostgreSQL 17 물리 구조로 옮긴 것이며, 규칙·오류 코드·수치를 다시 정의하지 않고 ID로 참조한다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > [아키텍처 다이어그램](./6-arch-diagram.md) > 이 문서 순으로 따른다.
 >
@@ -137,7 +139,7 @@ erDiagram
         integer id PK "IDENTITY"
         integer user_id FK "users.id"
         char token_hash UK "SHA-256 64자 uq_refresh_tokens_hash"
-        timestamptz expires_at "발급 후 7일"
+        timestamptz expires_at "발급 후 REFRESH_TOKEN_TTL_DAYS(기본 7일)"
         timestamptz created_at "기본 now"
     }
 ```
