@@ -52,13 +52,36 @@
   grid-area: del;
 }
 
+/* WF-04 데스크톱 표 머리줄(5.7). 모바일 카드(L-06)에는 없다. */
+.head {
+  display: none;
+}
+
 @media (min-width: 768px) {
-  .row {
+  .row,
+  .head {
     grid-template-columns: 48px minmax(0, 1fr) 220px 120px 80px 64px;
-    grid-template-areas: "check title period category status del";
     gap: var(--space-3);
+  }
+
+  .row {
+    grid-template-areas: "check title period category status del";
     min-height: 48px;
     padding: var(--space-2) 0;
+  }
+
+  .head {
+    display: grid;
+    align-items: center;
+    height: 36px;
+    background: var(--surface-muted);
+    border-bottom: 1px solid var(--divider);
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+  }
+
+  .head > :first-child {
+    justify-self: center;
   }
 
   .row:hover {

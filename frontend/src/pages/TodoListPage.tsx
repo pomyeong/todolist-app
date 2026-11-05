@@ -5,7 +5,7 @@ import { EmptyNotice } from '../components/EmptyNotice';
 import { FormError } from '../components/FormError';
 import { LoadingNotice } from '../components/LoadingNotice';
 import { TodoFilters } from '../features/todos/TodoFilters';
-import { TodoRow } from '../features/todos/TodoRow';
+import { TodoListHeader, TodoRow } from '../features/todos/TodoRow';
 import { useTodoList } from '../features/todos/useTodos';
 
 export function TodoListPage() {
@@ -26,11 +26,14 @@ export function TodoListPage() {
       ) : data?.length === 0 ? (
         <EmptyNotice />
       ) : (
-        <ul style={{ padding: 0 }}>
-          {data?.map((t) => (
-            <TodoRow key={t.id} todo={t} onError={setActionError} />
-          ))}
-        </ul>
+        <>
+          <TodoListHeader />
+          <ul style={{ padding: 0 }}>
+            {data?.map((t) => (
+              <TodoRow key={t.id} todo={t} onError={setActionError} />
+            ))}
+          </ul>
+        </>
       )}
     </>
   );

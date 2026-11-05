@@ -11,6 +11,20 @@ interface Props {
   onError(e: ApiError | null): void;
 }
 
+// WF-04 데스크톱 표 머리줄. 각 행의 조작 요소에 이미 접근 가능한 이름이 있어 보조기기에는 숨긴다.
+export function TodoListHeader() {
+  return (
+    <div className={styles.head} aria-hidden="true">
+      <span>완료</span>
+      <span>제목</span>
+      <span>기간</span>
+      <span>카테고리</span>
+      <span>상태</span>
+      <span />
+    </div>
+  );
+}
+
 export function TodoRow({ todo, onError }: Props) {
   const { pathname, search } = useLocation();
   const [confirming, setConfirming] = useState(false);
