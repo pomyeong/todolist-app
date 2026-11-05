@@ -1,0 +1,81 @@
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router';
+import type { ApiError, TodoWithStatus } from '../../api/types';
+import { STATUS_LABEL } from '../../api/types';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
+import styles from './TodoRow.module.css';
+import { useDeleteTodo, useToggleTodo } from './useTodos';
+
+interface Props {
+  todo: TodoWithStatus;
+  onError(e: ApiError | null): void;
+}
+
+export function TodoRow({ todo, onError }: Props) {
+  const { pathname, search } = useLocation();
+  const [confirming, setConfirming] = useState(false);
+  const toggle = useToggleTodo(todo.id);
+  const remove = useDeleteTodo(todo.id);
+  const busy = toggle.isPending || remove.isPending;
+
+  return (
+    <li className={styles.row}>
+      <input
+        className={styles.check}
+        type="checkbox"
+        aria-label={`${todo.title} 완료`}
+        checked={todo.completed}
+        disabled={busy}
+        onChange={(e) => {
+          onError(null);
+          toggle.mutate(e.target.checked, { onError });
+        }}
+      />
+      <Link
+        className={styles.title}
+        to={`/todos/${todo.id}/edit`}
+        state={{ from: pathname + search }}
+      >
+        {todo.title}
+      </Link>
+      <span className={styles.period}>
+        {todo.startDate} ~ {todo.endDate}
+      </span>
+      <span className={styles.meta}>
+        <span className={styles.category}>{todo.categoryName}</span>
+        <span className={styles.dot} aria-hidden="true">
+          ·
+        </span>
+        <span className="chip" data-status={todo.status}>
+          {STATUS_LABEL[todo.status]}
+        </span>
+      </span>
+      <button
+        type="button"
+        className={styles.del}
+        disabled={busy}
+        onClick={() => {
+          onError(null);
+          setConfirming(true);
+        }}
+      >
+        삭제
+      </button>
+      {confirming && (
+        <ConfirmDialog
+          title="이 할일을 삭제할까요?"
+          pending={remove.isPending}
+          onCancel={() => setConfirming(false)}
+          onConfirm={() =>
+            remove.mutate(undefined, {
+              onError: (e) => {
+                setConfirming(false);
+                onError(e);
+              },
+            })
+          }
+        />
+      )}
+    </li>
+  );
+}

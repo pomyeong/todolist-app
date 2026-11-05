@@ -1,0 +1,35 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.panel {
+  width: min(400px, calc(100vw - 32px));
+  padding: var(--space-5);
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+}
+
+.title {
+  color: var(--text-strong);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+
+.message {
+  margin-top: var(--space-2);
+  color: var(--text);
+  font-size: var(--fs-md);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}

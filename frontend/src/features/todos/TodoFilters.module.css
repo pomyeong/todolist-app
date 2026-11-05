@@ -1,0 +1,23 @@
+.filters {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.filters label {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-md);
+  color: var(--text-muted);
+}
+
+@media (min-width: 768px) {
+  .filters {
+    grid-auto-flow: column;
+    grid-auto-columns: 240px;
+    justify-content: start;
+    gap: var(--space-4);
+  }
+}

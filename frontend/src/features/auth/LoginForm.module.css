@@ -1,0 +1,25 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 400px;
+  margin: var(--space-6) auto;
+  padding: 0 var(--page-gutter);
+}
+
+.form h1 {
+  color: var(--text-strong);
+  font-size: var(--fs-xl);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field label {
+  font-size: var(--fs-md);
+  color: var(--text-muted);
+}

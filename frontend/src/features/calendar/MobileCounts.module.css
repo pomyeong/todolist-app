@@ -1,0 +1,71 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    display: none;
+  }
+}
+
+.weekday {
+  text-align: center;
+  font-size: var(--fs-sm);
+}
+
+.cell,
+.blank {
+  min-width: 0;
+  height: 48px;
+}
+
+.blank {
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+}
+
+.cell[data-selected="true"] {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.day {
+  min-width: 24px;
+  height: 24px;
+  line-height: 24px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-sm);
+}
+
+.cell[data-dow="0"] .day {
+  color: var(--danger);
+}
+
+.cell[data-dow="6"] .day {
+  color: var(--primary-text);
+}
+
+.cell[data-today="true"] .day {
+  background: var(--primary-strong);
+  color: #ffffff;
+}
+
+.count {
+  height: 16px;
+  color: var(--primary-text);
+  font-size: var(--fs-xs);
+  line-height: 16px;
+}

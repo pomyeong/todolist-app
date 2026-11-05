@@ -1,0 +1,149 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+:root {
+  --bg: #ffffff;
+  --surface-muted: #f8f9fa;
+  --border: #dadce0;
+  --divider: #f1f3f4;
+  --text-strong: #1f1f1f;
+  --text: #3c4043;
+  --text-muted: #5f6368;
+  --text-hint: #9aa0a6;
+  --primary: #1a73e8;
+  --primary-strong: #0b57d0;
+  --primary-soft: #e8f0fe;
+  --primary-text: #1967d2;
+  --danger: #c5221f;
+  --outline: #747775;
+  --segment-on: #c2e7ff;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --font: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-base: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 24px;
+
+  --page-gutter: 16px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --page-gutter: 32px;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  line-height: 1.5;
+}
+
+a {
+  color: var(--primary-text);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  height: 36px;
+  padding: 0 var(--space-4);
+  background: var(--bg);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+button.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 var(--space-3);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+textarea {
+  height: auto;
+  min-height: 96px;
+  padding: var(--space-2) var(--space-3);
+  resize: vertical;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: 12px;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.chip[data-status="completed"] {
+  background: #e6f4ea;
+  color: #137333;
+}
+
+.chip[data-status="not_started"] {
+  background: #e8eaed;
+  color: #3c4043;
+}
+
+.chip[data-status="in_progress"] {
+  background: #1a73e8;
+  color: #ffffff;
+}
+
+.chip[data-status="overdue"] {
+  background: #c5221f;
+  color: #ffffff;
+}
