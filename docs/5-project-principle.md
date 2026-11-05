@@ -15,6 +15,8 @@
 | v0.7 | 2026-11-05 | Claude | 초안 | 프론트 구현 중 결정 반영(`app/session.ts`, 연결 실패 문구) |
 | v0.8 | 2026-11-05 | Claude | 초안 | 헬스 체크에 DB 연결 상태 추가 |
 | v0.9 | 2026-11-05 | Claude | 초안 | 개발 환경 한정 Swagger UI(PD-30) |
+| v0.10 | 2026-11-05 | Claude | 초안 | Vite 프록시 대신 CORS(PR-S-04, PRD v0.15) |
+| v0.11 | 2026-11-05 | Claude | 초안 | 토큰 만료 시간 환경변수화(PR-S-01, PR-S-02) |
 
 ### 변경 이력
 
@@ -41,6 +43,8 @@
 | v0.7 | 2026-11-05 | PR-C-04, 7.3 | 서버가 NFR-15 형식을 주지 못한 경우(연결 실패·빈 본문) `api/client.ts`의 대체 문구 상수 하나를 예외로 허용, 401 전역 처리와 로그아웃이 함께 쓰는 `app/session.ts`(`clearSession`) 추가 | 백엔드 중단 시 Vite 프록시가 빈 본문 500을 줌(E-06-2), features 간 import 금지(PR-L-09) | Claude |
 | v0.8 | 2026-11-05 | PR-S-08, PD-14, 7.2 `/api/health` | 헬스 체크가 `SELECT 1`로 DB 연결을 확인(정상 200 `db: 'up'`, 실패 503 `db: 'down'`) | 사용자 요청(서버 기동만으로는 DB 연결을 알 수 없음) | Claude |
 | v0.9 | 2026-11-05 | PR-S-05, 7.2, PD-30 | `NODE_ENV=development`일 때만 `GET /api/docs`(Swagger UI)·`GET /api/docs/swagger.yaml` 제공, npm 의존성 없이 CDN `swagger-ui-dist` 사용 | 사용자 요청(개발 중 API 명세 열람·호출) | Claude |
+| v0.10 | 2026-11-05 | PR-S-01, PR-S-04, 7.1, 7.3, PD-30 | Vite 프록시를 없애고 CORS로 전환: `CORS_ORIGIN` 설정, `middleware/cors.js`, 프론트 `VITE_API_BASE_URL`·`credentials: 'include'` | 사용자 결정(PRD v0.15 P-04) | Claude |
+| v0.11 | 2026-11-05 | PR-S-01, PR-S-02 | access 토큰 만료·refresh 토큰 만료를 상수에서 환경변수 `JWT_ACCESS_EXPIRES_MINUTES`(기본 15)·`REFRESH_TOKEN_TTL_DAYS`(기본 7)로 이동 | 사용자 결정(PRD v0.16 P-04) | Claude |
 
 > 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.14](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
@@ -79,7 +83,7 @@
 백엔드   routes ──▶ services ──▶ db.js (pg Pool, 파라미터 바인딩)
             │          │
             └──────────┴──▶ domain/ (I/O 없는 순수 함수), errors.js, config.js
-         middleware/(auth, error)는 app.js가 조립한다.
+         middleware/(auth, cors, error)는 app.js가 조립한다.
 
 프론트   pages ──▶ features ──▶ api ──▶ fetch('/api/...')
             └────────┴──▶ components/, lib/ (공용. 어느 층에서나 import, 위로는 import 안 함)
@@ -147,10 +151,10 @@
 
 | ID | 규칙 | 이유 | 관련 ID |
 |---|---|---|---|
-| PR-S-01 | 설정은 환경변수로만 받고 `src/config.js` 한 곳에서 읽는다(Node `--env-file`, dotenv 미사용). 필수 값이 없으면 기동 시 즉시 종료한다. 키: `DATABASE_URL`, `JWT_SECRET`(HS384 키가 384비트 이상이 되도록 48자 이상), `PORT`(기본 3000), `DB_POOL_MAX`(기본 20), `NODE_ENV`. `.env`·`.env.test`는 커밋하지 않고 `.env.example`만 커밋한다.<br>하지 말 것: 다른 파일에서 `process.env` 직접 접근 | 설정 오류를 기동 시점에 발견. | NFR-03, PD-07 |
-| PR-S-02 | PRD가 확정한 값은 설정이 아닌 상수로 코드에 둔다: bcrypt cost 10, 서명 알고리즘 HS384, access 토큰 만료 15분, refresh 토큰 만료 7일, 쿠키 이름(`access_token`, `refresh_token`). | 환경마다 달라지면 안 되는 값. | NFR-06, P-04 |
+| PR-S-01 | 설정은 환경변수로만 받고 `src/config.js` 한 곳에서 읽는다(Node `--env-file`, dotenv 미사용). 필수 값이 없으면 기동 시 즉시 종료한다. 키: `DATABASE_URL`, `JWT_SECRET`(HS384 키가 384비트 이상이 되도록 48자 이상), `PORT`(기본 3000), `DB_POOL_MAX`(기본 20), `NODE_ENV`, `CORS_ORIGIN`(허용할 프론트 출처, 기본 `http://localhost:5173`, production에서는 필수), `JWT_ACCESS_EXPIRES_MINUTES`(access 토큰 만료 분, 기본 15), `REFRESH_TOKEN_TTL_DAYS`(refresh 토큰 만료 일, 기본 7). 두 만료 값은 양의 정수가 아니면 기동하지 않는다. `.env`·`.env.test`는 커밋하지 않고 `.env.example`만 커밋한다.<br>하지 말 것: 다른 파일에서 `process.env` 직접 접근 | 설정 오류를 기동 시점에 발견. | NFR-03, PD-07 |
+| PR-S-02 | PRD가 확정한 값은 설정이 아닌 상수로 코드에 둔다: bcrypt cost 10, 서명 알고리즘 HS384, 쿠키 이름(`access_token`, `refresh_token`). 토큰 만료 시간은 예외로 환경변수(PR-S-01)로 받는다(PRD v0.16 P-04). | 환경마다 달라지면 안 되는 값. | NFR-06, P-04 |
 | PR-S-03 | 인증은 access 토큰과 refresh 토큰 두 개를 쓴다(P-04). access 토큰은 JWT(HS384, 페이로드는 `sub`=사용자 ID만, 만료 15분)이고 `access_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/`, `maxAge` 15분)로 보낸다. 검증할 때 `algorithms: ['HS384']`를 명시해 다른 알고리즘(`none`, HS256 등)으로 서명된 토큰을 거부한다. refresh 토큰은 JWT가 아닌 `crypto.randomBytes(32)`의 base64url 문자열이고 `refresh_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/api/auth`, `maxAge` 7일)로 보낸다. DB `refresh_tokens`에는 SHA-256 해시만 저장한다(DB-13). `POST /api/auth/refresh`는 해시가 맞고 만료되지 않은 행을 한 문장으로 삭제(`DELETE … RETURNING user_id`)한 뒤 새 쌍을 발급한다(회전, 재사용 불가). 로그아웃은 그 refresh 토큰 행을 지우고 같은 옵션으로 두 쿠키를 지운다. `secure`는 `NODE_ENV=production`일 때만 켠다(HTTPS는 범위 외). access 토큰 블랙리스트는 만들지 않는다. 상태 변경 API는 GET을 쓰지 않고 JSON 본문(`express.json`)만 받아, `SameSite=Lax`와 함께 CSRF를 막는다. | access 검증은 stateless(NFR-02), 세션 종료는 refresh 토큰 삭제로 한다. 토큰 JS 접근 차단. refresh 쿠키 경로를 좁혀 일반 API 요청에 실리지 않게 한다. | P-04, NFR-02, FR-03, DB-13, PD-26 |
-| PR-S-04 | 개발은 Vite 프록시(`/api` → `http://localhost:3000`)로 같은 출처를 만든다. 프론트는 상대 경로(`/api/...`)만 쓰고 백엔드 주소를 코드에 넣지 않는다. CORS 미들웨어는 두지 않는다. | P-04. 같은 출처면 CORS와 쿠키 SameSite 문제가 없다. | P-04, PD-04 |
+| PR-S-04 | 개발·운영 모두 프론트가 API 서버를 직접 호출하고 CORS로 허용한다(P-04). 백엔드 `middleware/cors.js`는 `Origin`이 `CORS_ORIGIN`과 같을 때만 `Access-Control-Allow-Origin`(그 출처)·`Access-Control-Allow-Credentials: true`를 주고, preflight(`OPTIONS`)에는 허용 메서드(`GET, POST, PATCH, PUT, DELETE`)·헤더(`Content-Type`)를 담아 204로 답한다. 와일드카드(`*`)는 쓰지 않는다. 프론트는 API 주소를 빌드 환경변수 `VITE_API_BASE_URL` 한 곳에서만 읽고(`api/client.ts`) 모든 요청에 `credentials: 'include'`를 붙인다. 쿠키는 `SameSite=Lax` 그대로이므로 프론트와 API는 같은 사이트(등록 도메인, 포트 무관)에 둔다.<br>하지 말 것: `cors` 패키지 추가(몇 줄 미들웨어로 충분, PR-C-02), 출처 여러 개·정규식 허용 | P-04. 사용자 결정(PRD v0.15). 허용 출처를 하나로 고정해 다른 사이트가 쿠키를 실은 요청의 응답을 읽지 못하게 한다. | P-04, PD-04, PR-S-03 |
 | PR-S-05 | 인증은 기본 적용이다. `routes/index.js`에서 `/api/auth/signup`·`/api/auth/login`·`/api/auth/refresh`·`/api/auth/logout`·`/api/health`와 개발 환경 한정 `/api/docs`(PD-30)를 제외한 모든 라우트에 `auth` 미들웨어를 먼저 건다. access 토큰 쿠키가 없거나 만료·위조면 401 `UNAUTHORIZED`다. | 새 라우트가 실수로 공개되는 것을 막는다. | BR-01, FR-04 |
 | PR-S-06 | 비밀번호는 bcrypt(cost 10)로만 저장한다. 평문·해시·토큰을 로그·응답에 내보내지 않으며, 사용자 조회 SQL은 컬럼을 명시한다. | 민감 정보 노출 방지. | NFR-06, PR-L-04 |
 | PR-S-07 | 모든 입력은 서버에서 검증한다. 문자열은 trim한 뒤 검사하고(BR-22, 비밀번호는 trim하지 않음), 본문에서 필요한 필드만 꺼내 쓰며, `express.json`의 본문 한도는 16kb로 낮춘다. 한도 초과(`express.json`의 413 `entity.too.large`)와 JSON 파싱 실패는 `middleware/error.js`가 400 `VALIDATION_ERROR`로 바꾼다(새 오류 코드 없음). | 신뢰 경계 검증, 불필요 필드 무시. | NFR-09, BR-21, BR-22 |
@@ -195,6 +199,7 @@ backend/
 │  ├─ errors.js           # AppError, 오류 코드 상수
 │  ├─ middleware/
 │  │  ├─ auth.js          # access 토큰(HS384) 검증 → req.userId, 쿠키 직접 파싱
+│  │  ├─ cors.js          # CORS_ORIGIN 하나만 허용, preflight 204 (PR-S-04)
 │  │  └─ error.js         # 404(알 수 없는 /api 경로) + NFR-15 형식 응답
 │  ├─ routes/             # HTTP 입출력만 (PR-L-02)
 │  │  ├─ index.js         # /api 마운트, 인증 경계 (PR-S-05)
@@ -259,7 +264,8 @@ backend/
 frontend/
 ├─ package.json
 ├─ index.html
-├─ vite.config.ts         # React 플러그인, server.proxy: /api → http://localhost:3000, test 설정
+├─ vite.config.ts         # React 플러그인, 포트 5173, test 설정
+├─ .env.development       # VITE_API_BASE_URL=http://localhost:3000 (PR-S-04)
 ├─ tsconfig.json          # strict
 └─ src/
    ├─ main.tsx            # QueryClient(전역 401 처리, PR-L-12), RouterProvider
@@ -306,7 +312,7 @@ frontend/
 | `features/calendar` | `range.ts`(월=1일~말일, 주=일~토 기간 계산)와 `cellTodos.ts`(날짜가 기간에 속하는 할일, 서버 정렬 유지, 3건 초과 '+N')는 순수 함수. `calendarStore`(선택 날짜), 뷰·기준 날짜는 URL 쿼리, 모바일은 개수 점·그날 목록, 오늘 없는 기간이면 선택 해제 | FR-10~12, FR-16, BR-16~20, P-16, P-20, P-23, R-07 |
 | `features/categories` | 목록(BR-23 순서, 서버 순서 그대로), 추가, 이름 수정, 삭제 확인(소속 할일 안내), 기본 카테고리 조작 비활성 | FR-13, P-19, BR-12 |
 | `pages/TodoFormPage.tsx` | 진입 화면 복귀: 진입 시 `navigate(path, { state: { from } })`로 현재 경로(쿼리 포함)를 넘기고, 저장·취소 후 `state.from`으로, 없으면 `/todos`로 이동 | P-17, P-23 |
-| `api/client.ts` | `/api/...` 상대 경로, 같은 출처 쿠키, 오류 형식 파싱, 401 시 토큰 갱신 1회 후 재요청(PR-L-12). 토큰 접근 코드 없음(쿠키는 httpOnly) | P-04, NFR-15, PR-L-12 |
+| `api/client.ts` | `VITE_API_BASE_URL` + `/api/...`, `credentials: 'include'`(PR-S-04), 오류 형식 파싱, 401 시 토큰 갱신 1회 후 재요청(PR-L-12). 토큰 접근 코드 없음(쿠키는 httpOnly) | P-04, NFR-15, PR-L-12 |
 | `components/` | 삭제·카테고리 삭제 공용 확인 대화상자, 입력란 오류, 폼·화면 상단 오류, '불러오는 중…'/'갱신 중…'(이전 데이터 유지는 `placeholderData: keepPreviousData`), '할일이 없습니다.' | P-19, P-21, P-22, PRD 4장 |
 | `lib/` | 날짜 문자열 연산, 오늘 계산·재계산 | NFR-11, NFR-12, P-12 |
 | `styles/`, `*.module.css` | 360px 기준, 768px 중단점 | NFR-13, P-08 |
@@ -325,7 +331,7 @@ npm run db:init
 # 3) 프론트
 npm create vite@latest frontend -- --template react-ts
 cd frontend && npm i react-router @tanstack/react-query zustand
-npm i -D vitest                      # vite.config.ts에 proxy 설정
+npm i -D vitest                      # .env.development에 VITE_API_BASE_URL
 # 4) 루트: biome.json, .gitignore, README.md
 ```
 
@@ -366,7 +372,7 @@ PRD·도메인의 기능·규칙 수준 결정은 하지 않았다. 아래는 �
 | PD-27 | 요청 본문의 `null`은 ERD에서 NULL 허용인 컬럼에 대응하는 필드에만 허용한다. 요청으로 받는 필드 중 해당하는 것은 할일 `description`뿐이다(`completed_at`은 서버가 정한다). 등록에서 `null`은 생략과 같고, 수정(`PATCH`)에서 `null`을 보내면 값을 비운다. NOT NULL 컬럼에 대응하는 필드(`email`·`password`·`name`·`title`·`startDate`·`endDate`·`categoryId`·`completed` 등)에 `null`을 보내면 400 `VALIDATION_ERROR`다. `categoryId`의 BR-11(등록은 기본, 수정은 유지)은 생략일 때만 적용된다. | `null`의 의미를 컬럼 NULL 허용 여부 하나로 정한다(7-erd.md 4장, DB-11). | `null`을 생략과 같게 처리: 수정에서 값을 비울 수단이 빈 문자열뿐이 됨 |
 | PD-28 | API의 시각 필드(`createdAt`·`updatedAt`·`completedAt`)는 ISO 8601 UTC, `Date.prototype.toISOString()` 형식(`2026-11-04T09:00:00.000Z`)이다. 날짜 필드는 PR-C-05대로 `YYYY-MM-DD`다. | pg가 `TIMESTAMPTZ`를 `Date`로 돌려주고 `JSON.stringify`가 이 형식으로 직렬화해 변환 코드가 없다. | 오프셋 포함 현지 시각: 직렬화 코드 필요 |
 | PD-29 | 응답 필드: 할일 응답(단건 조회·등록·수정·완료 토글·목록·캘린더)은 모두 `categoryName`(JOIN)을 포함한다. `todos.category_id`가 NOT NULL·FK라 `categoryName`은 `null`이 되지 않는다. 상태(`status`)는 `today`를 받는 목록·캘린더에만 있다(PD-13). 사용자 응답(가입·로그인·내 정보 조회·이름 수정)은 항상 `id`·`email`·`name`·`createdAt`·`updatedAt`을 포함한다. | 프론트가 응답마다 다른 모양을 다루지 않게 할일·사용자 형태를 하나로 통일한다. | 응답별 필드 차등: 타입이 여러 개로 늘어남 |
-| PD-30 | Swagger UI는 `NODE_ENV=development`일 때만 `app.js`가 `GET /api/docs`(HTML 한 장)와 `GET /api/docs/swagger.yaml`(`backend/swagger.yaml` 원본)로 제공한다. UI는 CDN의 버전 고정 `swagger-ui-dist`를 불러오고 npm 의존성은 추가하지 않는다. 명세의 `servers`는 상대 경로(`/`)라 3000번·5173번(Vite 프록시) 어디서 열어도 같은 출처로 호출된다. | 명세(`swagger.yaml`)는 이미 단일 출처로 있고 화면만 필요하다. 개발 도구라 운영·테스트 환경에서는 노출하지 않는다. PR-C-02(몇 줄로 되면 의존성 추가 금지). | swagger-ui-express + yaml 파서: 의존성 2개. 오프라인 개발이 필요해지면 `swagger-ui-dist`를 devDependency로 받아 정적 제공 |
+| PD-30 | Swagger UI는 `NODE_ENV=development`일 때만 `app.js`가 `GET /api/docs`(HTML 한 장)와 `GET /api/docs/swagger.yaml`(`backend/swagger.yaml` 원본)로 제공한다. UI는 CDN의 버전 고정 `swagger-ui-dist`를 불러오고 npm 의존성은 추가하지 않는다. 명세의 `servers`는 상대 경로(`/`)라 3000번에서 연 Swagger UI가 같은 출처로 호출한다. | 명세(`swagger.yaml`)는 이미 단일 출처로 있고 화면만 필요하다. 개발 도구라 운영·테스트 환경에서는 노출하지 않는다. PR-C-02(몇 줄로 되면 의존성 추가 금지). | swagger-ui-express + yaml 파서: 의존성 2개. 오프라인 개발이 필요해지면 `swagger-ui-dist`를 devDependency로 받아 정적 제공 |
 
 ### 8.1 커버리지 확인
 

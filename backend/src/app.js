@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { config } from './config.js';
 import { query } from './db.js';
+import { cors } from './middleware/cors.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { apiRouter } from './routes/index.js';
 
@@ -19,6 +20,7 @@ const DOCS_HTML = `<!doctype html>
 export function createApp() {
   const app = express();
   app.disable('x-powered-by');
+  app.use(cors); // 오류 응답에도 CORS 헤더가 붙도록 맨 앞에 둔다
   app.use(express.json({ limit: '16kb' }));
   // PD-14: 기동과 DB 연결을 확인한다. DB 실패는 오류 미들웨어가 아닌 503 상태 본문으로 답한다.
   app.get('/api/health', async (_req, res) => {

@@ -5,11 +5,11 @@ import { config } from '../config.js';
 import { query, withTransaction } from '../db.js';
 import { AppError, ERROR, unauthorized } from '../errors.js';
 
-// PR-S-02: PRD가 확정한 값은 상수로 둔다.
+// PR-S-02: PRD가 확정한 값은 상수로 둔다. 토큰 만료는 환경변수(config)에서 온다.
 const BCRYPT_COST = 10;
 const JWT_ALGORITHM = 'HS384';
-const ACCESS_TTL_SEC = 15 * 60;
-const REFRESH_TTL_SEC = 7 * 24 * 60 * 60;
+const ACCESS_TTL_SEC = config.accessTtlSec;
+const REFRESH_TTL_SEC = config.refreshTtlSec;
 export const ACCESS_COOKIE = 'access_token';
 export const REFRESH_COOKIE = 'refresh_token';
 

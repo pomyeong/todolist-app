@@ -30,7 +30,7 @@
    ```
    cd frontend
    npm install
-   npm run dev            # /api 는 Vite 프록시로 백엔드에 전달
+   npm run dev            # .env.development의 VITE_API_BASE_URL(http://localhost:3000)로 API 직접 호출(CORS)
    ```
 
 ## 포맷·린트

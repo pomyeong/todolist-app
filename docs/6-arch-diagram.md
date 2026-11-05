@@ -13,6 +13,7 @@
 | v0.5 | 2026-11-04 | pmsong | 초안 | 문서 간 정합성 검토 반영 |
 | v0.6 | 2026-11-04 | Claude | 초안 | 참조 버전 동기화 |
 | v0.7 | 2026-11-05 | Claude | 초안 | 부하 테스트 제외 |
+| v0.8 | 2026-11-05 | Claude | 초안 | 프록시 대신 CORS |
 
 ### 변경 이력
 
@@ -26,6 +27,7 @@
 | v0.5 | 2026-11-04 | 참조 문서 | PRD v0.10 → v0.11, 시나리오 v0.8 → v0.9, 와이어프레임 v0.3 → v0.4, 구조 설계 원칙 v0.3 → v0.4, ERD v0.2 → v0.3 | 버전 동기화 | pmsong |
 | v0.6 | 2026-11-04 | 참조 문서 | 도메인 v0.6 → v0.7, PRD v0.11 → v0.12, 시나리오 v0.9 → v0.10, 와이어프레임 v0.4 → v0.5, 구조 설계 원칙 v0.4 → v0.5, ERD v0.3 → v0.4 | 버전 동기화 | Claude |
 | v0.7 | 2026-11-05 | AD-01, 4.3, 참조 문서 | k6 노드와 설명 삭제. PRD v0.12 → v0.13, 구조 설계 원칙 v0.5 → v0.6 | PRD v0.13 부하 테스트 제외 | Claude |
+| v0.8 | 2026-11-05 | AD-01, 프론트 구조 | Vite 프록시 노드를 없애고 브라우저가 API(:3000)를 CORS로 직접 호출 | PRD v0.15 P-04, 구조 설계 원칙 v0.10 PR-S-04 | Claude |
 
 > 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.13](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이, 구조(PR·PD)는 [프로젝트 구조 설계 원칙 v0.6](./5-project-principle.md)이, 데이터 구조(ERD-xx·DB-xx)는 [ERD v0.4](./7-erd.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > 이 문서 순으로 따른다.
 >
@@ -59,7 +61,6 @@ flowchart LR
         BR["브라우저<br/>Chrome / Edge / Safari / Firefox"]
         subgraph FE["Vite 개발 서버 :5173"]
             ST["React 앱 정적 자원"]
-            PX["프록시 /api"]
         end
         subgraph BE["Node 단일 프로세스 :3000"]
             EX["Express 5<br/>pg Pool 하나"]
@@ -68,12 +69,11 @@ flowchart LR
     end
 
     BR -->|"페이지, JS"| ST
-    BR -->|"/api 요청 + 인증 쿠키"| PX
-    PX -->|"http://localhost:3000"| EX
+    BR -->|"/api 요청 + 인증 쿠키<br/>CORS (credentials)"| EX
     EX -->|"SQL 파라미터 바인딩"| DB
 ```
 
-브라우저는 Vite 서버 한 곳만 바라보므로 API와 같은 출처가 되어 CORS 없이 쿠키가 동작한다. 운영 배포(호스팅, HTTPS)는 범위 외다.
+브라우저는 화면을 Vite 서버(:5173)에서, API를 Express(:3000)에서 직접 받는다. 출처가 달라 Express가 CORS로 `CORS_ORIGIN` 하나만 쿠키 포함 요청을 허용한다(PR-S-04). 두 서버는 같은 사이트(localhost)라 `SameSite=Lax` 쿠키가 실린다. 운영도 같은 방식이며 프론트와 API를 같은 사이트에 둔다. 운영 배포(호스팅, HTTPS)는 범위 외다.
 
 관련 ID: P-04, P-10, NFR-02, NFR-03, PR-S-04, PR-S-11
 
@@ -154,7 +154,7 @@ flowchart TB
     end
     API["api<br/>client.ts, types.ts, queryKeys.ts"]
     SHARED["components, lib<br/>어느 층에서나 import"]
-    BACK["/api (Vite 프록시)"]
+    BACK["API 서버 (VITE_API_BASE_URL, CORS)"]
     URL["URL 쿼리<br/>캘린더 view, date"]
 
     MAIN --> RTR

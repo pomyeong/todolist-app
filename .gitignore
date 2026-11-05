@@ -70,6 +70,8 @@ web_modules/
 .env.test
 .env.*
 !.env.example
+# 프론트 개발용 API 주소(비밀값 없음, PR-S-04)
+!frontend/.env.development
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

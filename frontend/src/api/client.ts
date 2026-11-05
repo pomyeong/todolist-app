@@ -3,6 +3,8 @@ import { ApiError } from './types';
 
 export type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 export const FALLBACK_MESSAGE = '서버에 연결할 수 없습니다.';
+// PR-S-04: API 주소는 이 한 곳에서만 읽는다. 없으면 같은 출처(테스트).
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
 // 같은 탭의 동시 401은 진행 중인 갱신 하나를 공유한다(PR-L-12).
 let refreshing: Promise<boolean> | null = null;
@@ -27,8 +29,9 @@ function isErrorBody(v: unknown): v is ErrorBody {
 async function send<T>(method: Method, path: string, body: unknown, retried: boolean): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(path, {
+    res = await fetch(API_BASE + path, {
       method,
+      credentials: 'include', // 다른 출처의 API에 인증 쿠키를 보내고 받는다
       headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
@@ -52,7 +55,7 @@ async function send<T>(method: Method, path: string, body: unknown, retried: boo
   const err = new ApiError(res.status, code, message, fields);
 
   if (code === 'UNAUTHORIZED' && !path.startsWith('/api/auth/') && !retried) {
-    refreshing ??= fetch('/api/auth/refresh', { method: 'POST' })
+    refreshing ??= fetch(`${API_BASE}/api/auth/refresh`, { method: 'POST', credentials: 'include' })
       .then(
         (r) => r.ok,
         () => false,

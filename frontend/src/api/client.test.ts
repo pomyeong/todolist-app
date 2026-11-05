@@ -65,6 +65,7 @@ describe('request 기본 동작', () => {
     expect(String(input)).toBe('/api/categories');
     expect(init?.method).toBe('POST');
     expect(init?.body).toBe(JSON.stringify({ name: '업무' }));
+    expect(init?.credentials).toBe('include'); // PR-S-04 CORS 쿠키
     expect(new Headers(init?.headers).get('Content-Type')).toBe('application/json');
   });
 
@@ -137,6 +138,7 @@ describe('401 토큰 갱신 (PR-L-12)', () => {
     });
     await expect(request('GET', '/api/todos')).resolves.toEqual([{ id: 1 }]);
     expect(calls()).toEqual(['GET /api/todos', REFRESH, 'GET /api/todos']);
+    expect(fetchMock.mock.calls[1][1]?.credentials).toBe('include'); // refresh도 쿠키 포함
   });
 
   it('refresh 401 → 원래 401 ApiError, 재전송 없음', async () => {
