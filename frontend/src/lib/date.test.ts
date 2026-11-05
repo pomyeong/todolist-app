@@ -4,6 +4,7 @@ import {
   addMonths,
   dayOfWeek,
   endOfMonth,
+  isValidDate,
   startOfMonth,
   todayLocal,
   WEEKDAYS,
@@ -78,6 +79,24 @@ describe('todayLocal', () => {
     vi.useFakeTimers();
     vi.setSystemTime(now);
     expect(todayLocal()).toBe(expected);
+  });
+});
+
+describe('isValidDate', () => {
+  it.each(['2026-11-04', '2028-02-29', '2026-12-31'])('%s는 유효', (d) => {
+    expect(isValidDate(d)).toBe(true);
+  });
+  it.each([
+    '2026-13-45',
+    '2026-02-30',
+    '2027-02-29',
+    '2026-11-31',
+    '2026-00-10',
+    '2026-1-4',
+    'abc',
+    '',
+  ])('%s는 무효', (d) => {
+    expect(isValidDate(d)).toBe(false);
   });
 });
 

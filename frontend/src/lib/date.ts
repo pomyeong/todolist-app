@@ -12,6 +12,11 @@ function parse(date: string): [number, number, number] {
   return [y, m, d];
 }
 
+// 형식이 맞고 달력에 실제로 있는 날짜인지(2026-13-45, 2026-02-30 거부). 없는 날짜는 Date가 다른 날로 넘기므로 왕복 비교
+export function isValidDate(date: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) && addDays(date, 0) === date;
+}
+
 export function todayLocal(): string {
   return format(new Date());
 }

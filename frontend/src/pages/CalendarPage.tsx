@@ -10,9 +10,8 @@ import type { CalendarView } from '../features/calendar/range';
 import { monthCells, pickSelected, rangeOf, weekDays } from '../features/calendar/range';
 import { useCalendar } from '../features/calendar/useCalendar';
 import { WeekGrid } from '../features/calendar/WeekGrid';
+import { isValidDate } from '../lib/date';
 import { useToday } from '../lib/useToday';
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export function CalendarPage() {
   const today = useToday();
@@ -20,7 +19,7 @@ export function CalendarPage() {
   const rawView = params.get('view');
   const view: CalendarView = rawView === 'week' || rawView === 'day' ? rawView : 'month';
   const rawDate = params.get('date');
-  const date = rawDate !== null && DATE_RE.test(rawDate) ? rawDate : today;
+  const date = rawDate !== null && isValidDate(rawDate) ? rawDate : today;
 
   const range = rangeOf(view, date);
   const { data, error } = useCalendar(range, today);
