@@ -33,6 +33,12 @@ export function fourWeekCells(date: string): string[] {
   return Array.from({ length: FOUR_WEEKS }, (_, i) => addDays(from, i));
 }
 
+// P-30: 4주 뷰(showMonth)의 첫 칸·매달 1일은 'M/D', 그 밖은 일만. 데스크톱·모바일 공용
+export function dayLabel(d: string, first: string | null, showMonth: boolean): string {
+  const day = Number(d.slice(8));
+  return showMonth && (d === first || day === 1) ? `${Number(d.slice(5, 7))}/${day}` : String(day);
+}
+
 export function weekDays(date: string): string[] {
   const from = addDays(date, -dayOfWeek(date));
   return Array.from({ length: 7 }, (_, i) => addDays(from, i));

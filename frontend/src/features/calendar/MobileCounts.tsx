@@ -2,16 +2,25 @@ import type { TodoWithStatus } from '../../api/types';
 import { useT } from '../../i18n';
 import { todosOn } from './cellTodos';
 import styles from './MobileCounts.module.css';
+import { dayLabel } from './range';
 
 interface Props {
   cells: (string | null)[];
+  showMonth?: boolean; // P-30: 4주 뷰의 첫 칸·매달 1일은 'M/D'
   todos: TodoWithStatus[];
   today: string;
   selected: string | null;
   onSelect(d: string): void;
 }
 
-export function MobileCounts({ cells, todos, today, selected, onSelect }: Props) {
+export function MobileCounts({
+  cells,
+  showMonth = false,
+  todos,
+  today,
+  selected,
+  onSelect,
+}: Props) {
   const t = useT();
   return (
     <div className={styles.grid}>
@@ -35,7 +44,7 @@ export function MobileCounts({ cells, todos, today, selected, onSelect }: Props)
             aria-label={d}
             onClick={() => onSelect(d)}
           >
-            <span className={styles.day}>{Number(d.slice(8))}</span>
+            <span className={styles.day}>{dayLabel(d, cells[0], showMonth)}</span>
             <span className={styles.count}>
               {count > 0 && (
                 <>

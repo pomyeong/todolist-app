@@ -71,6 +71,7 @@ export function CalendarPage() {
           )}
           <MobileCounts
             cells={cells}
+            showMonth={view === '4weeks'}
             todos={todos}
             today={today}
             selected={selected}

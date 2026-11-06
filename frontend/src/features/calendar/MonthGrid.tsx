@@ -1,6 +1,7 @@
 import type { TodoWithStatus } from '../../api/types';
 import { useT } from '../../i18n';
 import styles from './MonthGrid.module.css';
+import { dayLabel } from './range';
 import { WeekRow } from './WeekRow';
 
 interface Props {
@@ -14,10 +15,7 @@ interface Props {
 
 export function MonthGrid({ cells, showMonth = false, todos, today, selected, onSelect }: Props) {
   const t = useT();
-  const label = (d: string) =>
-    showMonth && (d === cells[0] || d.endsWith('-01'))
-      ? `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`
-      : String(Number(d.slice(8)));
+  const label = (d: string) => dayLabel(d, cells[0], showMonth);
   const weeks = Array.from({ length: cells.length / 7 }, (_, w) => cells.slice(w * 7, w * 7 + 7));
   return (
     <div className={styles.grid}>

@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { CalendarView, DateRange } from './range';
-import { fourWeekCells, monthCells, pickSelected, rangeOf, shiftDate, weekDays } from './range';
+import {
+  dayLabel,
+  fourWeekCells,
+  monthCells,
+  pickSelected,
+  rangeOf,
+  shiftDate,
+  weekDays,
+} from './range';
 
 describe('rangeOf', () => {
   it.each<[CalendarView, string, DateRange]>([
@@ -93,6 +101,16 @@ describe('fourWeekCells (P-30)', () => {
     const cells = fourWeekCells('2026-12-10');
     expect(cells).toHaveLength(28);
     expect([cells[0], cells[26], cells[27]]).toEqual(['2026-12-06', '2027-01-01', '2027-01-02']);
+  });
+});
+
+describe('dayLabel (P-30)', () => {
+  it('4주 뷰는 첫 칸·매달 1일만 M/D', () => {
+    const cells = fourWeekCells('2026-11-29'); // 11-29 ~ 12-26
+    expect(cells.slice(0, 4).map((d) => dayLabel(d, cells[0], true))).toEqual(['11/29', '30', '12/1', '2']);
+  });
+  it('월·주 뷰는 일만', () => {
+    expect(dayLabel('2026-11-01', '2026-11-01', false)).toBe('1');
   });
 });
 
