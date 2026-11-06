@@ -66,6 +66,7 @@
 | v0.18 | 2026-11-06 | 7.2 `app.js` | `createApp()`은 그대로 두고 앱 인스턴스를 default export로 추가 | Vercel 배포에서 Express 프리셋이 `src/app.js`의 default export를 진입점으로 요구(사용자 배포 결정) | Claude |
 | v0.18 | 2026-11-06 | 7.3 `vercel.json` | 운영 프론트는 `/api/*`를 백엔드로 rewrite해 같은 출처로 호출(운영 `VITE_API_BASE_URL`은 프론트 자신의 주소), 그 밖의 경로는 `index.html`(SPA) | `*.vercel.app`은 공개 접미사라 프론트·백엔드가 다른 사이트가 되어 `SameSite=Lax` 인증 쿠키가 안 실려 로그인 직후 401 | Claude |
 | v0.18 | 2026-11-06 | 7.3 `app/`, 8장 표 | 최상위 경로에 `errorElement`(`RouteError.tsx`): 렌더링 오류 시 React Router 기본 개발용 화면 대신 3개 언어 문구와 새로고침 버튼 | 운영에서 오류 시 사용자에게 개발용 화면이 노출되고, 재배포 후 옛 청크 로드 실패는 새로고침으로 복구된다(사용자 요청) | Claude |
+| v0.18 | 2026-11-06 | 7.2 `vercel.json` | 백엔드 Vercel 함수 리전을 `sin1`(싱가포르)로 고정 | 기본 `iad1`(워싱턴)에서 싱가포르 DB까지 쿼리마다 태평양 왕복으로 응답 지연(운영 스모크 관찰 #2) | Claude |
 
 > 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.11](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.24](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.12](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.12](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
@@ -212,6 +213,7 @@ todolist-app/
 ```
 backend/
 ├─ package.json           # "type": "module", engines.node
+├─ vercel.json            # 운영 함수 리전 sin1(DB Supabase ap-southeast-1과 같은 지역)
 ├─ .env.example           # PR-S-01 키 전부(DATABASE_URL, JWT_SECRET, PORT, DB_POOL_MAX, NODE_ENV, CORS_ORIGIN, JWT_ACCESS_EXPIRES_MINUTES, REFRESH_TOKEN_TTL_DAYS)
 ├─ scripts/
 │  ├─ db-init.js          # docs/schema.sql 실행(PR-S-10), --reset이면 삭제 후 생성
