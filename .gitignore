@@ -150,3 +150,6 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Playwright MCP 스냅샷·콘솔 로그
+.playwright-mcp/
