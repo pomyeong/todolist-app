@@ -23,6 +23,7 @@
 | v0.15 | 2026-11-05 | Claude | 초안 | 다국어 구조(i18n) |
 | v0.16 | 2026-11-05 | Claude | 초안 | 화면 모드 구조 |
 | v0.17 | 2026-11-05 | Claude | 초안 | 프론트 개발 모드 콘솔 로그(PR-S-13) |
+| v0.18 | 2026-11-06 | Claude | 초안 | 현재 구현 기준 동기화(localStorage 예외, 다국어, 셀프 체크 기록, 디렉토리 트리) |
 
 ### 변경 이력
 
@@ -57,8 +58,13 @@
 | v0.15 | 2026-11-05 | PR-C-04, 7.3 | `src/i18n/` 추가, 화면 문구는 사전에서만, 서버 오류 문구는 표시할 때 번역 | PRD v0.22 FR-18, P-31 | Claude |
 | v0.16 | 2026-11-05 | 7.3 | `lib/theme.ts`·`themeStore.ts`, `components/ThemeSelect`, index.html 선적용 | PRD v0.23 FR-19 | Claude |
 | v0.17 | 2026-11-05 | PR-S-13, 7.3 | 프론트 주요 지점(API 요청·응답·실패, 토큰 갱신, 쿼리·변경 오류, 세션 정리, 화면 이동) 콘솔 로그를 `lib/log.ts` 한 곳에서 개발 모드에만 출력 | 개발 중 흐름 추적. 운영 콘솔 노출·민감 정보 유출 방지 | Claude |
+| v0.18 | 2026-11-06 | PR-L-10, PR-N-09 | 화면 언어(`lang`)·화면 모드(`theme`) 선호값만 localStorage 예외(P-29, P-31), i18n은 `src/i18n/` 사전 직접 작성 | 이미 구현·결정된 사항(PRD P-29·P-31, FR-18·19)과 원칙 문구 충돌 해소 | Claude |
+| v0.18 | 2026-11-06 | PR-T-01, PR-T-05, PR-T-06, 7.1 | 시나리오 셀프 체크를 Playwright MCP로 수행해 `test/e2e/report.md`에 기록(코드 E2E 없음), 프론트 단위 테스트 파일 목록 | 2026-11-06 셀프 체크 79/79 통과, 실제 테스트 파일 | Claude |
+| v0.18 | 2026-11-06 | 3.1, PR-S-05, PR-S-10 | 프론트 호출을 `VITE_API_BASE_URL + '/api/...'`로, `/api/health`·`/api/docs`는 `app.js`가 `apiRouter`보다 먼저 등록해 인증 밖, `ALTER TABLE`로 컬럼을 더한 개발 DB의 컬럼 순서 차이 | 코드(`api/client.ts`, `app.js`, `routes/index.js`)·README 기준 | Claude |
+| v0.18 | 2026-11-06 | 7.1, 7.3 | 루트에 `test/e2e/`·`guide/`·`prompts/`·`.claude/`·`.mcp.json`, `.gitignore` 실제 항목. 프론트에 `ThemeSelect`·`lib/emoji.ts`·`WeekRow.tsx`·`features/auth/messages.ts`, `lib/` 항목 통합, 4주 뷰(FR-17·P-30)·이어진 막대(P-16)·날짜별 '+N' | 실제 디렉토리·코드 기준 | Claude |
+| v0.18 | 2026-11-06 | 참조 문서 | 도메인 v0.7 → v0.11, PRD v0.14 → v0.24, 시나리오 v0.10 → v0.12, 와이어프레임 v0.5 → v0.12 | 버전 동기화 | Claude |
 
-> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.14](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
+> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.11](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.24](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.12](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.12](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
 > ID 운영 원칙: PR-C·PR-L·PR-N·PR-T·PR-S·PD의 ID는 재사용하거나 재번호하지 않는다. 원칙·결정을 없애면 행을 지우지 말고 '폐기'로 표시한다.
 
@@ -97,7 +103,7 @@
             └──────────┴──▶ domain/ (I/O 없는 순수 함수), errors.js, config.js
          middleware/(auth, cors, error)는 app.js가 조립한다.
 
-프론트   pages ──▶ features ──▶ api ──▶ fetch('/api/...')
+프론트   pages ──▶ features ──▶ api ──▶ fetch(VITE_API_BASE_URL + '/api/...')
             └────────┴──▶ components/, lib/ (공용. 어느 층에서나 import, 위로는 import 안 함)
 ```
 
@@ -114,7 +120,7 @@
 | PR-L-07 | `domain/`에는 I/O 없는 순수 함수만 둔다: 상태 판정(`status.js`), 입력 검증(`validate.js`). 다른 모듈을 import하지 않는다. | G-04 단위 테스트 대상을 DB 없이 검증한다. | G-04, NFR-09, NFR-12 |
 | PR-L-08 | 조회는 쿼리 하나로 끝낸다(목록의 카테고리명은 JOIN). 행마다 추가 쿼리를 보내지 않는다. 정렬은 BR-20을 쿼리 한 곳(상수)에 두고 목록·캘린더가 공유하며, 마지막 키로 `id`를 덧붙여 순서를 고정한다. | N+1 방지(R-02), 정렬 규칙 단일화. | BR-20, NFR-04, R-02 |
 | PR-L-09 | 프론트 레이어는 pages → features → api다. pages는 경로 단위 조합만, features는 화면 기능(컴포넌트·훅·스토어), api는 `fetch` 호출과 타입만 가진다. features끼리 직접 import하지 않고, 공유가 필요하면 `components/`·`lib/`·`api/`로 올린다.<br>하지 말 것: 컴포넌트에서 `fetch` 직접 호출 | 의존 방향 고정, 기능 파일 제외 용이(PR-C-06). | P-23, R-01 |
-| PR-L-10 | 상태 보관 위치는 하나씩이다. 서버 데이터는 TanStack Query만, 클라이언트 UI 상태(필터·캘린더 선택 날짜·로그인 사용자 정보)는 Zustand만 쓴다. 서버 데이터(할일·카테고리)를 Zustand에 복사하지 않는다. 토큰은 어디에도 저장하지 않는다. Zustand `persist`는 쓰지 않는다(새로고침 시 초기화가 규칙).<br>하지 말 것: `localStorage`·`sessionStorage` 사용 | PRD 6장 역할 분담, 새로고침 시 필터 초기화(P-23). | PRD 6장, P-04, P-23 |
+| PR-L-10 | 상태 보관 위치는 하나씩이다. 서버 데이터는 TanStack Query만, 클라이언트 UI 상태(필터·캘린더 선택 날짜·로그인 사용자 정보)는 Zustand만 쓴다. 서버 데이터(할일·카테고리)를 Zustand에 복사하지 않는다. 토큰은 어디에도 저장하지 않는다. Zustand `persist`는 쓰지 않는다(새로고침 시 초기화가 규칙).<br>하지 말 것: `localStorage`·`sessionStorage` 사용. 예외: 화면 언어(`lang`, `i18n/index.ts`)·화면 모드(`theme`, `lib/themeStore.ts`·`index.html`) 선호값만 localStorage에 둔다(P-29, P-31) | PRD 6장 역할 분담, 새로고침 시 필터 초기화(P-23). 언어·화면 모드는 다시 열어도 유지되는 개인 선호다. | PRD 6장, P-04, P-23, P-29, P-31 |
 | PR-L-11 | 변경(mutation) 성공 후에는 `['todos']`·`['calendar']`(카테고리 변경이면 `['categories']`도) 쿼리를 무효화해 다시 조회한다. 무효화 호출은 `api/queryKeys.ts`의 헬퍼 한 곳에 둔다. 상태가 포함된 조회의 query key에는 `today`를 넣는다.<br>하지 말 것: 캐시 직접 수정, 낙관적 업데이트 | 상태 판정은 서버, 표시는 재조회 결과. | P-15, P-12, NFR-12 |
 | PR-L-12 | 401 `UNAUTHORIZED`는 두 단계로 처리한다. (1) `api/client.ts`가 401 `UNAUTHORIZED`를 받으면 `POST /api/auth/refresh`를 한 번 호출하고(같은 탭의 동시 401은 진행 중인 갱신 하나를 공유), 성공하면 원래 요청을 한 번 다시 보낸다. `/api/auth/*` 요청과 재전송한 요청은 갱신 대상이 아니다. 첫 진입 `GET /api/me`에도 (1)을 적용한다. (2) 갱신이 실패해 401이 그대로 올라오면 QueryClient의 `QueryCache`·`MutationCache` `onError`에서 `code === 'UNAUTHORIZED'`이면 Zustand·쿼리 캐시를 비우고 `/login`으로 보낸다. `INVALID_CREDENTIALS`(로그인 실패)와 첫 진입 로그인 확인(`GET /api/me`, PD-24)은 대상이 아니다. | 모든 API에 같은 규칙, 화면별 중복 방지. | FR-04, FR-02, P-23 |
 
@@ -141,7 +147,7 @@
 | PR-N-06 | API 경로는 `/api` 접두사 + 복수 명사 자원이며 동사를 쓰지 않는다(예외: `auth`의 `signup`·`login`·`refresh`·`logout`, 하위 동작 `completed`·`password`). 상태 변경에 GET을 쓰지 않는다. 경로 목록은 7.2의 표가 정한다. | RESTful, CSRF 방어의 전제(PR-S-03). | NFR-15, PD-13 |
 | PR-N-07 | 오류는 services·domain에서 `AppError(status, code, message, fields?)`를 throw하고 `middleware/error.js` 한 곳에서만 NFR-15 형식으로 응답한다. 예상 못한 오류는 500 `INTERNAL_ERROR`로 바꾼다.<br>하지 말 것: routes에서 `res.status(400).json(...)` 직접 작성 | 형식 단일화. | NFR-15 |
 | PR-N-08 | 주석은 '왜'만 한 줄로 쓴다. 규칙 근거는 ID로 쓴다(`// BR-14: 삭제 전에 기본 카테고리로 이동`). 지름길에는 `shortcut: 한계, 업그레이드 시점`을 쓴다. | 코드가 보여 주지 않는 것만 남긴다. | PR-C-01 |
-| PR-N-09 | 프론트 폼은 제어 컴포넌트(`useState`)로 쓰고, 입력란 옆 사유는 `fields[name]`을 `components/FieldError`로, 폼·화면 상단 오류는 `message`를 `components/FormError`로 표시한다. 고정 문구(P-21·P-22의 '할일이 없습니다.', '불러오는 중…', '갱신 중…')는 공용 컴포넌트에 한 번만 쓴다. i18n 라이브러리는 쓰지 않는다(한국어 단일). | 표시 위치 규칙(PRD 4장 머리말)의 일관성. | PRD 4장, P-21, P-22, PRD 3.2 |
+| PR-N-09 | 프론트 폼은 제어 컴포넌트(`useState`)로 쓰고, 입력란 옆 사유는 `fields[name]`을 `components/FieldError`로, 폼·화면 상단 오류는 `message`를 `components/FormError`로 표시한다. 고정 문구(P-21·P-22의 '할일이 없습니다.', '불러오는 중…', '갱신 중…')는 공용 컴포넌트에 한 번만 쓴다. i18n 라이브러리는 쓰지 않는다(ko·ja·en 사전을 `src/i18n/`에 직접 둔다, P-31). | 표시 위치 규칙(PRD 4장 머리말)의 일관성. | PRD 4장, P-21, P-22, P-31, PRD 3.2 |
 | PR-N-10 | 스타일은 CSS Modules(`Xxx.module.css`)다. 모바일(360px) 기준으로 먼저 쓰고 `@media (min-width: 768px)`에서 데스크톱으로 넓힌다. 중단점은 768px 하나다. 가로 스크롤이 생기지 않게 한다. | 모바일·데스크톱 분기 한 번. | NFR-13, P-08 |
 | PR-N-11 | 포맷·린트는 Biome(루트 `biome.json` 공유)이다: 2칸 들여쓰기, 작은따옴표, 세미콜론, 줄 폭 100. 커밋 전 `biome check`를 통과시킨다. | 도구 하나로 JS·TS 모두 처리. | PD-11 |
 
@@ -149,12 +155,12 @@
 
 | ID | 규칙 | 이유 | 관련 ID |
 |---|---|---|---|
-| PR-T-01 | 테스트는 세 종류만 둔다. (1) 백엔드 단위: `domain/` 순수 함수. (2) 백엔드 API 통합: 실제 DB로 HTTP 호출. (3) 프론트 단위: 순수 함수. E2E·컴포넌트 테스트는 두지 않고, 화면은 시나리오 셀프 체크로 확인한다. | 2일 안에 가치가 큰 곳에만. | G-03, G-04, R-05 |
+| PR-T-01 | 테스트는 세 종류만 둔다. (1) 백엔드 단위: `domain/` 순수 함수. (2) 백엔드 API 통합: 실제 DB로 HTTP 호출. (3) 프론트 단위: 순수 함수. 코드로 둔 E2E·컴포넌트 테스트는 두지 않고, 화면은 시나리오 셀프 체크(G-03)로 확인한다. 셀프 체크는 Playwright MCP 브라우저 조작으로 수행하고 결과를 `test/e2e/report.md`(스크린샷 `test/e2e/screenshots/`)에 기록한다(2026-11-06 79/79 통과). | 2일 안에 가치가 큰 곳에만. | G-03, G-04, R-05 |
 | PR-T-02 | G-04 대상은 모두 테스트한다. 순수 함수(`domain`)로 검증 가능한 것: ST-01~04(시작일·종료일 당일, 완료 우선, 완료 취소), BR-07, BR-21·22 경계(7/8/64/65자, 공백만, trim, 비밀번호는 trim하지 않음), 날짜 형식(`2026-13-01`). SQL이 판정하는 것은 API 통합으로 검증한다: BR-15 AND 결합, BR-16~18 월·주 경계, BR-19, BR-20 정렬. | PRD G-04의 검증 방법(단위 + API 통합)을 파일 단위로 나눈 것. | G-04, R-03, PD-09 |
 | PR-T-03 | 소유권 API 테스트: 사용자 두 명(U1·U2)을 만들고 카테고리·할일의 모든 엔드포인트에 타인 ID를 보내 404 `NOT_FOUND`와 데이터 불변을 확인한다. 타인 카테고리 지정(BR-04), 타인 카테고리 필터(P-14)를 포함한다. 새 카테고리·할일 엔드포인트를 만들면 이 테스트에 케이스를 추가해야 완료다. | SQL 직접 작성의 최대 리스크. | R-04, NFR-07, E-C2 |
 | PR-T-04 | API 테스트는 mock 없이 테스트 전용 PostgreSQL DB(`todolist_test`)에서 한다. 파일마다 시작 시 `TRUNCATE users, categories, todos, refresh_tokens RESTART IDENTITY CASCADE`로 비운다. 파일 병렬 실행을 막는다(`--test-concurrency=1`). | mock은 SQL·제약·인덱스를 검증하지 못한다. | R-04, NFR-04 |
-| PR-T-05 | 테스트 이름에 시나리오·예외 ID를 넣는다(`E-04-2 시작일 > 종료일은 400`). 새 시나리오 예외가 생기면 대응 테스트를 만든다. 셀프 체크(G-03)는 SC-01~13을 화면에서 수동 수행한다. | 추적성, 테스트 케이스는 시나리오에서 도출. | SC-01~13, G-03 |
-| PR-T-06 | 프론트 단위 테스트(Vitest)는 순수 함수만 대상으로 한다: 월·주 조회 기간 계산, 칸별 할일 필터, 날짜 문자열 연산, 오늘 계산. 반응형(360px·768px)은 M-05에서 수동 점검한다. | 캘린더 경계 계산이 R-03의 프론트 쪽 위험이다. | R-03, NFR-13, M-05 |
+| PR-T-05 | 테스트 이름에 시나리오·예외 ID를 넣는다(`E-04-2 시작일 > 종료일은 400`). 새 시나리오 예외가 생기면 대응 테스트를 만든다. 셀프 체크(G-03)는 SC-01~13을 화면에서 Playwright MCP로 수행하고 `test/e2e/report.md`에 기록한다(PR-T-01). | 추적성, 테스트 케이스는 시나리오에서 도출. | SC-01~13, G-03 |
+| PR-T-06 | 프론트 단위 테스트(Vitest)는 순수 함수만 대상으로 한다: 월·4주·주 조회 기간 계산(`features/calendar/range.test.ts`), 칸별 할일·이어진 막대(`cellTodos.test.ts`), 날짜 문자열 연산·오늘 계산(`lib/date.test.ts`), API 클라이언트(`api/client.test.ts`)·쿼리 키(`api/queryKeys.test.ts`), 제목 이모지(`lib/emoji.test.ts`), 화면 모드 판정(`lib/theme.test.ts`), 다국어 사전(`i18n/messages.test.ts`). 반응형(360px·768px)은 M-05에서 수동 점검한다. | 캘린더 경계 계산이 R-03의 프론트 쪽 위험이다. | R-03, NFR-13, M-05 |
 | PR-T-07 | 커밋 전 게이트: 백엔드 `npm test`, 프론트 `npm test`와 `tsc --noEmit`, 루트 `biome check`. CI·pre-commit hook은 두지 않는다. 커버리지는 `node --test --experimental-test-coverage`로 참고만 하고 수치 게이트는 없다. | 로컬 단일 머신(P-10), 테스트 대상은 PR-T-02·03이 정한다. | P-10, PD-12 |
 | PR-T-08 | 폐기(v0.6): 부하 테스트 제외(PRD v0.13) | - | - |
 | PR-T-09 | 느린 쿼리는 `EXPLAIN (ANALYZE)`로 확인하고 인덱스는 그 결과로 보강한다. 코드에서 미리 최적화하지 않는다(N+1 제거는 PR-L-08). | M-05는 측정 후 조치. | NFR-04, R-02, M-05 |
@@ -167,12 +173,12 @@
 | PR-S-02 | PRD가 확정한 값은 설정이 아닌 상수로 코드에 둔다: bcrypt cost 10, 서명 알고리즘 HS384, 쿠키 이름(`access_token`, `refresh_token`). 토큰 만료 시간은 예외로 환경변수(PR-S-01)로 받는다(PRD v0.16 P-04). | 환경마다 달라지면 안 되는 값. | NFR-06, P-04 |
 | PR-S-03 | 인증은 access 토큰과 refresh 토큰 두 개를 쓴다(P-04). access 토큰은 JWT(HS384, 페이로드는 `sub`=사용자 ID만, 만료 기본 15분 `JWT_ACCESS_EXPIRES_MINUTES`)이고 `access_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/`, `maxAge` = access 만료)로 보낸다. 검증할 때 `algorithms: ['HS384']`를 명시해 다른 알고리즘(`none`, HS256 등)으로 서명된 토큰을 거부한다. refresh 토큰은 JWT가 아닌 `crypto.randomBytes(32)`의 base64url 문자열이고 `refresh_token` 쿠키(httpOnly·`SameSite=Lax`, `path=/api/auth`, `maxAge` = refresh 만료(기본 7일 `REFRESH_TOKEN_TTL_DAYS`))로 보낸다. DB `refresh_tokens`에는 SHA-256 해시만 저장한다(DB-13). `POST /api/auth/refresh`는 해시가 맞고 만료되지 않은 행을 한 문장으로 삭제(`DELETE … RETURNING user_id`)한 뒤 새 쌍을 발급한다(회전, 재사용 불가). 로그아웃은 그 refresh 토큰 행을 지우고 같은 옵션으로 두 쿠키를 지운다. `secure`는 `NODE_ENV=production`일 때만 켠다(HTTPS는 범위 외). access 토큰 블랙리스트는 만들지 않는다. 상태 변경 API는 GET을 쓰지 않고 JSON 본문(`express.json`)만 받아, `SameSite=Lax`와 함께 CSRF를 막는다. | access 검증은 stateless(NFR-02), 세션 종료는 refresh 토큰 삭제로 한다. 토큰 JS 접근 차단. refresh 쿠키 경로를 좁혀 일반 API 요청에 실리지 않게 한다. | P-04, NFR-02, FR-03, DB-13, PD-26 |
 | PR-S-04 | 개발·운영 모두 프론트가 API 서버를 직접 호출하고 CORS로 허용한다(P-04). 백엔드 `middleware/cors.js`는 `Origin`이 `CORS_ORIGIN`과 같을 때만 `Access-Control-Allow-Origin`(그 출처)·`Access-Control-Allow-Credentials: true`를 주고, preflight(`OPTIONS`)에는 허용 메서드(`GET, POST, PATCH, PUT, DELETE`)·헤더(`Content-Type`)를 담아 204로 답한다. 와일드카드(`*`)는 쓰지 않는다. 프론트는 API 주소를 빌드 환경변수 `VITE_API_BASE_URL` 한 곳에서만 읽고(`api/client.ts`) 모든 요청에 `credentials: 'include'`를 붙인다. 쿠키는 `SameSite=Lax` 그대로이므로 프론트와 API는 같은 사이트(등록 도메인, 포트 무관)에 둔다.<br>하지 말 것: `cors` 패키지 추가(몇 줄 미들웨어로 충분, PR-C-02), 출처 여러 개·정규식 허용 | P-04. 사용자 결정(PRD v0.15). 허용 출처를 하나로 고정해 다른 사이트가 쿠키를 실은 요청의 응답을 읽지 못하게 한다. | P-04, PD-04, PR-S-03 |
-| PR-S-05 | 인증은 기본 적용이다. `routes/index.js`에서 `/api/auth/signup`·`/api/auth/login`·`/api/auth/refresh`·`/api/auth/logout`·`/api/health`와 개발 환경 한정 `/api/docs`(PD-30)를 제외한 모든 라우트에 `auth` 미들웨어를 먼저 건다. access 토큰 쿠키가 없거나 만료·위조면 401 `UNAUTHORIZED`다. | 새 라우트가 실수로 공개되는 것을 막는다. | BR-01, FR-04 |
+| PR-S-05 | 인증은 기본 적용이다. `routes/index.js`는 `/api/auth/*`(signup·login·refresh·logout)를 제외한 모든 라우터에 `auth` 미들웨어를 먼저 건다. `/api/health`와 개발 환경 한정 `/api/docs`(PD-30)는 `app.js`가 `apiRouter`보다 먼저 등록해 인증을 거치지 않는다. access 토큰 쿠키가 없거나 만료·위조면 401 `UNAUTHORIZED`다. | 새 라우트가 실수로 공개되는 것을 막는다. | BR-01, FR-04 |
 | PR-S-06 | 비밀번호는 bcrypt(cost 10)로만 저장한다. 평문·해시·토큰을 로그·응답에 내보내지 않으며, 사용자 조회 SQL은 컬럼을 명시한다. | 민감 정보 노출 방지. | NFR-06, PR-L-04 |
 | PR-S-07 | 모든 입력은 서버에서 검증한다. 문자열은 trim한 뒤 검사하고(BR-22, 비밀번호는 trim하지 않음), 본문에서 필요한 필드만 꺼내 쓰며, `express.json`의 본문 한도는 16kb로 낮춘다. 한도 초과(`express.json`의 413 `entity.too.large`)와 JSON 파싱 실패는 `middleware/error.js`가 400 `VALIDATION_ERROR`로 바꾼다(새 오류 코드 없음). | 신뢰 경계 검증, 불필요 필드 무시. | NFR-09, BR-21, BR-22 |
 | PR-S-08 | 오류 로그는 stderr에 JSON 한 줄(시각, 메서드, 경로, 오류 메시지, stack)로 남기고 500 응답에는 상세를 넣지 않는다. 요청 본문·쿠키·비밀번호는 기록하지 않는다. 구조화 로깅 라이브러리·메트릭은 두지 않는다. 헬스 체크는 `GET /api/health`는 `SELECT 1`로 DB 연결까지 확인해 정상이면 200 `{ ok: true, db: 'up' }`, DB 실패면 503 `{ ok: false, db: 'down' }`이다. | 로컬 단일 프로세스라 기동과 DB 연결 확인이면 충분하다. | NFR-15, P-10, P-25, PD-14 |
 | PR-S-09 | DB 연결은 프로세스당 `pg.Pool` 하나(`db.js`)다. 크기는 `DB_POOL_MAX`. DATE 타입(OID 1082)은 문자열로 받도록 pg 타입 파서를 `db.js`에서 한 번 설정한다. `SIGINT`·`SIGTERM`에서 `pool.end()`를 호출한다. | 풀 설정·날짜 파싱 한 곳. | NFR-03, NFR-11 |
-| PR-S-10 | 스키마의 단일 출처는 `docs/schema.sql` 하나다(설계 문서와 함께 둔다)(테이블·제약·NFR-04 인덱스). 변경은 이 파일을 고치고 `npm run db:init -- --reset`로 다시 만든다. 마이그레이션 도구는 쓰지 않는다. 상태 컬럼은 만들지 않는다(NFR-12). | 운영 데이터가 없다(P-10). | NFR-04, NFR-12, PD-08 |
+| PR-S-10 | 스키마의 단일 출처는 `docs/schema.sql` 하나다(설계 문서와 함께 둔다)(테이블·제약·NFR-04 인덱스). 변경은 이 파일을 고치고 `npm run db:init -- --reset`로 다시 만든다. 마이그레이션 도구는 쓰지 않는다. 상태 컬럼은 만들지 않는다(NFR-12). 개발 DB에 NULL 허용 컬럼을 `ALTER TABLE`로 더한 경우(README의 시작·종료 시간 업그레이드 절차) 실제 컬럼 순서가 `schema.sql`과 다를 수 있다. 기준은 `schema.sql`이며 `--reset`으로 일치시킨다. | 운영 데이터가 없다(P-10). | NFR-04, NFR-12, PD-08 |
 | PR-S-11 | 운영 범위는 로컬 단일 머신이다. Docker·프로세스 관리자·CI·배포 스크립트는 만들지 않는다. PostgreSQL 17은 로컬 설치를 쓴다. | 배포는 범위 외. | P-10, PRD 3.2 |
 | PR-S-12 | 의존성은 `package-lock.json`을 커밋하고 `npm ci`로 설치한다. `engines.node`로 Node LTS(22 이상)를 명시한다. 의존성을 추가하면 8장 PD를 먼저 갱신한다. | 재현 가능한 설치, PR-C-02 준수. | PR-C-02 |
 | PR-S-13 | 프론트 콘솔 로그는 `lib/log.ts`만 쓰고 개발 모드(`import.meta.env.DEV`, vitest 제외)에서만 출력한다. 대상은 주요 지점뿐이다: API 요청(메서드·경로·상태·소요 ms)·연결 실패, 토큰 갱신 결과, 쿼리·변경 오류, 401 세션 정리, 화면 이동. 요청·응답 본문, 쿠키, 비밀번호는 남기지 않는다. 로깅 라이브러리는 두지 않는다.<br>하지 말 것: 컴포넌트에서 `console.*` 직접 호출 | 개발 중 흐름 추적. 운영 빌드에서는 출력이 없어 사용자 콘솔에 내부 경로·오류가 노출되지 않는다. | PR-S-08, NFR-06, PR-C-02 |
@@ -186,8 +192,13 @@ todolist-app/
 ├─ docs/                  # 1~8번 문서, wireframe/ (코드 없음)
 ├─ backend/               # Node.js + Express + pg (JavaScript)
 ├─ frontend/              # React 19 + TypeScript + Vite
+├─ test/e2e/              # 셀프 체크 기록 report.md, screenshots/ (PR-T-01)
+├─ guide/                 # tutorial.md, ai-playbook.md, playbook-src/
+├─ prompts/               # 문서 생성에 쓴 프롬프트
+├─ .claude/               # Claude Code 에이전트·스킬·설정
+├─ .mcp.json              # MCP 서버 설정
 ├─ biome.json             # 포맷·린트 공통 설정 (PR-N-11)
-├─ .gitignore             # node_modules, .env, .env.test, dist
+├─ .gitignore             # node_modules, .env·.env.*(.env.example·frontend/.env.development 제외), dist, .playwright-mcp/ 등
 └─ README.md              # 실행 순서 (7.4)
 ```
 
@@ -294,22 +305,23 @@ frontend/
    │  ├─ CategoriesPage.tsx   # /categories SCR-06
    │  └─ MePage.tsx           # /me         SCR-07
    ├─ features/
-   │  ├─ auth/            # authStore.ts(user), useAuth.ts(me·로그인·가입·로그아웃), LoginForm, SignupForm, ProfileForm, PasswordForm
+   │  ├─ auth/            # authStore.ts(user), useAuth.ts(me·로그인·가입·로그아웃), messages.ts(비밀번호 확인 불일치 문구, P-24), LoginForm, SignupForm, ProfileForm, PasswordForm
    │  ├─ todos/           # filterStore.ts, useTodos.ts, TodoFilters, TodoRow, TodoForm
    │  ├─ calendar/        # calendarStore.ts(선택 날짜), range.ts, cellTodos.ts, useCalendar.ts, CalendarToolbar,
-   │  │                   # MonthGrid, WeekGrid, MobileCounts, DayList (주·일 뷰 파일은 Should, PR-C-06)
+   │  │                   # MonthGrid, WeekGrid, WeekRow(이어진 막대, P-16), MobileCounts, DayList (월·4주·주·일 뷰 모두 구현)
    │  └─ categories/      # useCategories.ts, CategoryList, CategoryAddForm
    ├─ api/
    │  ├─ client.ts        # fetch 래퍼(JSON, 오류 → ApiError{status, code, message, fields}, 401 시 갱신 후 재요청)
    │  ├─ types.ts         # API 타입, 오류 코드 유니온, 상태 값
    │  ├─ queryKeys.ts     # 쿼리 키 + 무효화 헬퍼 (PR-L-11)
    │  └─ auth.ts, categories.ts, todos.ts, calendar.ts   # 엔드포인트 함수
-   ├─ components/         # ConfirmDialog, FieldError, FormError, LoadingNotice, EmptyNotice, TodoTitle, LanguageSelect
-   ├─ lib/theme.ts, themeStore.ts  # 화면 모드(P-29): 판정 순수 함수 / 스토어(localStorage)·<html data-theme> 적용. index.html이 첫 화면 전에 같은 규칙으로 먼저 적용
+   ├─ components/         # ConfirmDialog, FieldError, FormError, LoadingNotice, EmptyNotice, TodoTitle, LanguageSelect, ThemeSelect
    ├─ i18n/               # 다국어(P-31): ko·ja·en 사전, 언어 스토어(localStorage), useT(), 서버 문구 번역. 화면 문구는 여기서만 가져온다
    ├─ lib/
    │  ├─ date.ts          # todayLocal(), addDays 등 문자열 날짜 연산 (PR-C-05)
    │  ├─ useToday.ts      # 포커스·가시성 복귀 시 today 재계산 (P-12)
+   │  ├─ theme.ts, themeStore.ts  # 화면 모드(P-29): 판정 순수 함수 / 스토어(localStorage)·<html data-theme> 적용. index.html이 첫 화면 전에 같은 규칙으로 먼저 적용
+   │  ├─ emoji.ts         # 할일 제목·설명 단어로 이모지 하나 선택 (P-27)
    │  ├─ log.ts           # 개발 모드 전용 콘솔 로그 (PR-S-13)
    │  └─ date.test.ts, ... # 단위 테스트는 대상 파일 옆에 둔다
    └─ styles/
@@ -323,12 +335,12 @@ frontend/
 | `app/AppLayout.tsx` | 내비게이션(사용자 이름·이동·로그아웃), 화면 상단 오류·'갱신 중…' 위치, 오류 영역은 내비게이션 바로 아래 | PRD 공통, FR-03, FR-14, P-22, L-17 |
 | `features/auth` | 앱 시작 시 `GET /api/me`로 로그인 확인 후 사용자 정보를 Zustand에 보관(토큰 없음). 가입·로그인 성공 시 `/todos` 이동. 로그아웃 시 Zustand·쿼리 캐시 초기화. 비밀번호 확인 일치 검사 | FR-01~03, FR-14, FR-15, P-04, P-24 |
 | `features/todos` | `filterStore`(카테고리·상태 필터, 새로고침·로그아웃 시 초기화), 목록 조회·`today` query key, 완료 토글(재조회 후 표시, 해당 행만 비활성), 삭제 확인, 등록·편집 폼 | FR-05~09, P-12, P-15, P-22, P-23, P-21 |
-| `features/calendar` | `range.ts`(월=1일~말일, 주=일~토 기간 계산)와 `cellTodos.ts`(날짜가 기간에 속하는 할일, 서버 정렬 유지, 3건 초과 '+N')는 순수 함수. `calendarStore`(선택 날짜), 뷰·기준 날짜는 URL 쿼리, 모바일은 개수 점·그날 목록, 오늘 없는 기간이면 선택 해제 | FR-10~12, FR-16, BR-16~20, P-16, P-20, P-23, R-07 |
+| `features/calendar` | `range.ts`(월=1일~말일, 4주(`'4weeks'`)=그 주 일요일부터 28일(FR-17, P-30), 주=일~토, 일=하루 기간 계산)와 `cellTodos.ts`(날짜가 기간에 속하는 할일, 서버 정렬 유지, `weekBars`로 여러 날 할일을 주 단위 이어진 막대로 배치(P-16), 3줄을 넘친 할일은 날짜별 '+N')는 순수 함수. 데스크톱 월·4주·주 뷰의 한 주는 `WeekRow.tsx`가 그린다. `calendarStore`(선택 날짜), 뷰·기준 날짜는 URL 쿼리, 모바일은 개수 점·그날 목록, 오늘 없는 기간이면 선택 해제 | FR-10~12, FR-16, FR-17, BR-16~20, P-16, P-20, P-23, P-30, R-07 |
 | `features/categories` | 목록(BR-23 순서, 서버 순서 그대로), 추가, 이름 수정, 삭제 확인(소속 할일 안내), 기본 카테고리 조작 비활성 | FR-13, P-19, BR-12 |
 | `pages/TodoFormPage.tsx` | 진입 화면 복귀: 진입 시 `navigate(path, { state: { from } })`로 현재 경로(쿼리 포함)를 넘기고, 저장·취소 후 `state.from`으로, 없으면 `/todos`로 이동 | P-17, P-23 |
 | `api/client.ts` | `VITE_API_BASE_URL` + `/api/...`, `credentials: 'include'`(PR-S-04), 오류 형식 파싱, 401 시 토큰 갱신 1회 후 재요청(PR-L-12). 토큰 접근 코드 없음(쿠키는 httpOnly) | P-04, NFR-15, PR-L-12 |
 | `components/` | 삭제·카테고리 삭제 공용 확인 대화상자, 입력란 오류, 폼·화면 상단 오류, '불러오는 중…'/'갱신 중…'(이전 데이터 유지는 `placeholderData: keepPreviousData`), '할일이 없습니다.' | P-19, P-21, P-22, PRD 4장 |
-| `lib/` | 날짜 문자열 연산, 오늘 계산·재계산, 개발 모드 로그(PR-S-13) | NFR-11, NFR-12, P-12 |
+| `lib/` | 날짜 문자열 연산, 오늘 계산·재계산, 화면 모드(P-29), 제목 이모지(P-27), 개발 모드 로그(PR-S-13) | NFR-11, NFR-12, P-12, P-27, P-29 |
 | `styles/`, `*.module.css` | 360px 기준, 768px 중단점 | NFR-13, P-08 |
 
 프론트 의존성: `react`, `react-dom`, `react-router`, `@tanstack/react-query`, `zustand`. 개발용: `vite`, `@vitejs/plugin-react`, `typescript`, `vitest`, `@types/react`, `@types/react-dom`.

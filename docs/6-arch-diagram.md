@@ -15,6 +15,7 @@
 | v0.7 | 2026-11-05 | Claude | 초안 | 부하 테스트 제외 |
 | v0.8 | 2026-11-05 | Claude | 초안 | 프록시 대신 CORS |
 | v0.9 | 2026-11-05 | Claude | 초안 | 백엔드 코드 기준 동기화 |
+| v0.10 | 2026-11-06 | Claude | 초안 | 현재 구현 기준 동기화(모듈 의존, 다국어·화면 모드, 캘린더 4주 뷰·이어진 막대, 할일 등록·수정 SQL) |
 
 ### 변경 이력
 
@@ -30,12 +31,17 @@
 | v0.7 | 2026-11-05 | AD-01, 4.3, 참조 문서 | k6 노드와 설명 삭제. PRD v0.12 → v0.13, 구조 설계 원칙 v0.5 → v0.6 | PRD v0.13 부하 테스트 제외 | Claude |
 | v0.8 | 2026-11-05 | AD-01, 프론트 구조 | Vite 프록시 노드를 없애고 브라우저가 API(:3000)를 CORS로 직접 호출 | PRD v0.15 P-04, 구조 설계 원칙 v0.10 PR-S-04 | Claude |
 | v0.9 | 2026-11-05 | AD-02, SD-01 | `middleware/cors.js` 노드 추가, 토큰 만료를 환경변수 기본값으로 표기 | 구조 설계 원칙 v0.11~v0.13 코드 반영 | Claude |
+| v0.10 | 2026-11-06 | AD-02 | 실제 import 기준 의존 화살표: `services/auth → domain/validate` 삭제, validate는 `{value, fields}` 반환 후 routes가 `errors.js`의 `assertValid`로 throw, `middleware/auth → services/auth`·`services/users → services/auth`·`routes/me → routes/auth`(setAuthCookies)·`routes/auth → middleware/auth`(readCookie)·`app.js → db.js`(health) 추가, health·docs는 `app.js`가 인증 밖에 등록 | 코드와 불일치 | Claude |
+| v0.10 | 2026-11-06 | AD-03 | `i18n/`·`lib/themeStore.ts`(localStorage, `<html data-theme>`)·`lib/log.ts`(DEV 전용) 노드 추가, API 호출을 `VITE_API_BASE_URL` 절대 주소 + `credentials: 'include'`로 | PRD P-29·P-31, 구조 원칙 v0.18 PR-L-10·PR-S-13 | Claude |
+| v0.10 | 2026-11-06 | SD-01, SD-03, SD-04, SD-06, SD-07 | 검증 실패는 routes의 `assertValid`가 throw. 캘린더 4주 뷰 기간, 주 경계에서 끊기는 이어진 막대(`weekBars`, `WeekRow.tsx`)와 날짜별 '+N'. 기본 카테고리 id를 UPDATE 서브쿼리로. 할일 등록은 `INSERT … SELECT FROM categories` 한 문장, 수정은 `UPDATE … AND EXISTS(본인 카테고리)` 한 문장이고 0행이면 404, 입력에 시작·종료 시간(BR-24) | 코드(`services/todos.js`, `services/categories.js`, `features/calendar/`)와 불일치, FR-17·P-16·P-30 | Claude |
+| v0.10 | 2026-11-06 | 4.1 | FR 커버리지에 FR-17(SD-04), FR-18·19(AD-03) 추가 | PRD v0.24 FR-17~19 누락 | Claude |
+| v0.10 | 2026-11-06 | 참조 문서 | 도메인 v0.7 → v0.11, PRD v0.13 → v0.24, 시나리오 v0.10 → v0.12, 와이어프레임 v0.5 → v0.12, 구조 설계 원칙 v0.6 → v0.18, ERD v0.4 → v0.8 | 버전 동기화 | Claude |
 
-> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.13](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.10](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.5](./4-wireframe.md)이, 구조(PR·PD)는 [프로젝트 구조 설계 원칙 v0.6](./5-project-principle.md)이, 데이터 구조(ERD-xx·DB-xx)는 [ERD v0.4](./7-erd.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > 이 문서 순으로 따른다.
+> 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.11](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.24](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.12](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.12](./4-wireframe.md)이, 구조(PR·PD)는 [프로젝트 구조 설계 원칙 v0.18](./5-project-principle.md)이, 데이터 구조(ERD-xx·DB-xx)는 [ERD v0.8](./7-erd.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > 이 문서 순으로 따른다.
 >
 > ID 운영 원칙: 다이어그램 ID(AD-xx 구조, SD-xx 순서)는 재사용하거나 재번호하지 않는다. 다이어그램을 없애면 행을 지우지 말고 '폐기'로 표시한다.
 >
-> 데이터 구조(개념 ERD, 물리 ERD, 테이블·제약·인덱스)는 [ERD v0.4](./7-erd.md)이 정의하고, 이 문서에는 그리지 않는다. 엔티티·관계의 정의는 [도메인 정의서 3.4](./1-domain-definition.md)가 맡는다. 오류 코드는 NFR-15에 있는 것만 쓴다.
+> 데이터 구조(개념 ERD, 물리 ERD, 테이블·제약·인덱스)는 [ERD v0.8](./7-erd.md)이 정의하고, 이 문서에는 그리지 않는다. 엔티티·관계의 정의는 [도메인 정의서 3.4](./1-domain-definition.md)가 맡는다. 오류 코드는 NFR-15에 있는 것만 쓴다.
 
 ## 1. 개요
 
@@ -44,7 +50,7 @@
 | AD-01 | 구조 | 시스템 컨텍스트와 배포 구성 | P-10, PR-S-04, PR-S-11 |
 | AD-02 | 구조 | 백엔드 레이어와 모듈 의존 | 구조 원칙 3.1, 7.2 |
 | AD-03 | 구조 | 프론트엔드 레이어와 상태 분담 | 구조 원칙 3.1, 7.3, PRD 6장 |
-| AD-04 | 구조 | 폐기(v0.3) → 7-erd.md로 이동 | [ERD v0.4](./7-erd.md) ERD-02 |
+| AD-04 | 구조 | 폐기(v0.3) → 7-erd.md로 이동 | [ERD v0.8](./7-erd.md) ERD-02 |
 | SD-01 | 순서 | 회원가입 트랜잭션 | FR-01, NFR-10 |
 | SD-02 | 순서 | 인증 미들웨어와 401 전역 처리 | FR-04, PR-L-12 |
 | SD-03 | 순서 | 할일 목록 조회 | FR-09, P-14, PD-17 |
@@ -89,6 +95,7 @@ flowchart TB
     APP --> AUTHMW["middleware/auth.js<br/>access 토큰(HS384) 검증, req.userId"]
     APP --> ERRMW["middleware/error.js<br/>NFR-15 형식 응답"]
     APP --> RT
+    APP -->|"/api/health SELECT 1"| DBJS
 
     subgraph RT["routes: HTTP 입출력만"]
         R0["index.js<br/>인증 경계"]
@@ -115,22 +122,25 @@ flowchart TB
     ERR["errors.js<br/>AppError, 오류 코드 상수"]
 
     R0 -.->|"auth 먼저 적용"| AUTHMW
-    RT -->|"요청 값 검증"| D1
+    RT -->|"요청 값 검증, {value, fields} 반환"| D1
+    RT -.->|"assertValid: fields 있으면 throw 400"| ERR
     R1 --> S1
+    R1 -.->|"readCookie"| AUTHMW
     R2 --> S2
+    R2 -->|"setAuthCookies"| R1
+    AUTHMW -->|"verifyAccessToken"| S1
+    S2 -->|"hashPassword, issueTokens"| S1
     R3 --> S3
     R4 --> S4
     R5 --> S4
     SV --> DBJS
     S4 --> D2
-    S1 --> D1
     SV -.->|"throw AppError"| ERR
-    D1 -.->|"throw AppError"| ERR
     ERR -.->|"catch"| ERRMW
     DBJS --> CFG
 ```
 
-의존은 위에서 아래로만 흐른다. routes는 SQL을 직접 실행하지 않고, domain은 다른 모듈을 import하지 않는다. 모든 오류는 `AppError`로 던져 `middleware/error.js` 한 곳에서만 응답으로 바꾼다. `auth` 미들웨어는 `routes/index.js`가 signup, login, refresh, logout, health를 제외한 모든 라우트 앞에 건다.
+의존은 위에서 아래로만 흐른다. routes는 SQL을 직접 실행하지 않고, domain은 다른 모듈을 import하지 않는다. `domain/validate.js`는 throw하지 않고 `{value, fields}`를 돌려주며, routes가 `errors.js`의 `assertValid`로 400을 던진다. 모든 오류는 `AppError`로 던져 `middleware/error.js` 한 곳에서만 응답으로 바꾼다. `auth` 미들웨어는 `routes/index.js`가 `/api/auth/*`(signup, login, refresh, logout)를 제외한 모든 라우터 앞에 걸고, `/api/health`와 개발 환경 한정 `/api/docs`는 `app.js`가 `apiRouter`보다 먼저 등록해 인증 밖에 둔다.
 
 관련 ID: PR-L-01~08, PR-N-07, PR-S-01, PR-S-05, NFR-07, NFR-08, NFR-15, G-04
 
@@ -159,6 +169,10 @@ flowchart TB
     SHARED["components, lib<br/>어느 층에서나 import"]
     BACK["API 서버 (VITE_API_BASE_URL, CORS)"]
     URL["URL 쿼리<br/>캘린더 view, date"]
+    I18N["i18n/<br/>ko·ja·en 사전, 언어 스토어, useT()"]
+    THEME["lib/themeStore.ts<br/>화면 모드, html data-theme 적용"]
+    LS[("localStorage<br/>lang, theme 선호값만")]
+    LOG["lib/log.ts<br/>DEV 전용 콘솔 로그"]
 
     MAIN --> RTR
     RTR --> RA --> AL --> PG
@@ -170,19 +184,24 @@ flowchart TB
     FT -->|"조회·변경"| TQ
     FC --> URL
     TQ --> API
-    API -->|"fetch 상대 경로"| BACK
+    API -->|"fetch VITE_API_BASE_URL + /api,<br/>credentials: 'include'"| BACK
+    FT -->|"화면 문구"| I18N
+    AL --> THEME
+    I18N --> LS
+    THEME --> LS
+    API -.->|"요청·응답·실패"| LOG
     API -.->|"401: refresh 1회 후 재요청"| BACK
     BACK -.->|"갱신도 실패한 401 UNAUTHORIZED"| MAIN
     MAIN -.->|"QueryCache·MutationCache onError:<br/>Zustand와 캐시 비움, /login 이동"| ZS
 ```
 
-서버 데이터는 TanStack Query에만, UI 상태는 Zustand에만 두며 서로 복사하지 않는다. 토큰은 어디에도 저장하지 않고 httpOnly 쿠키만 쓴다. 401 `UNAUTHORIZED`는 먼저 `api/client.ts`가 refresh 토큰으로 한 번 갱신해 다시 요청하고, 갱신도 실패한 401만 어떤 API에서 오든 `main.tsx`의 QueryClient `onError` 한 곳에서 처리한다(PR-L-12). features끼리는 직접 import하지 않는다.
+서버 데이터는 TanStack Query에만, UI 상태는 Zustand에만 두며 서로 복사하지 않는다. 토큰은 어디에도 저장하지 않고 httpOnly 쿠키만 쓴다. localStorage에는 화면 언어(`lang`)·화면 모드(`theme`) 선호값만 둔다(P-29, P-31, PR-L-10). 콘솔 로그는 `lib/log.ts`가 개발 모드에서만 출력한다(PR-S-13). 401 `UNAUTHORIZED`는 먼저 `api/client.ts`가 refresh 토큰으로 한 번 갱신해 다시 요청하고, 갱신도 실패한 401만 어떤 API에서 오든 `main.tsx`의 QueryClient `onError` 한 곳에서 처리한다(PR-L-12). features끼리는 직접 import하지 않는다.
 
-관련 ID: PRD 6장, PR-L-09~12, FR-04, P-04, P-12, P-15, P-23, PD-04
+관련 ID: PRD 6장, PR-L-09~12, PR-S-04, PR-S-13, FR-04, FR-18, FR-19, P-04, P-12, P-15, P-23, P-29, P-31, PD-04
 
 ### AD-04 데이터 구조 (물리 ERD)
 
-폐기(v0.3). [ERD v0.4](./7-erd.md)로 이동했다.
+폐기(v0.3). [ERD v0.8](./7-erd.md)로 이동했다.
 
 ## 3. Sequence Diagram
 
@@ -204,8 +223,8 @@ sequenceDiagram
     FE->>RT: POST /api/auth/signup
     RT->>VD: 이메일 형식, BR-21, BR-22 검증
     alt 검증 실패
-        VD-->>RT: throw AppError 400 VALIDATION_ERROR
-        RT-->>FE: 400 VALIDATION_ERROR + fields
+        VD-->>RT: fields 있음
+        RT-->>FE: assertValid가 throw, 400 VALIDATION_ERROR + fields
         FE-->>U: 입력란 옆에 사유 표시
     end
     RT->>SV: signup(input)
@@ -310,8 +329,8 @@ sequenceDiagram
     TQ->>RT: GET /api/todos?categoryId&status&today
     RT->>VD: today 형식, status 값, categoryId 검증
     alt today 누락 또는 잘못됨, status가 PD-19 값 아님
-        VD-->>RT: throw AppError
-        RT-->>TQ: 400 VALIDATION_ERROR
+        VD-->>RT: fields 있음
+        RT-->>TQ: assertValid가 throw, 400 VALIDATION_ERROR
         TQ-->>FE: 화면 상단에 오류 표시
     end
     RT->>SV: listTodos(userId, 필터)
@@ -354,7 +373,7 @@ sequenceDiagram
 
     U->>FE: /calendar?view&date 열기 또는 이동
     FE->>RG: view, date로 조회 기간 계산
-    RG-->>FE: from, to (월 1일~말일, 주 일~토, 일 하루)
+    RG-->>FE: from, to (월 1일~말일, 4주 그 주 일요일부터 28일, 주 일~토, 일 하루)
     FE->>TQ: key = calendar, from, to, today
     TQ->>RT: GET /api/calendar?from&to&today
     RT->>RT: from, to, today 형식과 from가 to 이하인지 검증
@@ -369,20 +388,20 @@ sequenceDiagram
     SV-->>RT: 상태가 포함된 할일 목록
     RT-->>TQ: 200
     TQ-->>FE: 할일 목록 (서버 정렬 순서)
-    FE->>CT: 날짜별로 start 이하 end 이상인 할일 선택
-    CT-->>FE: 칸별 할일 (서버 순서 유지)
-    alt 데스크톱 월·주 뷰
-        FE-->>U: 칸마다 제목과 상태, 3건 초과 시 +N<br/>앞뒤 채움 칸은 빈 칸 (PD-23)
-    else 모바일 월·주 뷰
+    FE->>CT: 날짜별 할일(todosOn), 데스크톱은 주마다 weekBars
+    CT-->>FE: 칸별 할일, 주 단위 막대와 줄, 날짜별 넘친 수 (서버 순서 유지)
+    alt 데스크톱 월·4주·주 뷰
+        FE-->>U: WeekRow가 기간을 잇는 막대(제목과 상태)를 그림, 주 경계에서 끊김<br/>3줄을 넘친 할일은 날짜별 +N, 월 뷰 앞뒤 채움 칸은 빈 칸 (PD-23)
+    else 모바일 월·4주·주 뷰
         FE-->>U: 칸에는 개수 점, 선택한 날짜의 목록은 아래에
     else 일 뷰
         FE-->>U: 그날 할일 전체 목록
     end
 ```
 
-월·주·일 뷰는 같은 API를 쓰며 기간만 다르다. 기간 계산과 칸 배치는 프론트의 순수 함수가, 겹침 조건과 정렬은 SQL 한 곳이 맡는다. 여러 날에 걸친 할일은 기간 안 모든 날짜 칸에 반복 표시한다.
+월·4주·주·일 뷰는 같은 API를 쓰며 기간만 다르다. 기간 계산(`range.ts`)과 칸·막대 배치(`cellTodos.ts`)는 프론트의 순수 함수가, 겹침 조건과 정렬은 SQL 한 곳이 맡는다. 데스크톱에서 여러 날에 걸친 할일은 기간 안 날짜를 잇는 막대 하나로 그리고, 막대는 주(일~토) 경계에서 끊겨 다음 주 줄에서 이어진다(P-16). 4주 뷰는 그 주 일요일부터 28칸 모두 날짜가 있다(P-30).
 
-관련 ID: FR-10, FR-11, FR-12, FR-16, UC-10, BR-16, BR-17, BR-18, BR-19, BR-20, NFR-04, NFR-11, P-12, P-14, P-16, P-20, P-23, PR-C-05, PR-T-06, SC-09, SC-10
+관련 ID: FR-10, FR-11, FR-12, FR-16, FR-17, UC-10, BR-16, BR-17, BR-18, BR-19, BR-20, NFR-04, NFR-11, P-12, P-14, P-16, P-20, P-23, P-30, PR-C-05, PR-T-06, SC-09, SC-10
 
 ### SD-05 완료 토글
 
@@ -451,8 +470,7 @@ sequenceDiagram
         RT-->>TQ: 400 DEFAULT_CATEGORY_IMMUTABLE
     else 삭제 가능
         SV->>DB: BEGIN (withTransaction)
-        SV->>DB: SELECT 기본 카테고리 id WHERE user_id AND is_default
-        SV->>DB: UPDATE todos SET category_id = 기본 WHERE category_id AND user_id
+        SV->>DB: UPDATE todos SET category_id = (SELECT 기본 카테고리 id WHERE user_id AND is_default)<br/>WHERE category_id AND user_id
         SV->>DB: DELETE categories WHERE id AND user_id
         SV->>DB: COMMIT
         SV-->>RT: 완료
@@ -479,45 +497,37 @@ sequenceDiagram
     participant SV as services/todos.js
     participant DB as PostgreSQL
 
-    U->>FE: 제목, 설명, 기간, 카테고리 입력 후 저장
+    U->>FE: 제목, 설명, 기간(시작·종료 날짜, 선택 시작·종료 시간 BR-24), 카테고리 입력 후 저장
     FE->>TQ: mutate, 저장 버튼 비활성화 (P-22)
     TQ->>RT: POST /api/todos 또는 PATCH /api/todos/:id
-    RT->>VD: 필수, trim, 길이(BR-22), 날짜 형식, 시작일 이하 종료일(BR-07)<br/>수정도 폼 전체 값을 보내 본문만으로 판정 (PD-20)
+    RT->>VD: 필수, trim, 길이(BR-22), 날짜 형식, 시작일 이하 종료일(BR-07), 시간 형식(BR-24)<br/>수정도 폼 전체 값을 보내 본문만으로 판정 (PD-20)
     alt 검증 실패
-        VD-->>RT: throw AppError 400 VALIDATION_ERROR + fields
-        RT-->>TQ: 400 VALIDATION_ERROR
+        VD-->>RT: fields 있음
+        RT-->>TQ: assertValid가 throw, 400 VALIDATION_ERROR + fields
         TQ-->>FE: 입력란 옆에 사유 표시, 저장 안 됨
     end
-    RT->>SV: createTodo 또는 updateTodo(userId, id, input)
-    opt 수정 (PATCH)
-        SV->>DB: SELECT todos WHERE id AND user_id
-        alt 0행 (타인 또는 없음)
-            SV-->>RT: throw AppError 404 NOT_FOUND
-        end
+    RT->>SV: create(userId, input) 또는 update(userId, id, input)
+    alt 등록 (POST)
+        SV->>DB: INSERT todos SELECT … FROM categories<br/>WHERE user_id AND (categoryId 미지정이면 is_default (BR-11), 지정이면 id = categoryId (BR-04))
+    else 수정 (PATCH)
+        SV->>DB: UPDATE todos WHERE id AND user_id<br/>AND (categoryId 미지정 또는 EXISTS 본인 카테고리 (BR-04)), 미지정이면 기존 카테고리 유지 (BR-11)
     end
-    alt categoryId 지정
-        SV->>DB: SELECT categories WHERE id AND user_id (BR-04)
-        alt 0행 (타인 또는 없음)
-            SV-->>RT: throw AppError 404 NOT_FOUND
-            RT-->>TQ: 404 NOT_FOUND
-            TQ-->>FE: 폼 상단에 message 표시, 저장 안 됨
-        end
-    else 등록에서 미지정 (BR-11)
-        SV->>DB: SELECT 기본 카테고리 id WHERE user_id AND is_default
-    else 수정에서 미지정 (BR-11)
-        Note over SV: 기존 카테고리 유지
+    alt 0행 (할일 또는 카테고리가 타인 것이거나 없음)
+        SV-->>RT: throw AppError 404 NOT_FOUND
+        RT-->>TQ: 404 NOT_FOUND
+        TQ-->>FE: 폼 상단에 message 표시, 저장 안 됨
+    else 저장됨
+        DB-->>SV: 저장된 할일 (categoryName JOIN)
+        SV-->>RT: 할일
+        RT-->>TQ: 201 또는 200 (PD-25)
+        TQ->>TQ: 무효화 todos, calendar
+        TQ-->>FE: 진입 화면으로 복귀 (state.from, 없으면 /todos)
     end
-    SV->>DB: INSERT 또는 UPDATE todos (user_id 조건 포함)
-    DB-->>SV: 저장된 할일
-    SV-->>RT: 할일
-    RT-->>TQ: 201 또는 200 (PD-25)
-    TQ->>TQ: 무효화 todos, calendar
-    TQ-->>FE: 진입 화면으로 복귀 (state.from, 없으면 /todos)
 ```
 
-형식·길이·날짜 순서는 `domain/validate.js`가 DB 없이 판정하고, 카테고리 소유권은 DB를 거쳐 서비스가 판정한다. 타인 카테고리는 없는 카테고리와 같은 404라 존재 여부가 드러나지 않는다. 과거 날짜는 거절하지 않는다(BR-08).
+형식·길이·날짜 순서는 `domain/validate.js`가 DB 없이 판정하고, 할일·카테고리 소유권은 서비스의 SQL 한 문장(등록 `INSERT … SELECT`, 수정 `UPDATE … EXISTS`)이 판정해 0행이면 404다. 타인 카테고리는 없는 카테고리와 같은 404라 존재 여부가 드러나지 않는다. 과거 날짜는 거절하지 않는다(BR-08).
 
-관련 ID: FR-05, FR-06, UC-05, UC-06, BR-03, BR-04, BR-06, BR-07, BR-08, BR-11, BR-22, NFR-07, NFR-09, NFR-15, P-17, P-22, PD-18, PR-L-05, PR-T-03, SC-04, SC-05
+관련 ID: FR-05, FR-06, UC-05, UC-06, BR-03, BR-04, BR-06, BR-07, BR-08, BR-11, BR-22, BR-24, NFR-07, NFR-09, NFR-15, P-17, P-22, PD-18, PR-L-05, PR-T-03, SC-04, SC-05
 
 ## 4. 커버리지
 
@@ -540,6 +550,8 @@ sequenceDiagram
 | FR-13 | SD-06 | 등록·이름 수정의 DUPLICATE_CATEGORY는 SD-01과 같은 23505 패턴이라 생략 |
 | FR-14, FR-15 | AD-02 | 내 정보(Should)는 구조 다이어그램에서만 |
 | FR-16 | SD-04 | 선택 시 이동은 SD-07 복귀 규칙과 연결 |
+| FR-17 | SD-04 | Should, 4주 뷰는 기간 계산만 다름 |
+| FR-18, FR-19 | AD-03 | Should, 화면 언어·모드는 프론트 구조(i18n, themeStore)에서만 |
 
 ### 4.2 BR 커버리지
 

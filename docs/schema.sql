@@ -1,5 +1,6 @@
 -- TodoList 데이터베이스 스키마 (PostgreSQL 17)
--- 근거: docs/7-erd.md v0.4 (ERD-02, 4장 테이블 명세, 5장 제약·인덱스, DB-01~13)
+-- 근거: docs/7-erd.md v0.8 (ERD-02, 4장 테이블 명세, 5장 제약·인덱스, DB-01~14)
+-- 기존 개발 DB는 README의 ALTER로 시간 컬럼을 추가해 start_time·end_time이 테이블 끝에 있다(기능 영향 없음).
 -- 상태(ST-01~04) 컬럼은 두지 않는다. 조회 시 파생한다(NFR-12).
 -- 다시 만들 때는 아래 DROP 구문의 주석을 풀고 실행한다(운영 데이터 없음, P-10).
 
@@ -64,7 +65,7 @@ CREATE TABLE refresh_tokens (
     id          INTEGER      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,      -- DB-01
     user_id     INTEGER      NOT NULL,
     token_hash  CHAR(64)     NOT NULL,                                      -- SHA-256 16진수(DB-13)
-    expires_at  TIMESTAMPTZ  NOT NULL,                                      -- 발급 후 7일(P-04)
+    expires_at  TIMESTAMPTZ  NOT NULL,                                      -- 발급 후 REFRESH_TOKEN_TTL_DAYS(기본 7일)(P-04)
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),                        -- DB-02
     CONSTRAINT fk_refresh_tokens_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,  -- DB-05, DB-12
     CONSTRAINT uq_refresh_tokens_hash UNIQUE (token_hash)                                            -- 갱신·로그아웃 조회(DB-13)

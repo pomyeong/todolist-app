@@ -13,6 +13,7 @@
 | v0.5 | 2026-11-05 | Claude | 초안 | DDL 단일 출처 경로 변경 |
 | v0.6 | 2026-11-05 | Claude | 초안 | refresh 만료 환경변수 반영 |
 | v0.7 | 2026-11-05 | Claude | 초안 | 할일 시작·종료 시간 컬럼(DB-14) |
+| v0.8 | 2026-11-06 | Claude | 초안 | 구현(코드·DB)에 맞춘 현행화 |
 
 ### 변경 이력
 
@@ -29,8 +30,10 @@
 | v0.5 | 2026-11-05 | ID 운영 원칙 | DDL 단일 출처 `backend/sql/schema.sql` → `docs/schema.sql` | 구조 설계 원칙 v0.12 PR-S-10 | Claude |
 | v0.6 | 2026-11-05 | ERD-02 `refresh_tokens.expires_at` | 만료 기간을 `REFRESH_TOKEN_TTL_DAYS`(기본 7일)로 표기 | 구조 설계 원칙 v0.11 PR-S-01 | Claude |
 | v0.7 | 2026-11-05 | ERD-01, ERD-02, 4.3, 5장, 6장, DB-14 | `start_time`·`end_time` TIME NULL, `ck_todos_times`, 'HH:MM' 응답 대응 | 도메인 v0.9 BR-24 | Claude |
+| v0.8 | 2026-11-06 | 4.3, 5장, 7장, DB-07 | 시간 컬럼 타입 `TIME` → `TIME(0)`, 제약 이름 목록·DB-07에 `ck_todos_times`(DB-14) 추가, 요청 `null` 허용 필드에 `startTime`·`endTime` 추가 | 구현(`docs/schema.sql`, `backend/src/domain/validate.js`)과 불일치 | Claude |
+| v0.8 | 2026-11-06 | 참조 문서 | 도메인 v0.7 → v0.11, PRD v0.12 → v0.24, 구조 설계 원칙 v0.5 → v0.18 | 버전 동기화 | Claude |
 
-> 단일 출처 원칙: 엔티티·속성·관계, 용어, 상태 규칙(ST), 비즈니스 규칙(BR)은 [도메인 정의서 v0.7](./1-domain-definition.md)이, 기능(FR)·비기능(NFR)·결정(P)은 [PRD v0.12](./2-PRD.md)이, 이름 규칙·API 경로(PR·PD)는 [프로젝트 구조 설계 원칙 v0.5](./5-project-principle.md)이 정의한다. 이 문서는 도메인 3장의 엔티티와 관계를 PostgreSQL 17 물리 구조로 옮긴 것이며, 규칙·오류 코드·수치를 다시 정의하지 않고 ID로 참조한다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > [아키텍처 다이어그램](./6-arch-diagram.md) > 이 문서 순으로 따른다.
+> 단일 출처 원칙: 엔티티·속성·관계, 용어, 상태 규칙(ST), 비즈니스 규칙(BR)은 [도메인 정의서 v0.11](./1-domain-definition.md)이, 기능(FR)·비기능(NFR)·결정(P)은 [PRD v0.24](./2-PRD.md)이, 이름 규칙·API 경로(PR·PD)는 [프로젝트 구조 설계 원칙 v0.18](./5-project-principle.md)이 정의한다. 이 문서는 도메인 3장의 엔티티와 관계를 PostgreSQL 17 물리 구조로 옮긴 것이며, 규칙·오류 코드·수치를 다시 정의하지 않고 ID로 참조한다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > [아키텍처 다이어그램](./6-arch-diagram.md) > 이 문서 순으로 따른다.
 >
 > ID 운영 원칙: ERD-xx(다이어그램)와 DB-xx(이 문서에서 정한 결정)는 재사용하거나 재번호하지 않는다. 없애면 행을 지우지 말고 '폐기'로 표시한다. 실제 DDL의 단일 출처는 [docs/schema.sql](./schema.sql)이다(PR-S-10). 이 문서와 그 파일이 다르면 이 문서를 먼저 고치고 파일을 맞춘다.
 
@@ -188,8 +191,8 @@ erDiagram
 | `title` | `VARCHAR(100)` | N | - | - | title | BR-06, BR-22 |
 | `description` | `VARCHAR(1000)` | Y | - | - | description | BR-22, DB-11 |
 | `start_date` | `DATE` | N | - | `ck_todos_dates` CHECK(`start_date <= end_date`) | startDate | BR-06, BR-07, NFR-11, DB-07 |
-| `start_time` | `TIME` | Y | - | `ck_todos_times` | startTime | BR-24, NFR-11, DB-14 |
-| `end_time` | `TIME` | Y | - | `ck_todos_times` | endTime | BR-24, NFR-11, DB-14 |
+| `start_time` | `TIME(0)` | Y | - | `ck_todos_times` | startTime | BR-24, NFR-11, DB-14 |
+| `end_time` | `TIME(0)` | Y | - | `ck_todos_times` | endTime | BR-24, NFR-11, DB-14 |
 | `end_date` | `DATE` | N | - | (위 CHECK) | endDate | BR-06, BR-07, NFR-11, DB-07 |
 | `completed` | `BOOLEAN` | N | `false` | `ck_todos_completed` CHECK(`completed = (completed_at IS NOT NULL)`) | completed | ST-01, PD-21, DB-08 |
 | `completed_at` | `TIMESTAMPTZ` | Y | - | (위 CHECK) | completedAt | PD-21, DB-08 |
@@ -210,7 +213,7 @@ erDiagram
 
 ## 5. 제약·인덱스 목록
 
-이름은 PR-N-04가 정한 것에 `fk_*`, `ck_users_email_lower`, `ck_todos_completed`를 더했다(DB-03, DB-08, DB-12). `refresh_tokens`의 제약·인덱스 이름은 DB-13이 정한다. 위반 오류의 응답 코드는 NFR-15를 따른다.
+이름은 PR-N-04가 정한 것에 `fk_*`, `ck_users_email_lower`, `ck_todos_completed`, `ck_todos_times`를 더했다(DB-03, DB-08, DB-12, DB-14). `refresh_tokens`의 제약·인덱스 이름은 DB-13이 정한다. 위반 오류의 응답 코드는 NFR-15를 따른다.
 
 | 이름 | 테이블 | 종류 | 정의 | 쓰임새 | 관련 BR·NFR |
 |---|---|---|---|---|---|
@@ -248,7 +251,7 @@ erDiagram
 
 ## 7. 도메인 속성 ↔ 컬럼 ↔ API 필드 대응표
 
-API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startDate"`)으로 바꾼다(PR-N-05, P-25). 범용 변환기는 두지 않는다. 시각 필드는 ISO 8601 UTC(`toISOString()` 형식, PD-28), 요청의 `null`은 NULL 허용 컬럼(`description`)에만 허용한다(PD-27).
+API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startDate"`)으로 바꾼다(PR-N-05, P-25). 범용 변환기는 두지 않는다. 시각 필드는 ISO 8601 UTC(`toISOString()` 형식, PD-28), 요청의 `null`은 NULL 허용 컬럼(`description`·`startTime`·`endTime`)에만 허용한다(PD-27).
 
 | 엔티티 | 도메인 속성 | 컬럼 | API 필드 | 비고 |
 |---|---|---|---|---|
@@ -287,7 +290,7 @@ API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startD
 | DB-04 | 카테고리 이름은 trim 후 있는 그대로 저장하고, 중복은 대소문자를 구분해 `UNIQUE(user_id, name)`로 판정한다. 안쪽 공백은 바꾸지 않는다. | BR-13은 중복 금지만 정하고 대소문자를 말하지 않는다. BR-22가 앞뒤 공백 제거를 정했으므로 trim으로 `' 업무'`와 `'업무'`는 같은 이름이다. 소문자·공백 접기 비교는 PRD NFR-04의 `categories(user_id, name)` 유일 정의와 PR-N-04 제약 이름을 바꾸게 한다. 한국어 이름이 주라 대소문자 문제가 작다. | `UNIQUE(user_id, lower(name))`: 영문 이름 `Work`/`work` 혼동을 막지만 규칙이 늘고 PR-N-04와 어긋난다. 구현 후 요구가 나오면 재검토 |
 | DB-05 | 모든 FK는 `ON DELETE RESTRICT`다. `CASCADE`와 `SET NULL`은 쓰지 않는다. 카테고리 삭제는 서비스가 한 트랜잭션에서 할일을 기본 카테고리로 옮긴 뒤 삭제한다. 사용자당 카테고리 최소 1개와 기본 카테고리 삭제 금지는 서비스·가입 트랜잭션이 지킨다. | 회원 탈퇴는 범위 외(도메인 1장)라 사용자 삭제 경로가 없다. 카테고리 삭제는 BR-14가 이동 후 삭제로 정했으므로 CASCADE는 서비스 버그를 할일 소실로 키운다. RESTRICT는 이동을 빠뜨리면 삭제가 실패해 버그가 드러난다. | `CASCADE`: 버그 시 데이터 소실. `NO ACTION`: 동작은 비슷하나 의도가 불명확 |
 | DB-06 | 할일의 카테고리가 같은 사용자 것인지(BR-04)는 서비스가 `WHERE id AND user_id` 조회로 확인하고, DB 복합 FK는 두지 않는다. | 타인 카테고리는 없는 카테고리와 같은 404여야 한다(BR-03, SD-07). 복합 FK는 위반 시 23503이라 서비스가 어차피 먼저 조회해 404를 만들어야 하고, `categories(id, user_id)` 유일 제약과 인덱스가 더 필요하며 `todos`가 FK를 두 개 갖게 된다. 장점은 서비스 버그의 최종 방어선이 되는 점이다. 이 규모(과설계 금지, PR-C-02)에서 서비스 확인과 통합 테스트(소유권 테스트)로 충분하다고 본다. | 복합 FK `(category_id, user_id)` → `categories(id, user_id)`: 위 단점 때문에 보류. 소유권 사고가 나면 도입 |
-| DB-07 | CHECK는 `ck_todos_dates`(`start_date <= end_date`)만 날짜 방어용으로 둔다. 길이·빈 문자열 CHECK는 두지 않는다. | 검증 주체는 `domain/validate.js`다(NFR-09, PD-20). 날짜 순서는 한 줄이라 방어 비용이 작다. 길이는 `VARCHAR(n)`이 이미 방어하고, JS 길이(UTF-16 단위)는 DB 문자 수 이상이므로 서비스 검증을 통과한 값이 DB 길이에 걸리지 않는다. 빈 문자열은 trim과 필수 검증(BR-22)이 먼저 막는다. | 길이·빈 값 CHECK: 규칙이 두 곳이 되어 BR-22 변경 시 DDL도 고쳐야 한다. |
+| DB-07 | CHECK는 `ck_todos_dates`(`start_date <= end_date`)와 `ck_todos_times`(같은 날 시작 ≤ 종료 시간, DB-14)만 날짜·시간 방어용으로 둔다. 길이·빈 문자열 CHECK는 두지 않는다. | 검증 주체는 `domain/validate.js`다(NFR-09, PD-20). 날짜 순서는 한 줄이라 방어 비용이 작다. 길이는 `VARCHAR(n)`이 이미 방어하고, JS 길이(UTF-16 단위)는 DB 문자 수 이상이므로 서비스 검증을 통과한 값이 DB 길이에 걸리지 않는다. 빈 문자열은 trim과 필수 검증(BR-22)이 먼저 막는다. | 길이·빈 값 CHECK: 규칙이 두 곳이 되어 BR-22 변경 시 DDL도 고쳐야 한다. |
 | DB-08 | `ck_todos_completed` CHECK(`completed = (completed_at IS NOT NULL)`)를 둔다. 완료 토글 SQL은 `completed_at = CASE WHEN $완료 THEN COALESCE(completed_at, now()) ELSE NULL END`처럼 같은 문장에서 두 컬럼을 함께 바꾼다. | PD-21(완료 시 현재 시각, 취소 시 NULL, 완료 재전송 시 유지)이 항상 두 값의 일치를 만든다. 한 줄 CHECK로 ST-01 판정의 기반인 `completed`와 기록이 어긋나는 UPDATE 실수를 잡는다. 등록 시 `completed`는 `false`, `completed_at`은 NULL이다. | CHECK 없음: 일관성이 서비스 한 곳에만 의존 |
 | DB-09 | 길이는 `VARCHAR(n)`(BR-22 값)으로, 필수는 `NOT NULL`로 DB에 건다. 공백·형식 검증은 DB에 두지 않는다. | DB-07과 같다. 비밀번호 해시는 bcrypt 출력 길이 60자에 맞춰 `VARCHAR(60)`이다. | `TEXT`: 길이 방어가 없다 |
 | DB-10 | BR-20(종료일 → 등록 시각 → id)·BR-23(기본 우선 → 생성 시각) 정렬 전용 인덱스는 만들지 않는다. 정렬은 `ORDER BY`가 한다. `category_id` 단독 인덱스도 두지 않는다. | 목록·캘린더는 `user_id` 조건으로 사용자당 약 100건(P-11)만 읽으므로 메모리 정렬 비용이 무시할 만하고, `idx_todos_user_dates`·`idx_todos_user_category`의 첫 컬럼이 `user_id`라 사용자 단위 범위를 좁힌다. 카테고리는 사용자당 수 건이다. 카테고리 삭제 시 RESTRICT 검사가 `category_id` 단독으로 `todos`를 훑지만 드문 작업이라 약 10만 행 규모에서 허용한다. 인덱스는 실행 계획으로 검증한다(NFR-04). | `(user_id, end_date, created_at, id)`: 쓰기 비용만 늘고 이득이 없다 |
