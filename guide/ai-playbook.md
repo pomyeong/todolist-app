@@ -849,6 +849,8 @@ web_modules/
 .env
 .env.test
 .env.*
+# 공백으로 이은 운영용 사본(예: ".env prod")도 비밀값이라 제외
+.env *
 !.env.example
 # 프론트 개발용 API 주소(비밀값 없음, PR-S-04)
 !frontend/.env.development
