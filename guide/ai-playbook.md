@@ -930,6 +930,9 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Playwright MCP 스냅샷·콘솔 로그
+.playwright-mcp/
 ````
 
 #### `prompts/PRD.txt`
@@ -1096,7 +1099,6 @@ export default defineConfig({
 ````text
 # 개발 서버가 직접 호출할 API 주소(PR-S-04, CORS). 운영 빌드는 VITE_API_BASE_URL을 지정해 빌드한다.
 VITE_API_BASE_URL=http://localhost:3000
-NODE_ENV=development
 ````
 
 ## 부록 B. 재사용 기반 코드 (구현 단계 11·12의 출발점)
