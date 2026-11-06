@@ -24,7 +24,7 @@ export function LoginForm() {
         <LanguageSelect />
         <ThemeSelect />
       </div>
-      <h1>{t('auth.login')}</h1>
+      <h1 className={styles.title}>{t('auth.login')}</h1>
       <FormError message={error?.fields ? undefined : error?.message} />
       <div className={styles.field}>
         <label htmlFor="email">{t('auth.email')}</label>

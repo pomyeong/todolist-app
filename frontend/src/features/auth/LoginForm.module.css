@@ -8,6 +8,10 @@
   padding: 0 var(--page-gutter);
 }
 
+.title {
+  text-align: center;
+}
+
 .field {
   display: flex;
   flex-direction: column;
