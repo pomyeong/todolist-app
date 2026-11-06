@@ -3,7 +3,7 @@
 > 새 프로젝트 폴더에서 이 파일 하나를 AI(Claude Code)에 읽히면, 개발 환경(에이전트·스킬·MCP·설정·DB·패키지)을 만들고 설계 문서 9종 → 구현 → 검증까지 단계별로 진행한다.
 > 출처: TodoList 앱(2026-11) 실제 진행에서 검증한 방식. 진행 기록은 `tutorial.md`. 부록 A·B는 그 프로젝트의 실제 파일 원본이다(`guide/playbook-src/build.mjs`로 생성).
 >
-> **AI가 읽는 법(컨텍스트 절약)**: 이 파일은 약 98KB다. 본문(0~10장, `## 부록 A` 앞까지, 약 27KB)만 읽는다. 부록은 읽지 않고 2.2-3의 추출 스크립트로 파일을 만든다. 부록 B의 특정 파일이 필요하면 그 경로 제목(예: `#### ` + 백틱 경로)을 grep해 그 블록만 읽는다. `@guide/ai-playbook.md`처럼 @로 붙이면 전체가 들어가므로 쓰지 않는다.
+> **AI가 읽는 법(컨텍스트 절약)**: 이 파일은 약 108KB다. 본문(0~10장, `## 부록 A` 앞까지, 약 31KB)만 읽는다. 부록은 읽지 않고 2.2-3의 추출 스크립트로 파일을 만든다. 부록 B의 특정 파일이 필요하면 그 경로 제목(예: `#### ` + 백틱 경로)을 grep해 그 블록만 읽는다. `@guide/ai-playbook.md`처럼 @로 붙이면 전체가 들어가므로 쓰지 않는다.
 
 ---
 
@@ -150,6 +150,8 @@ if (total === 0) process.exitCode = 1;
 | 12 프론트 | `/develop-frontend FE-01 ~ FE-xx 까지 선후행 작업을 고려해서 순서대로 에러없이 작업해줘` | `frontend/` | `tsc -b`·`vitest run` 통과, 스타일 가이드 적용 |
 | 13 검증 | `T-QA Task(반응형·브라우저, 시나리오 셀프 체크)를 진행해줘` | README 검증 기록 | 9.2 체크리스트 |
 | 14 점검 | `선행 테스크를 고려하여 모든 테스크가 에러없이 개발되었는지 확인하고, 코드 기준으로 docs와 swagger를 현행화해줘` | 실행 계획 2.3, 문서 동기화 | 완료 조건 전부 체크, 문서·코드 일치 |
+| 15 E2E | `playwright-mcp로 @docs/3-user-scenario.md 기반 통합테스트를 수행하고 test/e2e에 리포트·스크린샷을 남겨줘` | `test/e2e/report.md`, `screenshots/` | SC 전체 통과, 불일치는 고친 뒤 재확인 |
+| 16 배포(선택) | `8장 배포대로 Vercel에 올리고 운영 주소로 스모크 검사를 해줘` | `backend/vercel.json`, `frontend/vercel.json`, `test/e2e/smoke-prod/` | 헬스 200, 로그인 유지, 스모크 전 항목 통과 |
 
 - 단계 10은 와이어프레임 뒤 아무 때나 해도 된다(구현 전 권장).
 - 단계 11·12에서 부록 B 기반 코드를 먼저 놓고 시작하면 T-BE-02~07, T-FE-02·04의 대부분이 끝난다.
@@ -183,7 +185,7 @@ if (total === 0) process.exitCode = 1;
 - 백엔드: Node.js + JavaScript + Express 5 + pg (ORM 금지)
 - DB: PostgreSQL 17
 - 인증: JWT access(짧게) + refresh 토큰(DB 해시, 회전), httpOnly 쿠키
-- 배포: 범위 외(로컬 단일 머신)
+- 배포: 범위 외(로컬 단일 머신) 또는 Vercel + Supabase(8장 '배포')
 
 # UX
 - 접근성 범위:
@@ -279,7 +281,17 @@ ID는 재사용·재번호하지 않는다. 없애면 행을 지우지 말고 '�
 - 스타일: CSS Modules + 전역 토큰(`var(--토큰)`만, 직접 색값 금지). 중단점 768px 하나.
 - 다국어: `src/i18n/messages.ts` 사전(ko 기준 타입이라 키 누락 시 타입 오류), `useT()`, 언어는 localStorage + 브라우저 언어. 서버 오류 문구는 화면에서 알려진 문구만 번역.
 - 화면 모드: `<html data-theme="light|dark">` + `:root[data-theme="dark"]` 토큰, `color-scheme`, index.html 인라인 스크립트로 첫 화면 전 적용, '시스템'은 `matchMedia` 변경 추적.
+- 오류 화면: 최상위 경로에 `errorElement`(`app/RouteError.tsx`, 문구 + 새로고침 버튼). 렌더링 오류와 재배포 뒤 옛 청크 로드 실패를 새로고침으로 복구.
+- 폼 초기화: 저장 성공 콜백은 목록 재조회 뒤에 오므로, 입력란은 보낸 값이 그대로일 때만 비운다(연속 입력 유실 방지).
 - 테스트: Vitest로 순수 함수만(날짜, 캘린더 배치, 검증, 이모지 규칙, 번역). 화면은 Playwright로 실측.
+
+### 배포 (선택: Vercel + Supabase)
+- **DB**: Supabase PostgreSQL에 `docs/schema.sql` 적용. 서버리스용 접속은 pooler URL. 함수 인스턴스마다 풀이 생기므로 `DB_POOL_MAX`는 작게(예: 1~3).
+- **백엔드 프로젝트**: Root Directory `backend`, 프레임워크 Express. 진입점은 `src/app.js`의 default export(앱 인스턴스) — 부록 B `app.js`에 이미 있다. `backend/vercel.json`의 `regions`를 **DB와 같은 지역**으로(Supabase `ap-southeast-1` → `sin1`). 기본 `iad1`이면 쿼리마다 대륙 간 왕복.
+- **백엔드 환경변수**: `DATABASE_URL`, `JWT_SECRET`(48자 이상, 2.2-6 명령으로 새로 생성), `NODE_ENV=production`, `CORS_ORIGIN=<프론트 운영 주소>`, 토큰 만료 값. 잘못되면 `config.js`가 기동을 막고 런타임 로그에 이유가 찍힌다.
+- **프론트 프로젝트**: Root Directory `frontend`, 프레임워크 Vite. `frontend/vercel.json`으로 `/api/*`를 백엔드 주소로 rewrite하고 나머지는 `/index.html`(SPA). `VITE_API_BASE_URL`은 **프론트 자기 주소**. `*.vercel.app`은 공개 접미사라 백엔드를 직접 부르면 다른 사이트가 되어 `SameSite=Lax` 쿠키가 실리지 않는다.
+- **확인 순서**: 프로젝트 목록(같은 저장소에 중복 프로젝트가 없는지) → 백엔드 `/api/health` 200 → 프론트 주소의 `/api/health`(rewrite) 200 → 브라우저 로그인 후 새로고침해도 유지 → 운영 스모크 검사(9.2) → 결과를 `test/e2e/smoke-prod/report.md`에.
+- 배포 직후 이전 화면을 열어 둔 브라우저는 옛 번들을 쓴다. 증상이 안 바뀌면 강력 새로고침부터.
 
 ### 공통
 - 린트·포맷: 루트 `biome.json` 하나를 공유, `dist` 제외.
@@ -301,7 +313,8 @@ ID는 재사용·재번호하지 않는다. 없애면 행을 지우지 말고 '�
 - [ ] 시나리오 SC 전체를 기준 날짜로 고정해 수행(브라우저 시계 고정)
 - [ ] 실제 장애: 백엔드 중단, 만료 access 토큰, 만료 refresh 토큰
 - [ ] 소유권: 남의 데이터 조회·수정·삭제·지정이 모두 404
-- [ ] 결과를 README 검증 기록에 남김
+- [ ] 결과를 README 검증 기록(또는 `test/e2e/report.md`)에 남김
+- [ ] 배포했다면 운영 주소로 스모크 검사: 가입 → 카테고리 → 할일 등록·수정·완료·삭제 → 캘린더 → 내 정보 → 언어·화면 모드 → 로그아웃·재로그인·주소 직접 진입. 테스트 계정은 지울 수 있게 이메일 접두사를 정해 둔다
 
 ## 10. 함정 목록 (Windows + Git Bash + Node 환경에서 실제로 겪음)
 
@@ -314,16 +327,22 @@ ID는 재사용·재번호하지 않는다. 없애면 행을 지우지 말고 '�
 | `git checkout -- 파일` 후 CRLF로 바뀌어 포매터 실패 | LF로 정규화 |
 | 결정을 바꿨는데 다른 문서 문장이 옛 내용으로 남음 | 기능마다 관련 ID를 모든 문서에서 grep |
 | 개발 DB `--reset`은 데이터 삭제 | NULL 허용 컬럼 추가는 `ALTER … IF NOT EXISTS` |
-| 다른 출처 API에서 쿠키 안 실림 | 같은 사이트 배치 + `SameSite=Lax` + `credentials: 'include'` |
+| 다른 출처 API에서 쿠키 안 실림 | 같은 사이트 배치 + `SameSite=Lax` + `credentials: 'include'`. Vercel은 `*.vercel.app`끼리도 다른 사이트 → 프론트 `vercel.json` rewrite로 같은 출처 |
 | 캘린더 날짜 계산에 `Date`·`toISOString` 사용 | 날짜는 문자열, 로컬 컴포넌트로만 계산 |
 | 화면 모드 전환 시 첫 화면 깜빡임 | index.html 인라인 스크립트로 `data-theme` 선적용 |
 | 다크 모드에서 밝은 빨강 버튼 위 흰 글자 | 글자용 색과 채움용 색 토큰 분리(`--danger` / `--danger-fill`) |
 | Windows에 PostgreSQL을 깔아도 `psql`이 PATH에 없음 | DB 생성·조회는 `backend`의 `pg`로 `node -e`(2.2-5) |
-| `@guide/ai-playbook.md`로 붙이면 약 98KB 전체가 컨텍스트에 들어감 | 경로만 말하고 부록 앞까지 읽게 한다. 부록은 추출 스크립트로 |
+| `@guide/ai-playbook.md`로 붙이면 약 108KB 전체가 컨텍스트에 들어감 | 경로만 말하고 부록 앞까지 읽게 한다. 부록은 추출 스크립트로 |
 | 부록 코드를 AI가 손으로 옮겨 적다 한 글자씩 틀림 | `guide/extract.mjs`로 기계적으로 만든다 |
 | 루트에서 `npx biome`을 치면 무관한 `biome` 패키지를 내려받아 실행 | biome은 `backend`(또는 `frontend`)에서 실행한다 |
 | npm 11이 `bcrypt` 설치 스크립트 경고(`install-scripts`) | 미리 빌드된 바이너리로 동작한다. 무시(승인 불필요) |
 | 한국어 Windows PostgreSQL 오류 메시지가 깨져 보임 | 메시지 대신 오류 코드(`28P01` 등)로 판단 |
+| Vercel `Invalid export found in module …/src/app.js` | `src/app.js`에서 앱 인스턴스를 default export |
+| Vercel 배포 뒤 500, 런타임 로그는 비어 보임 | 같은 저장소에 연결된 다른 프로젝트의 로그일 수 있다. 프로젝트 목록·도메인부터 확인 |
+| SPA 경로에서 새로고침하면 404 | `vercel.json` rewrite `/(.*)` → `/index.html` |
+| 운영에서만 응답이 느림 | 함수 리전과 DB 리전을 맞춘다(`regions`) |
+| `.env prod`처럼 공백으로 이은 비밀 파일이 커밋 대상 | `.gitignore`에 `.env *` |
+| 사내망에서 Supabase DB 포트(5432·6543) 차단 | 운영 데이터 정리는 Supabase SQL Editor 또는 Supabase MCP(HTTPS) |
 
 ---
 
@@ -1363,6 +1382,9 @@ export function createApp() {
   app.use(errorHandler);
   return app;
 }
+
+// Vercel Express 프리셋은 src/app.js의 default export(앱 인스턴스)를 함수 진입점으로 쓴다. 로컬은 server.js가 listen한다.
+export default createApp();
 ````
 
 #### `backend/src/server.js`
@@ -1383,6 +1405,16 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     server.close(() => close().then(() => process.exit(0)));
   });
+}
+````
+
+#### `backend/vercel.json`
+
+Vercel 배포 시(8장 배포). **바꿀 곳**: `regions`를 DB 리전과 같은 곳으로.
+
+````json
+{
+  "regions": ["sin1"]
 }
 ````
 
@@ -1739,6 +1771,64 @@ export function RequireAuth({ mode }: { mode: 'authed' | 'guest' }) {
 }
 ````
 
+#### `frontend/src/app/RouteError.tsx`
+
+라우터 최상위 `errorElement` 오류 화면. 문구 키 `error.*`는 아래 사전에 있다. 그대로 쓴다.
+
+````tsx
+import { useRouteError } from 'react-router';
+import { useT } from '../i18n';
+import { logError } from '../lib/log';
+import styles from './RouteError.module.css';
+
+// 라우터 errorElement: 렌더링 오류·배포 후 옛 청크 로드 실패 시 기본 개발용 화면 대신 보인다. 새로고침이 최신 파일을 받아 복구한다.
+export function RouteError() {
+  const t = useT();
+  logError('router', useRouteError());
+  return (
+    <main role="alert" className={styles.box}>
+      <h1 className={styles.title}>{t('error.title')}</h1>
+      <p>{t('error.body')}</p>
+      <button type="button" className="primary" onClick={() => window.location.reload()}>
+        {t('error.reload')}
+      </button>
+    </main>
+  );
+}
+````
+
+#### `frontend/src/app/RouteError.module.css`
+
+````css
+.box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6) 16px;
+  text-align: center;
+  color: var(--text);
+}
+
+.title {
+  font-size: 1.25rem;
+  margin: 0;
+}
+````
+
+#### `frontend/vercel.json`
+
+Vercel 배포 시(8장 배포). **바꿀 곳**: rewrite 대상 백엔드 주소. 운영 `VITE_API_BASE_URL`은 프론트 자기 주소.
+
+````json
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://todolist-pmsong-be.vercel.app/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+````
+
 #### `frontend/src/lib/theme.ts`
 
 화면 모드 판정(순수 함수). 그대로 쓴다.
@@ -1838,6 +1928,9 @@ const ko = {
   'notice.empty': '할일이 없습니다.',
   'notice.loading': '불러오는 중…',
   'notice.refreshing': '갱신 중…',
+  'error.title': '문제가 발생했습니다',
+  'error.body': '화면을 표시하지 못했습니다. 새로고침해 주세요.',
+  'error.reload': '새로고침',
   'auth.login': '로그인',
   'auth.signup': '회원가입',
   'auth.signupSubmit': '가입',
@@ -1913,6 +2006,9 @@ const ja: Dict = {
   'notice.empty': 'タスクがありません。',
   'notice.loading': '読み込み中…',
   'notice.refreshing': '更新中…',
+  'error.title': '問題が発生しました',
+  'error.body': '画面を表示できませんでした。再読み込みしてください。',
+  'error.reload': '再読み込み',
   'auth.login': 'ログイン',
   'auth.signup': '新規登録',
   'auth.signupSubmit': '登録',
@@ -1987,6 +2083,9 @@ const en: Dict = {
   'notice.empty': 'No tasks.',
   'notice.loading': 'Loading…',
   'notice.refreshing': 'Updating…',
+  'error.title': 'Something went wrong',
+  'error.body': 'This screen could not be displayed. Please reload.',
+  'error.reload': 'Reload',
   'auth.login': 'Log in',
   'auth.signup': 'Sign up',
   'auth.signupSubmit': 'Sign up',

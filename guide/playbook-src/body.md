@@ -86,7 +86,17 @@ ID는 재사용·재번호하지 않는다. 없애면 행을 지우지 말고 '�
 - 스타일: CSS Modules + 전역 토큰(`var(--토큰)`만, 직접 색값 금지). 중단점 768px 하나.
 - 다국어: `src/i18n/messages.ts` 사전(ko 기준 타입이라 키 누락 시 타입 오류), `useT()`, 언어는 localStorage + 브라우저 언어. 서버 오류 문구는 화면에서 알려진 문구만 번역.
 - 화면 모드: `<html data-theme="light|dark">` + `:root[data-theme="dark"]` 토큰, `color-scheme`, index.html 인라인 스크립트로 첫 화면 전 적용, '시스템'은 `matchMedia` 변경 추적.
+- 오류 화면: 최상위 경로에 `errorElement`(`app/RouteError.tsx`, 문구 + 새로고침 버튼). 렌더링 오류와 재배포 뒤 옛 청크 로드 실패를 새로고침으로 복구.
+- 폼 초기화: 저장 성공 콜백은 목록 재조회 뒤에 오므로, 입력란은 보낸 값이 그대로일 때만 비운다(연속 입력 유실 방지).
 - 테스트: Vitest로 순수 함수만(날짜, 캘린더 배치, 검증, 이모지 규칙, 번역). 화면은 Playwright로 실측.
+
+### 배포 (선택: Vercel + Supabase)
+- **DB**: Supabase PostgreSQL에 `docs/schema.sql` 적용. 서버리스용 접속은 pooler URL. 함수 인스턴스마다 풀이 생기므로 `DB_POOL_MAX`는 작게(예: 1~3).
+- **백엔드 프로젝트**: Root Directory `backend`, 프레임워크 Express. 진입점은 `src/app.js`의 default export(앱 인스턴스) — 부록 B `app.js`에 이미 있다. `backend/vercel.json`의 `regions`를 **DB와 같은 지역**으로(Supabase `ap-southeast-1` → `sin1`). 기본 `iad1`이면 쿼리마다 대륙 간 왕복.
+- **백엔드 환경변수**: `DATABASE_URL`, `JWT_SECRET`(48자 이상, 2.2-6 명령으로 새로 생성), `NODE_ENV=production`, `CORS_ORIGIN=<프론트 운영 주소>`, 토큰 만료 값. 잘못되면 `config.js`가 기동을 막고 런타임 로그에 이유가 찍힌다.
+- **프론트 프로젝트**: Root Directory `frontend`, 프레임워크 Vite. `frontend/vercel.json`으로 `/api/*`를 백엔드 주소로 rewrite하고 나머지는 `/index.html`(SPA). `VITE_API_BASE_URL`은 **프론트 자기 주소**. `*.vercel.app`은 공개 접미사라 백엔드를 직접 부르면 다른 사이트가 되어 `SameSite=Lax` 쿠키가 실리지 않는다.
+- **확인 순서**: 프로젝트 목록(같은 저장소에 중복 프로젝트가 없는지) → 백엔드 `/api/health` 200 → 프론트 주소의 `/api/health`(rewrite) 200 → 브라우저 로그인 후 새로고침해도 유지 → 운영 스모크 검사(9.2) → 결과를 `test/e2e/smoke-prod/report.md`에.
+- 배포 직후 이전 화면을 열어 둔 브라우저는 옛 번들을 쓴다. 증상이 안 바뀌면 강력 새로고침부터.
 
 ### 공통
 - 린트·포맷: 루트 `biome.json` 하나를 공유, `dist` 제외.
@@ -108,7 +118,8 @@ ID는 재사용·재번호하지 않는다. 없애면 행을 지우지 말고 '�
 - [ ] 시나리오 SC 전체를 기준 날짜로 고정해 수행(브라우저 시계 고정)
 - [ ] 실제 장애: 백엔드 중단, 만료 access 토큰, 만료 refresh 토큰
 - [ ] 소유권: 남의 데이터 조회·수정·삭제·지정이 모두 404
-- [ ] 결과를 README 검증 기록에 남김
+- [ ] 결과를 README 검증 기록(또는 `test/e2e/report.md`)에 남김
+- [ ] 배포했다면 운영 주소로 스모크 검사: 가입 → 카테고리 → 할일 등록·수정·완료·삭제 → 캘린더 → 내 정보 → 언어·화면 모드 → 로그아웃·재로그인·주소 직접 진입. 테스트 계정은 지울 수 있게 이메일 접두사를 정해 둔다
 
 ## 10. 함정 목록 (Windows + Git Bash + Node 환경에서 실제로 겪음)
 
@@ -121,13 +132,19 @@ ID는 재사용·재번호하지 않는다. 없애면 행을 지우지 말고 '�
 | `git checkout -- 파일` 후 CRLF로 바뀌어 포매터 실패 | LF로 정규화 |
 | 결정을 바꿨는데 다른 문서 문장이 옛 내용으로 남음 | 기능마다 관련 ID를 모든 문서에서 grep |
 | 개발 DB `--reset`은 데이터 삭제 | NULL 허용 컬럼 추가는 `ALTER … IF NOT EXISTS` |
-| 다른 출처 API에서 쿠키 안 실림 | 같은 사이트 배치 + `SameSite=Lax` + `credentials: 'include'` |
+| 다른 출처 API에서 쿠키 안 실림 | 같은 사이트 배치 + `SameSite=Lax` + `credentials: 'include'`. Vercel은 `*.vercel.app`끼리도 다른 사이트 → 프론트 `vercel.json` rewrite로 같은 출처 |
 | 캘린더 날짜 계산에 `Date`·`toISOString` 사용 | 날짜는 문자열, 로컬 컴포넌트로만 계산 |
 | 화면 모드 전환 시 첫 화면 깜빡임 | index.html 인라인 스크립트로 `data-theme` 선적용 |
 | 다크 모드에서 밝은 빨강 버튼 위 흰 글자 | 글자용 색과 채움용 색 토큰 분리(`--danger` / `--danger-fill`) |
 | Windows에 PostgreSQL을 깔아도 `psql`이 PATH에 없음 | DB 생성·조회는 `backend`의 `pg`로 `node -e`(2.2-5) |
-| `@guide/ai-playbook.md`로 붙이면 약 98KB 전체가 컨텍스트에 들어감 | 경로만 말하고 부록 앞까지 읽게 한다. 부록은 추출 스크립트로 |
+| `@guide/ai-playbook.md`로 붙이면 약 108KB 전체가 컨텍스트에 들어감 | 경로만 말하고 부록 앞까지 읽게 한다. 부록은 추출 스크립트로 |
 | 부록 코드를 AI가 손으로 옮겨 적다 한 글자씩 틀림 | `guide/extract.mjs`로 기계적으로 만든다 |
 | 루트에서 `npx biome`을 치면 무관한 `biome` 패키지를 내려받아 실행 | biome은 `backend`(또는 `frontend`)에서 실행한다 |
 | npm 11이 `bcrypt` 설치 스크립트 경고(`install-scripts`) | 미리 빌드된 바이너리로 동작한다. 무시(승인 불필요) |
 | 한국어 Windows PostgreSQL 오류 메시지가 깨져 보임 | 메시지 대신 오류 코드(`28P01` 등)로 판단 |
+| Vercel `Invalid export found in module …/src/app.js` | `src/app.js`에서 앱 인스턴스를 default export |
+| Vercel 배포 뒤 500, 런타임 로그는 비어 보임 | 같은 저장소에 연결된 다른 프로젝트의 로그일 수 있다. 프로젝트 목록·도메인부터 확인 |
+| SPA 경로에서 새로고침하면 404 | `vercel.json` rewrite `/(.*)` → `/index.html` |
+| 운영에서만 응답이 느림 | 함수 리전과 DB 리전을 맞춘다(`regions`) |
+| `.env prod`처럼 공백으로 이은 비밀 파일이 커밋 대상 | `.gitignore`에 `.env *` |
+| 사내망에서 Supabase DB 포트(5432·6543) 차단 | 운영 데이터 정리는 Supabase SQL Editor 또는 Supabase MCP(HTTPS) |
