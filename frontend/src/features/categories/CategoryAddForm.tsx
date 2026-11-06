@@ -12,7 +12,9 @@ export function CategoryAddForm() {
   const { mutate, isPending, error } = useCreateCategory();
   const onSubmit = (e: SyntheticEvent) => {
     e.preventDefault();
-    mutate(name, { onSuccess: () => setName('') });
+    // 성공 콜백은 목록 재조회 뒤에 오므로, 그사이 새로 입력한 이름은 지우지 않는다
+    const sent = name;
+    mutate(sent, { onSuccess: () => setName((cur) => (cur === sent ? '' : cur)) });
   };
   return (
     <form className={styles.form} onSubmit={onSubmit} noValidate>
