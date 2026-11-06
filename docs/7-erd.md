@@ -32,6 +32,7 @@
 | v0.7 | 2026-11-05 | ERD-01, ERD-02, 4.3, 5장, 6장, DB-14 | `start_time`·`end_time` TIME NULL, `ck_todos_times`, 'HH:MM' 응답 대응 | 도메인 v0.9 BR-24 | Claude |
 | v0.8 | 2026-11-06 | 4.3, 5장, 7장, DB-07 | 시간 컬럼 타입 `TIME` → `TIME(0)`, 제약 이름 목록·DB-07에 `ck_todos_times`(DB-14) 추가, 요청 `null` 허용 필드에 `startTime`·`endTime` 추가 | 구현(`docs/schema.sql`, `backend/src/domain/validate.js`)과 불일치 | Claude |
 | v0.8 | 2026-11-06 | 참조 문서 | 도메인 v0.7 → v0.11, PRD v0.12 → v0.24, 구조 설계 원칙 v0.5 → v0.18 | 버전 동기화 | Claude |
+| v0.8 | 2026-11-06 | ERD-01, ERD-02, 4.3, DB-14, 9.2 | 시간 컬럼 순서를 `schema.sql`·도메인 3.3과 같게(`start_date`·`end_date` 다음), 4.3 `ck_todos_times` 정의 표기, ERD-02 관련 ID DB-01~14, DB-14 타입 `TIME(0)`, BR 커버리지에 BR-24 추가 | `schema.sql`과 정합성 점검 | Claude |
 
 > 단일 출처 원칙: 엔티티·속성·관계, 용어, 상태 규칙(ST), 비즈니스 규칙(BR)은 [도메인 정의서 v0.11](./1-domain-definition.md)이, 기능(FR)·비기능(NFR)·결정(P)은 [PRD v0.24](./2-PRD.md)이, 이름 규칙·API 경로(PR·PD)는 [프로젝트 구조 설계 원칙 v0.18](./5-project-principle.md)이 정의한다. 이 문서는 도메인 3장의 엔티티와 관계를 PostgreSQL 17 물리 구조로 옮긴 것이며, 규칙·오류 코드·수치를 다시 정의하지 않고 ID로 참조한다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 프로젝트 구조 설계 원칙 > [아키텍처 다이어그램](./6-arch-diagram.md) > 이 문서 순으로 따른다.
 >
@@ -82,9 +83,9 @@ erDiagram
         string title
         string description
         date startDate
+        date endDate
         string startTime
         string endTime
-        date endDate
         boolean completed
         datetime completedAt
         datetime createdAt
@@ -153,7 +154,7 @@ erDiagram
     }
 ```
 
-관련 ID: 도메인 3.1~3.4, NFR-04, NFR-11, NFR-12, P-04, PR-N-04, PR-S-10, DB-01~13
+관련 ID: 도메인 3.1~3.4, NFR-04, NFR-11, NFR-12, P-04, PR-N-04, PR-S-10, DB-01~14
 
 ## 4. 테이블 명세
 
@@ -191,9 +192,9 @@ erDiagram
 | `title` | `VARCHAR(100)` | N | - | - | title | BR-06, BR-22 |
 | `description` | `VARCHAR(1000)` | Y | - | - | description | BR-22, DB-11 |
 | `start_date` | `DATE` | N | - | `ck_todos_dates` CHECK(`start_date <= end_date`) | startDate | BR-06, BR-07, NFR-11, DB-07 |
-| `start_time` | `TIME(0)` | Y | - | `ck_todos_times` | startTime | BR-24, NFR-11, DB-14 |
-| `end_time` | `TIME(0)` | Y | - | `ck_todos_times` | endTime | BR-24, NFR-11, DB-14 |
 | `end_date` | `DATE` | N | - | (위 CHECK) | endDate | BR-06, BR-07, NFR-11, DB-07 |
+| `start_time` | `TIME(0)` | Y | - | `ck_todos_times` CHECK(같은 날이면 `start_time <= end_time`) | startTime | BR-24, NFR-11, DB-14 |
+| `end_time` | `TIME(0)` | Y | - | (위 CHECK) | endTime | BR-24, NFR-11, DB-14 |
 | `completed` | `BOOLEAN` | N | `false` | `ck_todos_completed` CHECK(`completed = (completed_at IS NOT NULL)`) | completed | ST-01, PD-21, DB-08 |
 | `completed_at` | `TIMESTAMPTZ` | Y | - | (위 CHECK) | completedAt | PD-21, DB-08 |
 | `created_at` | `TIMESTAMPTZ` | N | `now()` | - | createdAt | BR-20, DB-02 |
@@ -297,7 +298,7 @@ API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startD
 | DB-11 | `description`은 trim 후 빈 문자열이면 서비스가 `NULL`로 저장하고 API는 `null`로 돌려준다. | `''`와 `NULL` 두 표현이 같은 뜻이라 하나로 모은다. 도메인 3.3이 `description`을 선택 속성(N)으로 정의한다. | 빈 문자열 그대로 저장: 표시 쪽이 둘을 다 처리해야 한다. 요청의 `null`도 `NULL`로 저장한다(등록은 생략과 같음, 수정은 값 비움, PD-27). |
 | DB-12 | FK 이름은 `fk_<테이블>_<참조>` 형식으로 명시한다(`fk_categories_user`, `fk_todos_user`, `fk_todos_category`). PK는 기본 이름을 쓴다. | PR-N-04가 제약 이름을 명시하는 방침이다. 오류 분기에는 23505만 쓰지만 로그에서 위반 원인을 읽기 쉽다. | 기본 이름: 자동 생성 이름은 읽기 어렵다 |
 | DB-13 | `refresh_tokens`는 refresh 토큰 1개당 1행이다. 토큰 원문 대신 SHA-256 16진수 64자를 `CHAR(64)`로 저장하고 `uq_refresh_tokens_hash`로 찾는다. 갱신은 `DELETE … WHERE token_hash = $1 AND expires_at > now() RETURNING user_id` 한 문장으로 사용 처리해 같은 토큰을 동시에 써도 한 번만 성공한다. 행을 수정하지 않으므로 `updated_at`이 없다. 만료 행은 로그인할 때 그 사용자의 만료 행을 지워 정리하고 배치는 두지 않는다. 비밀번호 변경 시 전체 폐기와 만료 정리를 위해 `idx_refresh_tokens_user`를 둔다. | 해시는 bcrypt가 아닌 SHA-256이다: 원문이 32바이트 난수라 무차별 대입이 불가능하고, 갱신마다 bcrypt를 계산하면 CPU 부하(NFR-05)가 커진다. 한 문장 DELETE는 트랜잭션 없이 원자적이다. | 원문 저장: DB 유출 시 세션 탈취. 소프트 삭제(`revoked_at`): 재사용 탐지가 필요해지면 도입(PD-26). 만료 정리 배치: 로컬 단일 머신(P-10)에서 과설계 |
-| DB-14 | 시작·종료 시간은 NULL 허용 `TIME`(초 없이 저장)으로 두고, 응답은 SELECT에서 `to_char(t.start_time, 'HH24:MI')`로 'HH:MM' 문자열을 만든다. 같은 날 시작 ≤ 종료는 `ck_todos_times`로 방어한다. 상태 파생·캘린더 조회는 시간 컬럼을 쓰지 않는다. | 날짜와 따로 둬야 시간 없는 할일과 기간 판정(DB-07)을 그대로 쓴다. `timestamp`로 합치면 시간대 변환 위험(NFR-11). | `timestamptz` 시작·종료 시각: 날짜 컬럼과 중복, 시간대 처리 필요 |
+| DB-14 | 시작·종료 시간은 NULL 허용 `TIME(0)`(초 이하 없이 저장)으로 두고, 응답은 SELECT에서 `to_char(t.start_time, 'HH24:MI')`로 'HH:MM' 문자열을 만든다. 같은 날 시작 ≤ 종료는 `ck_todos_times`로 방어한다. 상태 파생·캘린더 조회는 시간 컬럼을 쓰지 않는다. | 날짜와 따로 둬야 시간 없는 할일과 기간 판정(DB-07)을 그대로 쓴다. `timestamp`로 합치면 시간대 변환 위험(NFR-11). | `timestamptz` 시작·종료 시각: 날짜 컬럼과 중복, 시간대 처리 필요 |
 
 ## 9. 커버리지
 
@@ -331,6 +332,7 @@ API 필드는 도메인 속성명(camelCase)과 같고 SELECT 별칭(`AS "startD
 | BR-21 비밀번호 | `password_hash`(정책은 서비스 검증) |
 | BR-22 길이·trim | `VARCHAR(n)`, DB-04, DB-09 |
 | BR-23 카테고리 정렬 | `created_at`, `is_default` 컬럼, DB-10 |
+| BR-24 같은 날 시작 시간 ≤ 종료 시간 | `start_time`·`end_time`(NULL 허용), `ck_todos_times`, DB-07, DB-14 |
 | BR-01, BR-05, BR-08, BR-15, BR-16, BR-19 | 별도 구조 없음. BR-05는 `updated_at`(DB-02), BR-15는 `idx_todos_user_category` |
 
 ### 9.3 NFR·PRD 결정
