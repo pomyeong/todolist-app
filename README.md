@@ -1,12 +1,15 @@
 # TodoList
 
-개인 할일(기간·카테고리)과 월/주/일 캘린더를 제공하는 웹 앱. 설계 문서는 [docs/](docs/)에 있다.
+개인 할일(기간·시간·카테고리)과 월/4주/주/일 캘린더를 제공하는 웹 앱. 한국어·日本語·English, 시스템/주간/다크 화면 모드를 지원한다. 설계 문서는 [docs/](docs/)에 있다.
+
+- 운영: https://todolist-pmsong.vercel.app (프론트) · https://todolist-pmsong-be.vercel.app/api/health (백엔드 헬스 체크)
 
 ## 디렉토리
 
 - `backend/` — Node.js + Express 5 API 서버
 - `frontend/` — React 19 + TypeScript + Vite
 - `docs/` — 설계 문서
+- `test/e2e/` — 시나리오 E2E 리포트([report.md](test/e2e/report.md))와 운영 스모크 검사([smoke-prod/report.md](test/e2e/smoke-prod/report.md)), 스크린샷
 - `guide/` — 개발 과정 튜토리얼([tutorial.md](guide/tutorial.md))과 비슷한 앱을 만들 때 AI에 한 번에 읽히는 플레이북([ai-playbook.md](guide/ai-playbook.md))
 
 ## 실행 순서
@@ -33,6 +36,28 @@
    npm install
    npm run dev            # .env.development의 VITE_API_BASE_URL(http://localhost:3000)로 API 직접 호출(CORS)
    ```
+
+## 테스트
+
+```
+cd backend && npm test     # 단위 + API 통합 + 소유권(실제 앱 + todolist_test DB, .env.test 필요) — 124건
+cd frontend && npm test    # 순수 함수 단위 테스트(Vitest) — 165건
+```
+
+화면은 코드 E2E 대신 Playwright MCP로 시나리오를 실행해 [test/e2e/report.md](test/e2e/report.md)에 기록한다(PR-T-05).
+
+## 운영 배포 (Vercel + Supabase)
+
+같은 저장소에 Vercel 프로젝트 두 개를 연결해 `main` 푸시마다 자동 배포한다. DB는 Supabase PostgreSQL(싱가포르 `ap-southeast-1`)이고 `docs/schema.sql`로 만든다.
+
+| 프로젝트 | Root Directory | 프레임워크 | 설정 파일 | 환경변수 |
+| --- | --- | --- | --- | --- |
+| `todolist-pmsong-be` | `backend` | Express(진입점 `src/app.js` default export) | `backend/vercel.json`: 함수 리전 `sin1`(DB와 같은 지역) | `DATABASE_URL`(pooler), `JWT_SECRET`(48자 이상), `NODE_ENV=production`, `CORS_ORIGIN=https://todolist-pmsong.vercel.app`, `DB_POOL_MAX`, 토큰 만료 |
+| `todolist-pmsong` | `frontend` | Vite | `frontend/vercel.json`: `/api/*` → 백엔드 rewrite, 나머지 → `index.html`(SPA) | `VITE_API_BASE_URL=https://todolist-pmsong.vercel.app`(자기 주소) |
+
+- 브라우저는 프론트 주소의 `/api/...`만 호출하고 Vercel이 백엔드로 넘긴다. `*.vercel.app`은 공개 접미사라 백엔드를 직접 부르면 다른 사이트가 되어 `SameSite=Lax` 인증 쿠키가 실리지 않는다.
+- 운영 env 사본은 `.env prod`처럼 두고 커밋하지 않는다(`.gitignore`의 `.env *`).
+- 배포 확인: 백엔드 헬스 200 → `https://todolist-pmsong.vercel.app/api/health` 200 → 로그인 후 새로고침해도 유지 → 스모크 검사. 배포 직후 화면이 그대로면 강력 새로고침(Ctrl+Shift+R).
 
 ## 기존 DB 업그레이드
 
@@ -61,7 +86,7 @@ COMMIT;
 
 ## 포맷·린트
 
-루트 `biome.json`을 공유한다. 커밋 전 `npx @biomejs/biome check`를 통과시킨다.
+루트 `biome.json`을 공유한다. 커밋 전 `npx @biomejs/biome check`를 통과시킨다(루트에서 `npx biome`을 치면 무관한 패키지를 받으므로 패키지 이름을 쓰거나 `backend`·`frontend` 안에서 `npx biome check`). 프론트는 `npx tsc -b`도 통과시킨다.
 
 ## 검증 기록
 
@@ -134,3 +159,16 @@ Playwright(playwright-core)로 로컬 브라우저를 구동해 가입 → 로�
 - 화면에서 만들 수 없는 잘못된 필터·기간(E-08, E-09)은 API로 확인했다.
 - 캘린더 URL의 없는 날짜(`date=2026-13-45`, `2026-02-30`)는 오늘 기준으로 표시하도록 고쳤다(`lib/date.ts` `isValidDate`).
 - 발견·수정: 카테고리 이름 수정의 409 문구가 '닫기'·Esc 후에도 남던 문제를 고쳤다(`CategoryList.tsx`, T-FE-10 범위).
+
+### 시나리오 E2E (2026-11-06)
+
+Playwright MCP(Chromium)로 로컬 개발 서버에서 SC-01~15를 수행했다. 데스크톱 1280×900, 모바일 360×780. **98건 중 98건 통과**. 수행 중 찾은 모바일 4주 뷰 'M/D' 표기 누락(P-30)은 `dayLabel()`로 고친 뒤 재확인했다. 상세와 스크린샷 36장: [test/e2e/report.md](test/e2e/report.md).
+
+### 운영 스모크 검사 (2026-11-06)
+
+https://todolist-pmsong.vercel.app 에서 SC-13 종단 흐름을 축으로 SC-01~15 핵심 단계를 수행했다. 상세: [test/e2e/smoke-prod/report.md](test/e2e/smoke-prod/report.md).
+
+| 차수 | 결과 | 후속 조치 |
+| --- | --- | --- |
+| 1차 | 15/15 통과, 관찰 2건 | 카테고리 연속 추가 시 입력 유실 → 보낸 값이 그대로일 때만 입력란 비움. 응답 지연 → 백엔드 함수 리전 `iad1` → `sin1` |
+| 2차 | 20/20 통과, 5xx 0건 | 관찰 2건 해소 확인. `/api/todos` 0.14~0.16s |
