@@ -65,6 +65,7 @@
 | v0.18 | 2026-11-06 | 참조 문서 | 도메인 v0.7 → v0.11, PRD v0.14 → v0.24, 시나리오 v0.10 → v0.12, 와이어프레임 v0.5 → v0.12 | 버전 동기화 | Claude |
 | v0.18 | 2026-11-06 | 7.2 `app.js` | `createApp()`은 그대로 두고 앱 인스턴스를 default export로 추가 | Vercel 배포에서 Express 프리셋이 `src/app.js`의 default export를 진입점으로 요구(사용자 배포 결정) | Claude |
 | v0.18 | 2026-11-06 | 7.3 `vercel.json` | 운영 프론트는 `/api/*`를 백엔드로 rewrite해 같은 출처로 호출(운영 `VITE_API_BASE_URL`은 프론트 자신의 주소), 그 밖의 경로는 `index.html`(SPA) | `*.vercel.app`은 공개 접미사라 프론트·백엔드가 다른 사이트가 되어 `SameSite=Lax` 인증 쿠키가 안 실려 로그인 직후 401 | Claude |
+| v0.18 | 2026-11-06 | 7.3 `app/`, 8장 표 | 최상위 경로에 `errorElement`(`RouteError.tsx`): 렌더링 오류 시 React Router 기본 개발용 화면 대신 3개 언어 문구와 새로고침 버튼 | 운영에서 오류 시 사용자에게 개발용 화면이 노출되고, 재배포 후 옛 청크 로드 실패는 새로고침으로 복구된다(사용자 요청) | Claude |
 
 > 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.11](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.24](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.12](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.12](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
@@ -295,7 +296,8 @@ frontend/
 └─ src/
    ├─ main.tsx            # QueryClient(전역 401 처리, PR-L-12), RouterProvider
    ├─ app/
-   │  ├─ router.tsx       # 경로 표(P-23), 알 수 없는 경로·`/` 리다이렉트
+   │  ├─ router.tsx       # 경로 표(P-23), 알 수 없는 경로·`/` 리다이렉트, 최상위 errorElement
+   │  ├─ RouteError.tsx   # 렌더링 오류 화면(문구 + 새로고침), 옛 청크 로드 실패도 새로고침으로 복구
    │  ├─ RequireAuth.tsx  # 로그인 여부 가드, 로그인 상태의 /login·/signup 우회
    │  ├─ AppLayout.tsx    # 내비게이션(WF-01), 화면 상단 오류·'갱신 중…' 영역
    │  └─ session.ts       # clearSession(): 스토어 reset + 쿼리 캐시 비우기 (401 전역 처리·로그아웃 공용)
@@ -334,7 +336,7 @@ frontend/
 | 위치 | 역할 | 구현하는 ID |
 |---|---|---|
 | `main.tsx` | QueryClient 설정, 401 전역 처리(Zustand·캐시 초기화 후 `/login`) | FR-04, PR-L-12 |
-| `app/router.tsx`, `RequireAuth.tsx` | 경로 7개, `/`·미정의 경로 리다이렉트, 로그인 상태에서 `/login`·`/signup` 접근 시 `/todos` | P-23, BR-01, FR-03 |
+| `app/router.tsx`, `RequireAuth.tsx`, `RouteError.tsx` | 경로 7개, `/`·미정의 경로 리다이렉트, 로그인 상태에서 `/login`·`/signup` 접근 시 `/todos`, 렌더링 오류는 최상위 `errorElement`가 오류 화면(새로고침 버튼)으로 | P-23, BR-01, FR-03 |
 | `app/AppLayout.tsx` | 내비게이션(사용자 이름·이동·로그아웃), 화면 상단 오류·'갱신 중…' 위치, 오류 영역은 내비게이션 바로 아래 | PRD 공통, FR-03, FR-14, P-22, L-17 |
 | `features/auth` | 앱 시작 시 `GET /api/me`로 로그인 확인 후 사용자 정보를 Zustand에 보관(토큰 없음). 가입·로그인 성공 시 `/todos` 이동. 로그아웃 시 Zustand·쿼리 캐시 초기화. 비밀번호 확인 일치 검사 | FR-01~03, FR-14, FR-15, P-04, P-24 |
 | `features/todos` | `filterStore`(카테고리·상태 필터, 새로고침·로그아웃 시 초기화), 목록 조회·`today` query key, 완료 토글(재조회 후 표시, 해당 행만 비활성), 삭제 확인, 등록·편집 폼 | FR-05~09, P-12, P-15, P-22, P-23, P-21 |

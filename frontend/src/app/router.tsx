@@ -8,29 +8,36 @@ import { TodoFormPage } from '../pages/TodoFormPage';
 import { TodoListPage } from '../pages/TodoListPage';
 import { AppLayout } from './AppLayout';
 import { RequireAuth } from './RequireAuth';
+import { RouteError } from './RouteError';
 
 export const router = createBrowserRouter([
   {
-    element: <RequireAuth mode="guest" />,
-    children: [
-      { path: '/login', element: <LoginPage /> },
-      { path: '/signup', element: <SignupPage /> },
-    ],
-  },
-  {
-    element: <RequireAuth mode="authed" />,
+    // 하위 화면의 렌더링 오류를 모두 받는다
+    errorElement: <RouteError />,
     children: [
       {
-        element: <AppLayout />,
+        element: <RequireAuth mode="guest" />,
         children: [
-          { path: '/todos', element: <TodoListPage /> },
-          { path: '/todos/new', element: <TodoFormPage /> },
-          { path: '/todos/:id/edit', element: <TodoFormPage /> },
-          { path: '/calendar', element: <CalendarPage /> },
-          { path: '/categories', element: <CategoriesPage /> },
-          { path: '/me', element: <MePage /> },
-          { path: '/', element: <Navigate to="/todos" replace /> },
-          { path: '*', element: <Navigate to="/todos" replace /> },
+          { path: '/login', element: <LoginPage /> },
+          { path: '/signup', element: <SignupPage /> },
+        ],
+      },
+      {
+        element: <RequireAuth mode="authed" />,
+        children: [
+          {
+            element: <AppLayout />,
+            children: [
+              { path: '/todos', element: <TodoListPage /> },
+              { path: '/todos/new', element: <TodoFormPage /> },
+              { path: '/todos/:id/edit', element: <TodoFormPage /> },
+              { path: '/calendar', element: <CalendarPage /> },
+              { path: '/categories', element: <CategoriesPage /> },
+              { path: '/me', element: <MePage /> },
+              { path: '/', element: <Navigate to="/todos" replace /> },
+              { path: '*', element: <Navigate to="/todos" replace /> },
+            ],
+          },
         ],
       },
     ],

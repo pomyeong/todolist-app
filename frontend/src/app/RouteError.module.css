@@ -1,0 +1,14 @@
+.box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6) 16px;
+  text-align: center;
+  color: var(--text);
+}
+
+.title {
+  font-size: 1.25rem;
+  margin: 0;
+}
