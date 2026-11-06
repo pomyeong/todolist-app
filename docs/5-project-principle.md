@@ -64,6 +64,7 @@
 | v0.18 | 2026-11-06 | 7.1, 7.3 | 루트에 `test/e2e/`·`guide/`·`prompts/`·`.claude/`·`.mcp.json`, `.gitignore` 실제 항목. 프론트에 `ThemeSelect`·`lib/emoji.ts`·`WeekRow.tsx`·`features/auth/messages.ts`, `lib/` 항목 통합, 4주 뷰(FR-17·P-30)·이어진 막대(P-16)·날짜별 '+N' | 실제 디렉토리·코드 기준 | Claude |
 | v0.18 | 2026-11-06 | 참조 문서 | 도메인 v0.7 → v0.11, PRD v0.14 → v0.24, 시나리오 v0.10 → v0.12, 와이어프레임 v0.5 → v0.12 | 버전 동기화 | Claude |
 | v0.18 | 2026-11-06 | 7.2 `app.js` | `createApp()`은 그대로 두고 앱 인스턴스를 default export로 추가 | Vercel 배포에서 Express 프리셋이 `src/app.js`의 default export를 진입점으로 요구(사용자 배포 결정) | Claude |
+| v0.18 | 2026-11-06 | 7.3 `vercel.json` | 운영 프론트는 `/api/*`를 백엔드로 rewrite해 같은 출처로 호출(운영 `VITE_API_BASE_URL`은 프론트 자신의 주소), 그 밖의 경로는 `index.html`(SPA) | `*.vercel.app`은 공개 접미사라 프론트·백엔드가 다른 사이트가 되어 `SameSite=Lax` 인증 쿠키가 안 실려 로그인 직후 401 | Claude |
 
 > 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.11](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.24](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.12](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.12](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
@@ -289,6 +290,7 @@ frontend/
 ├─ index.html
 ├─ vite.config.ts         # React 플러그인, 포트 5173, test 설정
 ├─ .env.development       # VITE_API_BASE_URL=http://localhost:3000 (PR-S-04)
+├─ vercel.json            # 운영: /api/* → 백엔드 rewrite(같은 출처라 Lax 쿠키 전송), 나머지 → index.html
 ├─ tsconfig.json          # strict
 └─ src/
    ├─ main.tsx            # QueryClient(전역 401 처리, PR-L-12), RouterProvider
