@@ -41,3 +41,6 @@ export function createApp() {
   app.use(errorHandler);
   return app;
 }
+
+// Vercel Express 프리셋은 src/app.js의 default export(앱 인스턴스)를 함수 진입점으로 쓴다. 로컬은 server.js가 listen한다.
+export default createApp();

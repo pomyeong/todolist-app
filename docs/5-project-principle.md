@@ -63,6 +63,7 @@
 | v0.18 | 2026-11-06 | 3.1, PR-S-05, PR-S-10 | 프론트 호출을 `VITE_API_BASE_URL + '/api/...'`로, `/api/health`·`/api/docs`는 `app.js`가 `apiRouter`보다 먼저 등록해 인증 밖, `ALTER TABLE`로 컬럼을 더한 개발 DB의 컬럼 순서 차이 | 코드(`api/client.ts`, `app.js`, `routes/index.js`)·README 기준 | Claude |
 | v0.18 | 2026-11-06 | 7.1, 7.3 | 루트에 `test/e2e/`·`guide/`·`prompts/`·`.claude/`·`.mcp.json`, `.gitignore` 실제 항목. 프론트에 `ThemeSelect`·`lib/emoji.ts`·`WeekRow.tsx`·`features/auth/messages.ts`, `lib/` 항목 통합, 4주 뷰(FR-17·P-30)·이어진 막대(P-16)·날짜별 '+N' | 실제 디렉토리·코드 기준 | Claude |
 | v0.18 | 2026-11-06 | 참조 문서 | 도메인 v0.7 → v0.11, PRD v0.14 → v0.24, 시나리오 v0.10 → v0.12, 와이어프레임 v0.5 → v0.12 | 버전 동기화 | Claude |
+| v0.18 | 2026-11-06 | 7.2 `app.js` | `createApp()`은 그대로 두고 앱 인스턴스를 default export로 추가 | Vercel 배포에서 Express 프리셋이 `src/app.js`의 default export를 진입점으로 요구(사용자 배포 결정) | Claude |
 
 > 단일 출처 원칙: 용어, 엔티티, 상태 규칙(ST), 비즈니스 규칙(BR), 유스케이스(UC)는 [도메인 정의서 v0.11](./1-domain-definition.md)이, 기능(FR)·화면(SCR)·비기능(NFR)·목표(G)·일정(M)·리스크(R)·결정(P)은 [PRD v0.24](./2-PRD.md)이, 시나리오(SC)는 [사용자 시나리오 v0.12](./3-user-scenario.md)이, 화면 배치(WF·L)는 [와이어프레임 v0.12](./4-wireframe.md)이 정의한다. 이 문서는 해당 ID를 참조만 하며 규칙·오류 코드·수치를 다시 정의하지 않는다. 충돌하면 도메인 정의서 > PRD > 시나리오 > 와이어프레임 > 이 문서 순으로 따른다.
 >
@@ -215,7 +216,7 @@ backend/
 │  └─ seed-load.js        # 실행 계획 확인용 사용자·할일 입력 (NFR-04)
 ├─ src/
 │  ├─ server.js           # config 로드 → app.listen, 종료 시 pool.end
-│  ├─ app.js              # createApp(): 미들웨어·라우터 조립, /api/health (테스트가 import)
+│  ├─ app.js              # createApp(): 미들웨어·라우터 조립, /api/health (테스트가 import). default export는 Vercel Express 진입점용 앱 인스턴스
 │  ├─ config.js           # 환경변수 읽기·검증 (PR-S-01)
 │  ├─ db.js               # Pool, query, withTransaction, DATE 문자열 파서
 │  ├─ errors.js           # AppError, 오류 코드 상수
